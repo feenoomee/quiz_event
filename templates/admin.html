@@ -1,10 +1,533 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Title</title>
-</head>
-<body>
+{% extends "base.html" %}
 
-</body>
-</html>
+{% block title %}Админ-панель - TLTQUIZ{% endblock %}
+
+{% block content %}
+    <section class="hero">
+        <h1>Админ-панель</h1>
+        <p>Управляйте мероприятиями, просматривайте статистику и аналитику</p>
+    </section>
+
+    <!-- Quick Stats -->
+    <div class="cards-grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); margin-bottom: 3rem;">
+        <div class="card" style="text-align: center;">
+            <p class="text-muted">Всего игр проведено</p>
+            <p style="font-size: 2.5rem; color: var(--yellow-pastel); font-weight: bold;">24</p>
+            <p class="card-text text-muted">За все время</p>
+        </div>
+        <div class="card" style="text-align: center;">
+            <p class="text-muted">Участников всего</p>
+            <p style="font-size: 2.5rem; color: var(--yellow-pastel); font-weight: bold;">487</p>
+            <p class="card-text text-muted">За все время</p>
+        </div>
+        <div class="card" style="text-align: center;">
+            <p class="text-muted">Общий доход</p>
+            <p style="font-size: 2.5rem; color: var(--yellow-pastel); font-weight: bold;">487 000 ₽</p>
+            <p class="card-text text-muted">За все время</p>
+        </div>
+        <div class="card" style="text-align: center;">
+            <p class="text-muted">Предстоящие события</p>
+            <p style="font-size: 2.5rem; color: var(--yellow-pastel); font-weight: bold;">5</p>
+            <p class="card-text text-muted">В этом месяце</p>
+        </div>
+    </div>
+
+    <!-- Tabs Navigation -->
+    <div style="display: flex; gap: 1rem; margin-bottom: 2rem; border-bottom: 1px solid var(--light-gray); padding-bottom: 0; flex-wrap: wrap;">
+        <button class="btn btn-secondary" style="background: none; color: var(--yellow-pastel); border: none; padding-bottom: 0.8rem; border-bottom: 2px solid var(--yellow-pastel);" onclick="switchTab('events')">Мероприятия</button>
+        <button class="btn btn-secondary" style="background: none; color: var(--text-primary); border: none; padding-bottom: 0.8rem; border-bottom: 2px solid transparent;" onclick="switchTab('analytics')">Аналитика</button>
+        <button class="btn btn-secondary" style="background: none; color: var(--text-primary); border: none; padding-bottom: 0.8rem; border-bottom: 2px solid transparent;" onclick="switchTab('registrations')">Регистрации</button>
+        <button class="btn btn-secondary" style="background: none; color: var(--text-primary); border: none; padding-bottom: 0.8rem; border-bottom: 2px solid transparent;" onclick="switchTab('reports')">Отчёты</button>
+    </div>
+
+    <!-- Tab: Events Management -->
+    <div id="events-tab">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+            <h2 class="section-title" style="margin: 0;">Управление мероприятиями</h2>
+            <button class="btn btn-primary" onclick="openCreateEventModal()">+ Создать событие</button>
+        </div>
+
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Название</th>
+                        <th>Дата</th>
+                        <th>Место</th>
+                        <th>Участников</th>
+                        <th>Цена</th>
+                        <th>Доход</th>
+                        <th>Статус</th>
+                        <th>Действия</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Квиз «Кино»</td>
+                        <td>15 мая 2026</td>
+                        <td>Онлайн</td>
+                        <td>8/10</td>
+                        <td>500 ₽</td>
+                        <td>4 000 ₽</td>
+                        <td><span class="status-badge status-active">Предстоящее</span></td>
+                        <td style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                            <a href="#" style="color: var(--yellow-pastel); font-size: 0.85rem;">Редактировать</a>
+                            <a href="#" style="color: var(--text-secondary); font-size: 0.85rem;">Удалить</a>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Квиз «История»</td>
+                        <td>22 мая 2026</td>
+                        <td>ул. Ленина, 10</td>
+                        <td>18/20</td>
+                        <td>600 ₽</td>
+                        <td>10 800 ₽</td>
+                        <td><span class="status-badge status-active">Предстоящее</span></td>
+                        <td style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                            <a href="#" style="color: var(--yellow-pastel); font-size: 0.85rem;">Редактировать</a>
+                            <a href="#" style="color: var(--text-secondary); font-size: 0.85rem;">Удалить</a>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Квиз «Наука»</td>
+                        <td>5 июня 2026</td>
+                        <td>Онлайн</td>
+                        <td>12/15</td>
+                        <td>500 ₽</td>
+                        <td>6 000 ₽</td>
+                        <td><span class="status-badge status-active">Предстоящее</span></td>
+                        <td style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                            <a href="#" style="color: var(--yellow-pastel); font-size: 0.85rem;">Редактировать</a>
+                            <a href="#" style="color: var(--text-secondary); font-size: 0.85rem;">Удалить</a>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Квиз «Спорт» (май)</td>
+                        <td>29 апреля 2026</td>
+                        <td>Онлайн</td>
+                        <td>25/25</td>
+                        <td>550 ₽</td>
+                        <td>13 750 ₽</td>
+                        <td><span class="status-badge status-inactive">Завершено</span></td>
+                        <td style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                            <a href="#" style="color: var(--yellow-pastel); font-size: 0.85rem;">Просмотр</a>
+                            <a href="#" style="color: var(--text-secondary); font-size: 0.85rem;">Отчёт</a>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Квиз «География»</td>
+                        <td>8 апреля 2026</td>
+                        <td>ул. Пушкина, 5</td>
+                        <td>15/20</td>
+                        <td>500 ₽</td>
+                        <td>7 500 ₽</td>
+                        <td><span class="status-badge status-inactive">Завершено</span></td>
+                        <td style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                            <a href="#" style="color: var(--yellow-pastel); font-size: 0.85rem;">Просмотр</a>
+                            <a href="#" style="color: var(--text-secondary); font-size: 0.85rem;">Отчёт</a>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Tab: Analytics -->
+    <div id="analytics-tab" style="display: none;">
+        <h2 class="section-title">Аналитика и статистика</h2>
+
+        <!-- Filter by Period -->
+        <div style="background-color: var(--dark-gray); padding: 1.5rem; border-radius: 6px; margin-bottom: 2rem; border: 1px solid var(--light-gray);">
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="analyticsPeriodStart">Период от:</label>
+                    <input type="date" id="analyticsPeriodStart">
+                </div>
+                <div class="form-group">
+                    <label for="analyticsPeriodEnd">Период до:</label>
+                    <input type="date" id="analyticsPeriodEnd">
+                </div>
+            </div>
+            <button class="btn btn-primary">Применить фильтр</button>
+        </div>
+
+        <!-- Analytics Cards -->
+        <div class="cards-grid">
+            <div class="card">
+                <p class="text-muted">Игр за период</p>
+                <p style="font-size: 2rem; color: var(--yellow-pastel); font-weight: bold;">8</p>
+                <p class="card-text text-muted">май - июнь 2026</p>
+            </div>
+            <div class="card">
+                <p class="text-muted">Участников за период</p>
+                <p style="font-size: 2rem; color: var(--yellow-pastel); font-weight: bold;">156</p>
+                <p class="card-text text-muted">май - июнь 2026</p>
+            </div>
+            <div class="card">
+                <p class="text-muted">Доход за период</p>
+                <p style="font-size: 2rem; color: var(--yellow-pastel); font-weight: bold;">78 500 ₽</p>
+                <p class="card-text text-muted">май - июнь 2026</p>
+            </div>
+            <div class="card">
+                <p class="text-muted">Средняя заполняемость</p>
+                <p style="font-size: 2rem; color: var(--yellow-pastel); font-weight: bold;">78%</p>
+                <p class="card-text text-muted">от всех мест</p>
+            </div>
+        </div>
+
+        <!-- Charts (Placeholders) -->
+        <div class="cards-grid" style="grid-template-columns: repeat(auto-fit, minmax(500px, 1fr)); margin-top: 2rem;">
+            <div class="card">
+                <h3 style="color: var(--yellow-pastel); margin-bottom: 1.5rem;">Участники по событиям</h3>
+                <div style="height: 300px; background: linear-gradient(to right, rgba(232, 209, 101, 0.1) 0%, rgba(232, 209, 101, 0.2) 50%, rgba(232, 209, 101, 0.1) 100%); border-radius: 4px; display: flex; align-items: flex-end; justify-content: space-around; padding: 1rem;">
+                    <div style="width: 40px; height: 60%; background-color: var(--yellow-pastel); border-radius: 4px; display: flex; align-items: center; justify-content: center; color: var(--black); font-weight: bold; font-size: 0.85rem;">8</div>
+                    <div style="width: 40px; height: 75%; background-color: var(--yellow-pastel); border-radius: 4px; display: flex; align-items: center; justify-content: center; color: var(--black); font-weight: bold; font-size: 0.85rem;">18</div>
+                    <div style="width: 40px; height: 50%; background-color: var(--yellow-pastel); border-radius: 4px; display: flex; align-items: center; justify-content: center; color: var(--black); font-weight: bold; font-size: 0.85rem;">12</div>
+                    <div style="width: 40px; height: 100%; background-color: var(--yellow-pastel); border-radius: 4px; display: flex; align-items: center; justify-content: center; color: var(--black); font-weight: bold; font-size: 0.85rem;">25</div>
+                    <div style="width: 40px; height: 65%; background-color: var(--yellow-pastel); border-radius: 4px; display: flex; align-items: center; justify-content: center; color: var(--black); font-weight: bold; font-size: 0.85rem;">15</div>
+                </div>
+                <div style="display: flex; justify-content: space-around; margin-top: 1rem; font-size: 0.8rem; color: var(--text-secondary);">
+                    <span>Кино</span>
+                    <span>История</span>
+                    <span>Спорт</span>
+                    <span>География</span>
+                    <span>Наука</span>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3 style="color: var(--yellow-pastel); margin-bottom: 1.5rem;">Доход по событиям</h3>
+                <div style="height: 300px; background: linear-gradient(to right, rgba(232, 209, 101, 0.1) 0%, rgba(232, 209, 101, 0.2) 50%, rgba(232, 209, 101, 0.1) 100%); border-radius: 4px; display: flex; align-items: flex-end; justify-content: space-around; padding: 1rem;">
+                    <div style="width: 40px; height: 40%; background-color: var(--yellow-pastel); border-radius: 4px; display: flex; align-items: center; justify-content: center; color: var(--black); font-weight: bold; font-size: 0.7rem;">4k</div>
+                    <div style="width: 40px; height: 65%; background-color: var(--yellow-pastel); border-radius: 4px; display: flex; align-items: center; justify-content: center; color: var(--black); font-weight: bold; font-size: 0.7rem;">10.8k</div>
+                    <div style="width: 40px; height: 70%; background-color: var(--yellow-pastel); border-radius: 4px; display: flex; align-items: center; justify-content: center; color: var(--black); font-weight: bold; font-size: 0.7rem;">13.7k</div>
+                    <div style="width: 40px; height: 50%; background-color: var(--yellow-pastel); border-radius: 4px; display: flex; align-items: center; justify-content: center; color: var(--black); font-weight: bold; font-size: 0.7rem;">7.5k</div>
+                    <div style="width: 40px; height: 45%; background-color: var(--yellow-pastel); border-radius: 4px; display: flex; align-items: center; justify-content: center; color: var(--black); font-weight: bold; font-size: 0.7rem;">6k</div>
+                </div>
+                <div style="display: flex; justify-content: space-around; margin-top: 1rem; font-size: 0.8rem; color: var(--text-secondary);">
+                    <span>Кино</span>
+                    <span>История</span>
+                    <span>Спорт</span>
+                    <span>География</span>
+                    <span>Наука</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Detailed Stats Table -->
+        <div style="margin-top: 2rem;">
+            <h3 class="section-title">Детальная статистика по событиям</h3>
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Событие</th>
+                            <th>Дата</th>
+                            <th>Участников</th>
+                            <th>Мест доступно</th>
+                            <th>Цена</th>
+                            <th>Доход</th>
+                            <th>Заполняемость</th>
+                            <th>Средний рейтинг</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Квиз «Кино»</td>
+                            <td>15 мая 2026</td>
+                            <td>8</td>
+                            <td>10</td>
+                            <td>500 ₽</td>
+                            <td>4 000 ₽</td>
+                            <td>80%</td>
+                            <td>⭐ 4.7/5</td>
+                        </tr>
+                        <tr>
+                            <td>Квиз «История»</td>
+                            <td>22 мая 2026</td>
+                            <td>18</td>
+                            <td>20</td>
+                            <td>600 ₽</td>
+                            <td>10 800 ₽</td>
+                            <td>90%</td>
+                            <td>⭐ 4.9/5</td>
+                        </tr>
+                        <tr>
+                            <td>Квиз «Спорт»</td>
+                            <td>29 апреля 2026</td>
+                            <td>25</td>
+                            <td>25</td>
+                            <td>550 ₽</td>
+                            <td>13 750 ₽</td>
+                            <td>100%</td>
+                            <td>⭐ 4.8/5</td>
+                        </tr>
+                        <tr>
+                            <td>Квиз «География»</td>
+                            <td>8 апреля 2026</td>
+                            <td>15</td>
+                            <td>20</td>
+                            <td>500 ₽</td>
+                            <td>7 500 ₽</td>
+                            <td>75%</td>
+                            <td>⭐ 4.6/5</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tab: Registrations -->
+    <div id="registrations-tab" style="display: none;">
+        <h2 class="section-title">Регистрации и участники</h2>
+
+        <div style="background-color: var(--dark-gray); padding: 1.5rem; border-radius: 6px; margin-bottom: 2rem; border: 1px solid var(--light-gray);">
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="registrationEvent">Фильтр по событию:</label>
+                    <select id="registrationEvent">
+                        <option value="">Все события</option>
+                        <option value="1">Квиз «Кино»</option>
+                        <option value="2">Квиз «История»</option>
+                        <option value="3">Квиз «Спорт»</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="registrationStatus">Статус:</label>
+                    <select id="registrationStatus">
+                        <option value="">Все</option>
+                        <option value="confirmed">Подтверждено</option>
+                        <option value="pending">На ожидании</option>
+                        <option value="cancelled">Отменено</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Участник</th>
+                        <th>Email</th>
+                        <th>Телефон</th>
+                        <th>Событие</th>
+                        <th>Команда</th>
+                        <th>Статус</th>
+                        <th>Дата регистрации</th>
+                        <th>Действие</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Иван Иванов</td>
+                        <td>ivan@example.com</td>
+                        <td>+79991234567</td>
+                        <td>Квиз «Кино»</td>
+                        <td>Мои друзья</td>
+                        <td><span class="status-badge status-active">Подтверждено</span></td>
+                        <td>10 мая 2026</td>
+                        <td><a href="#" style="color: var(--yellow-pastel);">Просмотр</a></td>
+                    </tr>
+                    <tr>
+                        <td>Мария Сидорова</td>
+                        <td>maria@example.com</td>
+                        <td>+79997654321</td>
+                        <td>Квиз «История»</td>
+                        <td>Интеллектуалы</td>
+                        <td><span class="status-badge status-active">Подтверждено</span></td>
+                        <td>15 мая 2026</td>
+                        <td><a href="#" style="color: var(--yellow-pastel);">Просмотр</a></td>
+                    </tr>
+                    <tr>
+                        <td>Петр Петров</td>
+                        <td>petr@example.com</td>
+                        <td>+79991111111</td>
+                        <td>Квиз «Кино»</td>
+                        <td>-</td>
+                        <td><span class="status-badge status-inactive">На ожидании</span></td>
+                        <td>11 мая 2026</td>
+                        <td><a href="#" style="color: var(--yellow-pastel);">Просмотр</a></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Tab: Reports -->
+    <div id="reports-tab" style="display: none;">
+        <h2 class="section-title">Экспорт и отчёты</h2>
+
+        <div class="cards-grid" style="grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));">
+            <div class="card">
+                <div class="card-title">📊 Отчёт по событиям</div>
+                <p class="card-text text-muted">Информация о всех мероприятиях, участниках и доходах</p>
+                <div class="card-footer" style="margin-top: 1.5rem;">
+                    <button class="btn btn-primary" onclick="exportReport('events')">Скачать PDF</button>
+                    <button class="btn btn-outline" onclick="exportReport('events_xlsx')">Скачать Excel</button>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-title">📋 Список участников</div>
+                <p class="card-text text-muted">Полный список всех участников с контактной информацией</p>
+                <div class="card-footer" style="margin-top: 1.5rem;">
+                    <button class="btn btn-primary" onclick="exportReport('participants')">Скачать PDF</button>
+                    <button class="btn btn-outline" onclick="exportReport('participants_xlsx')">Скачать Excel</button>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-title">💰 Финансовый отчёт</div>
+                <p class="card-text text-muted">Подробный анализ доходов и расходов по событиям</p>
+                <div class="card-footer" style="margin-top: 1.5rem;">
+                    <button class="btn btn-primary" onclick="exportReport('financial')">Скачать PDF</button>
+                    <button class="btn btn-outline" onclick="exportReport('financial_xlsx')">Скачать Excel</button>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-title">⭐ Отзывы и рейтинги</div>
+                <p class="card-text text-muted">Сбор отзывов и оценок от участников</p>
+                <div class="card-footer" style="margin-top: 1.5rem;">
+                    <button class="btn btn-primary" onclick="exportReport('reviews')">Скачать PDF</button>
+                    <button class="btn btn-outline" onclick="exportReport('reviews_xlsx')">Скачать Excel</button>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-title">📈 Аналитический отчёт</div>
+                <p class="card-text text-muted">Графики, диаграммы и анализ тенденций</p>
+                <div class="card-footer" style="margin-top: 1.5rem;">
+                    <button class="btn btn-primary" onclick="exportReport('analytics')">Скачать PDF</button>
+                    <button class="btn btn-outline" onclick="exportReport('analytics_xlsx')">Скачать Excel</button>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-title">🎯 Кастомный отчёт</div>
+                <p class="card-text text-muted">Создайте свой отчёт с выбранными параметрами</p>
+                <div class="card-footer" style="margin-top: 1.5rem;">
+                    <button class="btn btn-primary" onclick="openCustomReportModal()">Создать</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Create Event Modal -->
+    <div class="modal" id="createEventModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">Создать новое событие</h2>
+                <button class="modal-close" onclick="closeCreateEventModal()">✕</button>
+            </div>
+            <form id="createEventForm">
+                <div class="form-group">
+                    <label for="eventTitle">Название события *</label>
+                    <input type="text" id="eventTitle" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="eventDescription">Описание</label>
+                    <textarea id="eventDescription"></textarea>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="eventDate">Дата и время *</label>
+                        <input type="datetime-local" id="eventDate" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="eventDuration">Длительность (часы) *</label>
+                        <input type="number" id="eventDuration" min="0.5" step="0.5" required>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="eventPrice">Цена (₽) *</label>
+                        <input type="number" id="eventPrice" min="0" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="eventSeats">Всего мест *</label>
+                        <input type="number" id="eventSeats" min="1" required>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="eventBuffer">Буфер мест (%)</label>
+                        <input type="number" id="eventBuffer" min="0" max="100" value="50">
+                    </div>
+                    <div class="form-group">
+                        <label for="eventLocation">Место проведения *</label>
+                        <input type="text" id="eventLocation" required>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="eventRules">Правила/Требования</label>
+                    <textarea id="eventRules"></textarea>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closeCreateEventModal()">Отмена</button>
+                    <button type="submit" class="btn btn-primary">Создать событие</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        function switchTab(tabName) {
+            // Hide all tabs
+            document.getElementById('events-tab').style.display = 'none';
+            document.getElementById('analytics-tab').style.display = 'none';
+            document.getElementById('registrations-tab').style.display = 'none';
+            document.getElementById('reports-tab').style.display = 'none';
+
+            // Show selected tab
+            document.getElementById(tabName + '-tab').style.display = 'block';
+
+            // Update button styles
+            document.querySelectorAll('button[onclick*="switchTab"]').forEach(btn => {
+                btn.style.color = 'var(--text-primary)';
+                btn.style.borderBottom = '2px solid transparent';
+            });
+            event.target.style.color = 'var(--yellow-pastel)';
+            event.target.style.borderBottom = '2px solid var(--yellow-pastel)';
+        }
+
+        function openCreateEventModal() {
+            document.getElementById('createEventModal').classList.add('active');
+        }
+
+        function closeCreateEventModal() {
+            document.getElementById('createEventModal').classList.remove('active');
+        }
+
+        function exportReport(type) {
+            alert('Генерируем отчёт "' + type + '"... В реальном приложении это создаст файл для скачивания.');
+        }
+
+        function openCustomReportModal() {
+            alert('Открыть модальное окно для создания кастомного отчёта');
+        }
+
+        // Close modal when clicking outside
+        window.onclick = function(event) {
+            const modal = document.getElementById('createEventModal');
+            if (event.target == modal) {
+                modal.classList.remove('active');
+            }
+        }
+
+        document.getElementById('createEventForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            alert('Событие создано! В реальном приложении это сохранится в БД.');
+            closeCreateEventModal();
+            this.reset();
+        });
+    </script>
+{% endblock %}

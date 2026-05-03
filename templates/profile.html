@@ -1,0 +1,182 @@
+{% extends "base.html" %}
+
+{% block title %}Профиль - TLTQUIZ{% endblock %}
+
+{% block content %}
+    <section class="hero">
+        <h1>Мой профиль</h1>
+        <p>Управляйте вашими регистрациями и командами</p>
+    </section>
+
+    <div style="display: grid; grid-template-columns: 250px 1fr; gap: 2rem; margin-bottom: 2rem;">
+        <!-- Profile Sidebar -->
+        <div class="card">
+            <div style="text-align: center; margin-bottom: 1.5rem;">
+                <div style="width: 100px; height: 100px; background-color: var(--light-gray); border-radius: 50%; margin: 0 auto 1rem; display: flex; align-items: center; justify-content: center; font-size: 2rem; color: var(--yellow-pastel);">👤</div>
+                <p style="font-weight: bold; font-size: 1.1rem;">Иван Иванов</p>
+                <p class="card-text text-muted">@ivanov2026</p>
+            </div>
+            
+            <div style="border-top: 1px solid var(--light-gray); padding-top: 1rem;">
+                <p style="font-weight: 600; color: var(--yellow-pastel); margin-bottom: 0.5rem;">Статистика</p>
+                <div style="margin-bottom: 1rem;">
+                    <p class="text-muted" style="font-size: 0.9rem;">Всего участвовал:</p>
+                    <p style="font-size: 1.3rem; color: var(--yellow-pastel);">5</p>
+                </div>
+                <div style="margin-bottom: 1rem;">
+                    <p class="text-muted" style="font-size: 0.9rem;">В команде:</p>
+                    <p style="font-size: 1.3rem; color: var(--yellow-pastel);">2</p>
+                </div>
+                <div>
+                    <p class="text-muted" style="font-size: 0.9rem;">Рейтинг:</p>
+                    <p style="font-size: 1.3rem; color: var(--yellow-pastel);">⭐ 4.8/5</p>
+                </div>
+            </div>
+
+            <div style="margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid var(--light-gray);">
+                <a href="#" class="btn btn-outline w-full" style="text-align: center; display: block;">Редактировать профиль</a>
+                <a href="#" class="btn btn-secondary w-full" style="text-align: center; display: block; margin-top: 0.5rem;">Изменить пароль</a>
+            </div>
+        </div>
+
+        <!-- Profile Tabs -->
+        <div>
+            <!-- Tabs Navigation -->
+            <div style="display: flex; gap: 1rem; margin-bottom: 1.5rem; border-bottom: 1px solid var(--light-gray); padding-bottom: 0; flex-wrap: wrap;">
+                <button class="btn btn-secondary" style="background: none; color: var(--yellow-pastel); border: none; padding-bottom: 0.8rem; border-bottom: 2px solid var(--yellow-pastel);" onclick="switchTab('registrations')">Мои регистрации</button>
+                <button class="btn btn-secondary" style="background: none; color: var(--text-primary); border: none; padding-bottom: 0.8rem; border-bottom: 2px solid transparent;" onclick="switchTab('teams')">Мои команды</button>
+                <button class="btn btn-secondary" style="background: none; color: var(--text-primary); border: none; padding-bottom: 0.8rem; border-bottom: 2px solid transparent;" onclick="switchTab('confirmations')">Подтверждения</button>
+            </div>
+
+            <!-- Tab: Registrations -->
+            <div id="registrations-tab">
+                <h2 class="section-title">Мои регистрации</h2>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Мероприятие</th>
+                                <th>Дата</th>
+                                <th>Статус</th>
+                                <th>Команда</th>
+                                <th>Действие</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Квиз «Кино»</td>
+                                <td>15 мая 2026</td>
+                                <td><span class="status-badge status-active">Подтверждено</span></td>
+                                <td>Мои друзья</td>
+                                <td><a href="#" style="color: var(--yellow-pastel);">Отменить</a></td>
+                            </tr>
+                            <tr>
+                                <td>Квиз «История»</td>
+                                <td>22 мая 2026</td>
+                                <td><span class="status-badge status-active">На ожидании</span></td>
+                                <td>-</td>
+                                <td><a href="#" style="color: var(--yellow-pastel);">Отменить</a></td>
+                            </tr>
+                            <tr>
+                                <td>Квиз «Наука»</td>
+                                <td>5 июня 2026</td>
+                                <td><span class="status-badge status-inactive">Прошедшее</span></td>
+                                <td>Интеллектуалы</td>
+                                <td><a href="#" style="color: var(--yellow-pastel);">Оставить отзыв</a></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Tab: Teams (hidden by default) -->
+            <div id="teams-tab" style="display: none;">
+                <h2 class="section-title">Мои команды</h2>
+                <div class="cards-grid">
+                    <div class="card">
+                        <div class="card-title">Мои друзья</div>
+                        <p class="card-text text-muted">Создана: 10 мая 2026</p>
+                        <p class="card-text">Участников: <strong>4</strong></p>
+                        <p class="card-text text-muted">Роль: <span style="color: var(--yellow-pastel);">Лидер</span></p>
+                        <div class="card-footer">
+                            <a href="#" class="btn btn-secondary">Настройки</a>
+                            <a href="#" class="btn btn-outline">Участники</a>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-title">Интеллектуалы</div>
+                        <p class="card-text text-muted">Создана: 2 апреля 2026</p>
+                        <p class="card-text">Участников: <strong>6</strong></p>
+                        <p class="card-text text-muted">Роль: <span style="color: var(--text-secondary);">Участник</span></p>
+                        <div class="card-footer">
+                            <a href="#" class="btn btn-secondary">Профиль</a>
+                            <a href="#" class="btn btn-outline">Выйти</a>
+                        </div>
+                    </div>
+                </div>
+
+                <div style="margin-top: 2rem; text-align: center;">
+                    <button class="btn btn-primary">+ Создать новую команду</button>
+                </div>
+            </div>
+
+            <!-- Tab: Confirmations (hidden by default) -->
+            <div id="confirmations-tab" style="display: none;">
+                <h2 class="section-title">Подтверждения участия</h2>
+                <p class="card-text text-muted" style="margin-bottom: 1.5rem;">Подтвердите вашу явку на предстоящие мероприятия</p>
+                
+                <div class="cards-grid" style="grid-template-columns: 1fr;">
+                    <div class="card" style="border-left: 4px solid var(--yellow-pastel);">
+                        <div style="display: flex; justify-content: space-between; align-items: start;">
+                            <div>
+                                <div class="card-title">Квиз «Кино»</div>
+                                <p class="card-text text-muted">📅 15 мая 2026 в 19:00</p>
+                                <p class="card-text">Напоминаем: пожалуйста, подтвердите вашу явку за 24 часа до начала</p>
+                            </div>
+                            <span class="status-badge status-inactive">Не подтверждено</span>
+                        </div>
+                        <div class="card-footer" style="margin-top: 1.5rem;">
+                            <button class="btn btn-primary">Подтвердить явку</button>
+                            <button class="btn btn-secondary">Отменить участие</button>
+                        </div>
+                    </div>
+
+                    <div class="card" style="border-left: 4px solid #7cfc00;">
+                        <div style="display: flex; justify-content: space-between; align-items: start;">
+                            <div>
+                                <div class="card-title">Квиз «История»</div>
+                                <p class="card-text text-muted">📅 22 мая 2026 в 19:00</p>
+                                <p class="card-text">Спасибо! Ваша явка подтверждена</p>
+                            </div>
+                            <span class="status-badge status-active">Подтверждено</span>
+                        </div>
+                        <div class="card-footer" style="margin-top: 1.5rem;">
+                            <button class="btn btn-secondary">Отменить явку</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function switchTab(tabName) {
+            // Hide all tabs
+            document.getElementById('registrations-tab').style.display = 'none';
+            document.getElementById('teams-tab').style.display = 'none';
+            document.getElementById('confirmations-tab').style.display = 'none';
+
+            // Show selected tab
+            document.getElementById(tabName + '-tab').style.display = 'block';
+
+            // Update button styles
+            document.querySelectorAll('button[onclick*="switchTab"]').forEach(btn => {
+                btn.style.color = 'var(--text-primary)';
+                btn.style.borderBottom = '2px solid transparent';
+            });
+            event.target.style.color = 'var(--yellow-pastel)';
+            event.target.style.borderBottom = '2px solid var(--yellow-pastel)';
+        }
+    </script>
+{% endblock %}

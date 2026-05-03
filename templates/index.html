@@ -1,10 +1,220 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Title</title>
-</head>
-<body>
+{% extends "base.html" %}
 
-</body>
-</html>
+{% block title %}Главная - TLTQUIZ{% endblock %}
+
+{% block content %}
+    <!-- Hero Banner -->
+    <section class="hero">
+        <h1>Добро пожаловать в TLTQUIZ</h1>
+        <p>Интеллектуальные квиз-мероприятия для всех</p>
+        <div>
+            {% if not current_user.is_authenticated %}
+                <a href="#" class="btn btn-primary" onclick="openRegisterModal()">Зарегистрироваться на квиз</a>
+            {% else %}
+                <a href="{{ url_for('schedule') }}" class="btn btn-primary">Смотреть расписание</a>
+            {% endif %}
+        </div>
+    </section>
+
+    <!-- Slider with Results/Photos -->
+    <section>
+        <h2 class="section-title">Результаты прошлых игр</h2>
+        <div class="slider-container">
+            <div class="slider-wrapper" id="sliderWrapper">
+                <div class="slider-item">
+                    <img src="https://via.placeholder.com/1200x400?text=Quiz+Results+1" alt="Результаты игры 1">
+                </div>
+                <div class="slider-item">
+                    <img src="https://via.placeholder.com/1200x400?text=Quiz+Results+2" alt="Результаты игры 2">
+                </div>
+                <div class="slider-item">
+                    <img src="https://via.placeholder.com/1200x400?text=Quiz+Results+3" alt="Результаты игры 3">
+                </div>
+            </div>
+            <button class="slider-prev" onclick="prevSlide()">‹</button>
+            <button class="slider-next" onclick="nextSlide()">›</button>
+            <div class="slider-controls">
+                <div class="slider-dot active" onclick="goToSlide(0)"></div>
+                <div class="slider-dot" onclick="goToSlide(1)"></div>
+                <div class="slider-dot" onclick="goToSlide(2)"></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Upcoming Events -->
+    <section>
+        <h2 class="section-title">Предстоящие мероприятия</h2>
+        <div class="cards-grid">
+            <div class="card">
+                <div class="card-title">Квиз «Кино»</div>
+                <p class="card-text text-muted">📅 15 мая 2026 | 📍 Онлайн</p>
+                <p class="card-text">Вопросы о истории кино, актёрах, режиссёрах и культовых фильмах.</p>
+                <p><strong>Цена:</strong> 500 ₽ | <span class="badge">8/10 мест</span></p>
+                <div class="card-footer">
+                    <button class="btn btn-primary" onclick="openRegisterModal()">Регистрация</button>
+                    <a href="{{ url_for('schedule') }}" class="btn btn-outline">Подробнее</a>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-title">Квиз «История»</div>
+                <p class="card-text text-muted">📅 22 мая 2026 | 📍 Офис</p>
+                <p class="card-text">Погрузитесь в интересные факты и события мировой истории.</p>
+                <p><strong>Цена:</strong> 600 ₽ | <span class="badge">15/20 мест</span></p>
+                <div class="card-footer">
+                    <button class="btn btn-primary" onclick="openRegisterModal()">Регистрация</button>
+                    <a href="{{ url_for('schedule') }}" class="btn btn-outline">Подробнее</a>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-title">Корпоративный квиз</div>
+                <p class="card-text text-muted">📅 29 мая 2026 | 📍 По запросу</p>
+                <p class="card-text">Закажите свой квиз для вашей компании или мероприятия.</p>
+                <p><strong>Цена:</strong> По договору | <span class="badge" style="background-color: var(--light-gray);">На заказ</span></p>
+                <div class="card-footer">
+                    <button class="btn btn-primary">Связаться с нами</button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- About Section -->
+    <section class="mt-3">
+        <h2 class="section-title">Почему TLTQUIZ?</h2>
+        <div class="cards-grid">
+            <div class="card">
+                <div class="card-title">✓ Интересные вопросы</div>
+                <p class="card-text">Тщательно подобранные вопросы для людей разного возраста и интересов.</p>
+            </div>
+            <div class="card">
+                <div class="card-title">✓ Дружная атмосфера</div>
+                <p class="card-text">Находите новых друзей и весело проводите время с интересными людьми.</p>
+            </div>
+            <div class="card">
+                <div class="card-title">✓ Удобно и просто</div>
+                <p class="card-text">Зарегистрируйтесь за минуту, оплатите и приходите в указанное время.</p>
+            </div>
+            <div class="card">
+                <div class="card-title">✓ Команды и чат</div>
+                <p class="card-text">Общайтесь с участниками до игры в нашем встроенном чате.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Registration Modal -->
+    <div class="modal" id="registerModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">Регистрация на квиз</h2>
+                <button class="modal-close" onclick="closeRegisterModal()">✕</button>
+            </div>
+            <form id="registerForm">
+                <div class="form-group">
+                    <label for="eventSelect">Выберите мероприятие *</label>
+                    <select id="eventSelect" required>
+                        <option value="">-- Выберите --</option>
+                        <option value="1">Квиз «Кино» - 15 мая (500 ₽)</option>
+                        <option value="2">Квиз «История» - 22 мая (600 ₽)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="fullName">ФИО *</label>
+                    <input type="text" id="fullName" required>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="email">Email *</label>
+                        <input type="email" id="email" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="phone">Телефон</label>
+                        <input type="tel" id="phone">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="teamName">Название команды</label>
+                        <input type="text" id="teamName">
+                    </div>
+                    <div class="form-group">
+                        <label for="participants">Количество участников</label>
+                        <input type="number" id="participants" value="1" min="1" max="10">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="notes">Комментарий</label>
+                    <textarea id="notes" placeholder="Расскажите о себе или вашей команде..."></textarea>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closeRegisterModal()">Отмена</button>
+                    <button type="submit" class="btn btn-primary">Зарегистрироваться</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Chat Widget (bottom right corner) -->
+    <div style="position: fixed; bottom: 20px; right: 20px; z-index: 999;">
+        <a href="{{ url_for('chat') }}" class="btn btn-primary" style="border-radius: 50%; width: 50px; height: 50px; display: flex; align-items: center; justify-content: center; text-decoration: none; font-size: 1.2rem;">
+            💬
+        </a>
+    </div>
+
+    <script>
+        // Slider functionality
+        let currentSlide = 0;
+        const slides = document.querySelectorAll('.slider-item').length;
+
+        function showSlide(n) {
+            const wrapper = document.getElementById('sliderWrapper');
+            const dots = document.querySelectorAll('.slider-dot');
+            
+            if (n >= slides) currentSlide = 0;
+            if (n < 0) currentSlide = slides - 1;
+            
+            wrapper.style.transform = `translateX(-${currentSlide * 100}%)`;
+            
+            dots.forEach(dot => dot.classList.remove('active'));
+            dots[currentSlide].classList.add('active');
+        }
+
+        function nextSlide() {
+            currentSlide++;
+            showSlide(currentSlide);
+        }
+
+        function prevSlide() {
+            currentSlide--;
+            showSlide(currentSlide);
+        }
+
+        function goToSlide(n) {
+            currentSlide = n;
+            showSlide(currentSlide);
+        }
+
+        // Modal functionality
+        function openRegisterModal() {
+            document.getElementById('registerModal').classList.add('active');
+        }
+
+        function closeRegisterModal() {
+            document.getElementById('registerModal').classList.remove('active');
+        }
+
+        // Close modal when clicking outside
+        window.onclick = function(event) {
+            const modal = document.getElementById('registerModal');
+            if (event.target == modal) {
+                modal.classList.remove('active');
+            }
+        }
+
+        // Auto-slide every 5 seconds
+        setInterval(() => {
+            currentSlide++;
+            showSlide(currentSlide);
+        }, 5000);
+    </script>
+{% endblock %}
