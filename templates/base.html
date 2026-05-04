@@ -1,81 +1,10 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}TLTQUIZ - Квиз мероприятия{% endblock %}</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <title>Title</title>
 </head>
 <body>
-    <!-- Header -->
-    <header>
-        <div class="header-container">
-            <a href="{{ url_for('index') }}" class="logo">
-                <img src="{{ url_for('static', filename='images/logo.png') }}" alt="TLTQUIZ Logo">
-                <span class="logo-text">TLTQUIZ</span>
-            </a>
-            
-            <button class="menu-toggle" id="menuToggle">☰</button>
-            
-            <nav id="mainNav" class="mobile-hidden">
-                <a href="{{ url_for('index') }}" class="{% if request.endpoint == 'index' %}active{% endif %}">Главная</a>
-                <a href="{{ url_for('schedule') }}" class="{% if request.endpoint == 'schedule' %}active{% endif %}">Расписание</a>
-                {% if current_user.is_authenticated %}
-                    <a href="{{ url_for('profile') }}" class="{% if request.endpoint == 'profile' %}active{% endif %}">Профиль</a>
-                    {% if current_user.is_admin %}
-                        <a href="{{ url_for('admin') }}" class="{% if request.endpoint == 'admin' %}active{% endif %}">Админ</a>
-                    {% endif %}
-                    <a href="{{ url_for('chat') }}" class="{% if request.endpoint == 'chat' %}active{% endif %}">Чат</a>
-                {% endif %}
-            </nav>
-            
-            <div class="auth-buttons">
-                {% if current_user.is_authenticated %}
-                    <span style="color: var(--yellow-pastel); margin-right: 1rem;">{{ current_user.username }}</span>
-                    <a href="{{ url_for('logout') }}" class="btn btn-secondary">Выйти</a>
-                {% else %}
-                    <a href="{{ url_for('login') }}" class="btn btn-secondary">Вход</a>
-                    <a href="{{ url_for('register') }}" class="btn btn-primary">Регистрация</a>
-                {% endif %}
-            </div>
-        </div>
-    </header>
 
-    <!-- Main Content -->
-    <main>
-        <div class="container">
-            {% with messages = get_flashed_messages(with_categories=true) %}
-                {% if messages %}
-                    {% for category, message in messages %}
-                        <div class="alert alert-{{ category }}">
-                            {{ message }}
-                        </div>
-                    {% endfor %}
-                {% endif %}
-            {% endwith %}
-
-            {% block content %}{% endblock %}
-        </div>
-    </main>
-
-    <!-- Footer -->
-    <footer>
-        <p>&copy; 2026 TLTQUIZ. Все права защищены.</p>
-        <p>Свяжитесь с нами: <a href="https://vk.com/tltquiz" target="_blank">VK</a> | Email: info@tltquiz.ru</p>
-    </footer>
-
-    <!-- Mobile Menu Toggle Script -->
-    <script>
-        const menuToggle = document.getElementById('menuToggle');
-        const mainNav = document.getElementById('mainNav');
-        
-        if (menuToggle) {
-            menuToggle.addEventListener('click', () => {
-                mainNav.classList.toggle('mobile-hidden');
-            });
-        }
-    </script>
-
-    {% block scripts %}{% endblock %}
 </body>
 </html>

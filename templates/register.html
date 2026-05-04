@@ -1,65 +1,10 @@
-{% extends "base.html" %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
 
-{% block title %}Регистрация - TLTQUIZ{% endblock %}
-
-{% block content %}
-    <section class="hero">
-        <h1>Создать аккаунт</h1>
-        <p>Зарегистрируйтесь, чтобы начать участвовать в квизах</p>
-    </section>
-
-    <div style="max-width: 600px; margin: 2rem auto;">
-        <div class="card">
-            <form method="POST">
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="firstName">Имя *</label>
-                        <input type="text" id="firstName" name="first_name" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="lastName">Фамилия *</label>
-                        <input type="text" id="lastName" name="last_name" required>
-                    </div>
-                </div>
-
-                <div class="form-group">
-                    <label for="username">Логин (ник) *</label>
-                    <input type="text" id="username" name="username" required>
-                    <small class="card-text text-muted" style="display: block; margin-top: 0.3rem;">Только латинские буквы, цифры и подчёркивание</small>
-                </div>
-
-                <div class="form-group">
-                    <label for="email">Email *</label>
-                    <input type="email" id="email" name="email" required>
-                </div>
-
-                <div class="form-group">
-                    <label for="phone">Телефон</label>
-                    <input type="tel" id="phone" name="phone">
-                </div>
-
-                <div class="form-group">
-                    <label for="password">Пароль *</label>
-                    <input type="password" id="password" name="password" required>
-                    <small class="card-text text-muted" style="display: block; margin-top: 0.3rem;">Минимум 8 символов</small>
-                </div>
-
-                <div class="form-group">
-                    <label for="confirmPassword">Подтвердите пароль *</label>
-                    <input type="password" id="confirmPassword" name="confirm_password" required>
-                </div>
-
-                <div class="form-group" style="display: flex; align-items: flex-start; gap: 0.5rem;">
-                    <input type="checkbox" id="agreeTerms" name="agree_terms" style="width: auto; margin-top: 0.3rem;" required>
-                    <label for="agreeTerms" style="margin-bottom: 0; font-weight: normal;">Я согласен с <a href="#" style="color: var(--yellow-pastel);">условиями использования</a> и <a href="#" style="color: var(--yellow-pastel);">политикой конфиденциальности</a> *</label>
-                </div>
-
-                <button type="submit" class="btn btn-primary w-full" style="margin-top: 1.5rem; padding: 0.8rem;">Зарегистрироваться</button>
-            </form>
-
-            <div style="text-align: center; margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid var(--light-gray);">
-                <p class="card-text">Уже есть аккаунт? <a href="{{ url_for('login') }}" style="color: var(--yellow-pastel); text-decoration: none;">Войти</a></p>
-            </div>
-        </div>
-    </div>
-{% endblock %}
+</body>
+</html>
