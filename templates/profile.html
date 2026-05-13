@@ -1,47 +1,42 @@
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Личный кабинет — TLTQUIZ</title>
-  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-</head>
-<body>
+{% extends 'base.html' %}
+{% block title %}Личный кабинет — TLTQUIZ{% endblock %}
+{% block styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/profile.css') }}">
+{% endblock %}
+{% block nav_links %}
+  <a href="/">На главную</a>
+  <a href="/#events">Календарь</a>
+  <a href="https://vk.com/tltquiz" target="_blank">Корпоратив</a>
+  <a href="/profile" class="btn-profile">Кабинет</a>
+  {% if current_user and current_user.role == 'admin' %}
+    <a href="/admin">Админка</a>
+  {% endif %}
+  <a href="/logout">Выход</a>
+{% endblock %}
+{% block mobile_menu_links %}
+  <a href="/" onclick="closeMobileMenu()">На главную</a>
+  <a href="/#events" onclick="closeMobileMenu()">Календарь</a>
+  <a href="https://vk.com/tltquiz" target="_blank" onclick="closeMobileMenu()">Корпоратив</a>
+  <a href="/profile" class="btn-profile" onclick="closeMobileMenu()">Кабинет</a>
+  {% if current_user and current_user.role == 'admin' %}
+    <a href="/admin" onclick="closeMobileMenu()">Админка</a>
+  {% endif %}
+  <a href="/logout" onclick="closeMobileMenu()">Выход</a>
+{% endblock %}
+{% block content %}
 
-<!-- ===== HEADER ===== -->
-<header>
-  <div class="header-inner">
-    <div class="logo">
-      <div class="logo-icon"><img src="{{ url_for('static', filename='../media/logo.png') }}" alt="TLTQUIZ Logo" style="width: 100px; height: 90px;"></div>
-      TLTQUIZ
-    </div>
-
-    <nav>
-      <a href="/">На главную</a>
-      <a href="#events">Календарь</a>
-      <a href="https://vk.com/tltquiz" target="_blank">Корпоратив</a>
-      <a href="#" class="btn-profile">Кабинет</a>
-    </nav>
-
-    <div class="burger" onclick="toggleMobileMenu()" id="burgerBtn">
-      <span></span><span></span><span></span>
-    </div>
-  </div>
-</header>
-
-<!-- ===== PROFILE HEADER ===== -->
 <section class="profile-header">
   <div class="profile-header-inner">
     <div class="profile-user-info">
-      <div class="profile-avatar">U</div>
+      <div class="profile-avatar">{{ (current_user.name[0] if current_user else 'U')|upper }}</div>
       <div class="profile-user-details">
-        <h1>Игорь К.</h1>
-        <p>igor@email.com</p>
+        <h1>{{ current_user.name if current_user else 'Пользователь' }}</h1>
+        <p>{{ current_user.email if current_user else 'user@example.com' }}</p>
         <p style="font-size: 0.85rem;">Присоединился 15 марта 2025</p>
       </div>
     </div>
     <div>
-      <div class="profile-stats">
+      <!-- <div class="profile-stats">
         <div class="profile-stat-item">
           <span class="profile-stat-value">5</span>
           <span class="profile-stat-label">Участий</span>
@@ -53,9 +48,9 @@
         <div class="profile-stat-item">
           <span class="profile-stat-value">1</span>
           <span class="profile-stat-label">Побед</span>
-        </div>
+        </div> -->
       </div>
-      <div class="profile-actions" style="margin-top: 20px;">
+      <div class="profile-actions" style="margin-top: 20px; display: none;" id="profileActions">
         <button class="btn-edit" onclick="toggleSettingsMenu(event)">Меню</button>
         <button class="btn-logout">Выход</button>
       </div>
@@ -63,15 +58,9 @@
   </div>
 </section>
 
-<!-- ===== MAIN CONTENT ===== -->
 <div class="profile-content">
-
-  <!-- ===== MY REGISTRATIONS SECTION ===== -->
   <section class="profile-section">
-    <div class="profile-section-title">
-      Мои регистрации
-    </div>
-
+    <div class="profile-section-title">Мои регистрации</div>
     <div class="profile-tabs">
       <button class="profile-tab active" onclick="switchRegTab('active')">Предстоящие</button>
       <button class="profile-tab" onclick="switchRegTab('pending')">Подтверждение</button>
@@ -79,7 +68,6 @@
     </div>
 
     <div id="regTabActive" class="profile-cards" style="display: grid;">
-      <!-- Активная регистрация -->
       <div class="profile-card">
         <div class="reg-card-header">
           <div style="display: flex; align-items: center;">
@@ -110,7 +98,6 @@
         </div>
       </div>
 
-      <!-- Вторая регистрация -->
       <div class="profile-card">
         <div class="reg-card-header">
           <div style="display: flex; align-items: center;">
@@ -143,7 +130,6 @@
     </div>
 
     <div id="regTabPending" class="profile-cards" style="display: none;">
-      <!-- Подтверждение участия -->
       <div class="profile-card">
         <div class="reg-card-header">
           <div style="display: flex; align-items: center;">
@@ -173,7 +159,6 @@
     </div>
 
     <div id="regTabCompleted" class="profile-cards" style="display: none;">
-      <!-- Прошедшее событие -->
       <div class="profile-card">
         <div class="reg-card-header">
           <div style="display: flex; align-items: center;">
@@ -205,20 +190,14 @@
     </div>
   </section>
 
-  <!-- ===== MY TEAMS SECTION ===== -->
   <section class="profile-section">
-    <div class="profile-section-title">
-      Мои команды
-    </div>
-
+    <div class="profile-section-title">Мои команды</div>
     <div class="profile-cards">
-      <!-- Команда 1 -->
       <div class="team-card">
         <div class="team-header">
           <h3 class="team-name">Квизмастеры</h3>
           <span class="team-role">Капитан</span>
         </div>
-
         <div class="team-members">
           <div class="team-members-title">Участники (4)</div>
           <div class="team-members-list">
@@ -228,7 +207,6 @@
             <div class="team-member-badge">👤 Наталья</div>
           </div>
         </div>
-
         <div class="team-stats">
           <div class="team-stat">
             <span class="team-stat-value">5</span>
@@ -243,20 +221,16 @@
             <span class="team-stat-label">Призов</span>
           </div>
         </div>
-
         <div class="team-footer">
           <button style="background: transparent; border: 1px solid var(--border); color: #aaa;">Управление</button>
           <button style="background: transparent; border: 1px solid var(--border); color: #aaa;">Выйти</button>
         </div>
       </div>
-
-      <!-- Команда 2 -->
       <div class="team-card">
         <div class="team-header">
           <h3 class="team-name">Звёздные мозги</h3>
           <span style="background: rgba(33, 150, 243, 0.2); color: #2196f3; padding: 4px 10px; border-radius: 6px; font-size: 0.7rem; font-weight: 700; text-transform: uppercase;">Участник</span>
         </div>
-
         <div class="team-members">
           <div class="team-members-title">Участники (6)</div>
           <div class="team-members-list">
@@ -266,7 +240,6 @@
             <div style="background: rgba(245,197,24,0.08); border: 1px solid rgba(245,197,24,0.2); border-radius: 6px; padding: 6px 12px; font-size: 0.8rem; color: #888;">+ 3 участника</div>
           </div>
         </div>
-
         <div class="team-stats">
           <div class="team-stat">
             <span class="team-stat-value">3</span>
@@ -281,28 +254,21 @@
             <span class="team-stat-label">Призов</span>
           </div>
         </div>
-
         <div class="team-footer">
           <button style="background: transparent; border: 1px solid var(--border); color: #aaa;">Детали</button>
           <button style="background: transparent; border: 1px solid var(--border); color: #aaa;">Выйти</button>
         </div>
       </div>
     </div>
-
-    <!-- Create Team Button -->
     <div style="text-align: center; margin-top: 40px;">
       <button class="btn-create" onclick="alert('Функция создания команды')">+ Создать новую команду</button>
     </div>
   </section>
 
-  <!-- ===== EDIT PROFILE SECTION ===== -->
   <section class="profile-section" id="editSection" style="display: none;">
     <div class="edit-section">
-      <div class="edit-section-title">
-        Редактировать профиль
-      </div>
-
-      <form style="display: flex; flex-direction: column;">
+      <div class="edit-section-title">Редактировать профиль</div>
+      <form>
         <div class="form-row">
           <div class="form-group">
             <label>Имя и фамилия</label>
@@ -313,22 +279,18 @@
             <input type="date" value="1990-05-15" />
           </div>
         </div>
-
         <div class="form-group">
           <label>Email</label>
           <input type="email" value="igor@email.com" />
         </div>
-
         <div class="form-group">
           <label>Телефон</label>
           <input type="tel" value="+7 (999) 123-45-67" />
         </div>
-
         <div class="form-group">
           <label>О себе</label>
           <textarea placeholder="Расскажите о себе, какие темы квизов вам нравятся?">Люблю кино, музыку и интеллектуальные игры. Опыт квизов — 2 года.</textarea>
         </div>
-
         <div class="form-row" style="margin-top: 20px;">
           <div class="form-group">
             <label>Город</label>
@@ -339,42 +301,33 @@
             <input type="text" value="Русский" />
           </div>
         </div>
-
         <div class="edit-actions">
-          <button type="button" style="background: transparent; border: 1px solid var(--border); color: #888;">Отменить</button>
-          <button type="submit" style="background: var(--yellow); color: #000;">Сохранить изменения</button>
+          <button type="button" class="btn-cancel">Отменить</button>
+          <button type="submit" class="btn-main">Сохранить изменения</button>
         </div>
       </form>
     </div>
-
-    <!-- Security Section -->
     <div class="edit-section">
-      <div class="edit-section-title">
-        Безопасность
-      </div>
-
+      <div class="edit-section-title">Безопасность</div>
       <div class="form-group">
         <label>Пароль</label>
         <div style="display: flex; gap: 10px;">
           <input type="password" value="••••••••" style="flex: 1;" />
-          <button type="button" style="padding: 12px 24px; background: transparent; border: 1px solid var(--border); border-radius: 10px; color: #aaa; font-weight: 600; cursor: pointer;">Изменить</button>
+          <button type="button" class="btn-cancel">Изменить</button>
         </div>
       </div>
-
       <div style="margin-top: 20px; padding: 16px; background: #111; border-radius: 10px; border: 1px solid var(--border);">
         <div style="color: #888; font-size: 0.9rem;">
           <strong>Двухфакторная аутентификация:</strong> Отключена
           <button type="button" style="margin-left: 20px; color: var(--yellow); background: none; border: none; cursor: pointer; text-decoration: underline; font-weight: 600;">Включить</button>
         </div>
       </div>
-    </div>
-
-    <!-- Notifications Section -->
-    <div class="edit-section">
-      <div class="edit-section-title">
-        Уведомления
+      <div class="edit-actions" style="margin-top: 20px;">
+        <button type="button" class="btn-cancel">Закрыть</button>
       </div>
-
+    </div>
+    <div class="edit-section">
+      <div class="edit-section-title">Уведомления</div>
       <div style="display: flex; flex-direction: column; gap: 16px;">
         <div style="display: flex; align-items: center; justify-content: space-between; padding: 12px; background: #111; border-radius: 10px; border: 1px solid var(--border);">
           <label style="margin: 0; font-weight: 600;">Напоминание за день до квиза</label>
@@ -391,36 +344,23 @@
       </div>
     </div>
   </section>
-
 </div>
 
-<!-- ===== SETTINGS MENU ===== -->
 <div class="settings-menu" id="settingsMenu">
-  <button class="settings-menu-item" onclick="openModal('editProfileModal')">
-    Редактировать профиль
-  </button>
-  <button class="settings-menu-item" onclick="openModal('securityModal')">
-    Безопасность
-  </button>
-  <button class="settings-menu-item" onclick="openModal('notificationsModal')">
-    Уведомления
-  </button>
-  <button class="settings-menu-item logout" onclick="logout()">
-    Выход
-  </button>
+  <button class="settings-menu-item" onclick="openModal('editProfileModal')">Редактировать профиль</button>
+  <button class="settings-menu-item" onclick="openModal('securityModal')">Безопасность</button>
+  <button class="settings-menu-item" onclick="openModal('notificationsModal')">Уведомления</button>
+  <button class="settings-menu-item logout" onclick="logout()">Выход</button>
 </div>
 
-<!-- ===== MODAL: EDIT PROFILE ===== -->
 <div class="modal-overlay-custom" id="editProfileModal" onclick="closeModal(event)">
   <div class="modal-box" onclick="event.stopPropagation()">
     <div class="modal-header-custom">
-      <div class="modal-title-custom">
-        Редактировать профиль
-      </div>
-      <button class="modal-close-btn" onclick="closeModal()">&times;</button>
+      <div class="modal-title-custom">Редактировать профиль</div>
+      <button class="modal-close-btn" onclick="closeModal()">×</button>
     </div>
     <div class="modal-body">
-      <form style="display: flex; flex-direction: column;">
+      <form>
         <div class="form-row">
           <div class="form-group">
             <label>Имя и фамилия</label>
@@ -431,22 +371,18 @@
             <input type="date" value="1990-05-15" />
           </div>
         </div>
-
         <div class="form-group">
           <label>Email</label>
           <input type="email" value="igor@email.com" />
         </div>
-
         <div class="form-group">
           <label>Телефон</label>
           <input type="tel" value="+7 (999) 123-45-67" />
         </div>
-
         <div class="form-group">
           <label>О себе</label>
-          <textarea placeholder="Расскажите о себе, какие темы квизов вам нравятся?">Люблю кино, музыку и интеллектуальные игры. Опыт квизов — 2 года.</textarea>
+          <textarea>Люблю кино, музыку и интеллектуальные игры. Опыт квизов — 2 года.</textarea>
         </div>
-
         <div class="form-row" style="margin-top: 20px;">
           <div class="form-group">
             <label>Город</label>
@@ -457,56 +393,47 @@
             <input type="text" value="Русский" />
           </div>
         </div>
-
         <div class="edit-actions">
-          <button type="button" style="background: transparent; border: 1px solid var(--border); color: #888;" onclick="closeModal()">Отменить</button>
-          <button type="submit" style="background: var(--yellow); color: #000;">Сохранить изменения</button>
+          <button type="button" class="btn-cancel">Отменить</button>
+          <button type="submit" class="btn-main">Сохранить изменения</button>
         </div>
       </form>
     </div>
   </div>
 </div>
 
-<!-- ===== MODAL: SECURITY ===== -->
 <div class="modal-overlay-custom" id="securityModal" onclick="closeModal(event)">
   <div class="modal-box" onclick="event.stopPropagation()">
     <div class="modal-header-custom">
-      <div class="modal-title-custom">
-        Безопасность
-      </div>
-      <button class="modal-close-btn" onclick="closeModal()">&times;</button>
+      <div class="modal-title-custom">Безопасность</div>
+      <button class="modal-close-btn" onclick="closeModal()">×</button>
     </div>
     <div class="modal-body">
       <div class="form-group">
         <label>Пароль</label>
         <div style="display: flex; gap: 10px;">
           <input type="password" value="••••••••" style="flex: 1;" />
-          <button type="button" style="padding: 12px 24px; background: transparent; border: 1px solid var(--border); border-radius: 10px; color: #aaa; font-weight: 600; cursor: pointer;">Изменить</button>
+          <button type="button" class="btn-cancel">Изменить</button>
         </div>
       </div>
-
       <div style="margin-top: 20px; padding: 16px; background: #111; border-radius: 10px; border: 1px solid var(--border);">
         <div style="color: #888; font-size: 0.9rem;">
           <strong>Двухфакторная аутентификация:</strong> Отключена
           <button type="button" style="margin-left: 20px; color: var(--yellow); background: none; border: none; cursor: pointer; text-decoration: underline; font-weight: 600;">Включить</button>
         </div>
       </div>
-
       <div class="edit-actions" style="margin-top: 20px;">
-        <button type="button" style="background: transparent; border: 1px solid var(--border); color: #888;" onclick="closeModal()">Закрыть</button>
+        <button type="button" class="btn-cancel" onclick="closeModal()">Закрыть</button>
       </div>
     </div>
   </div>
 </div>
 
-<!-- ===== MODAL: NOTIFICATIONS ===== -->
 <div class="modal-overlay-custom" id="notificationsModal" onclick="closeModal(event)">
   <div class="modal-box" onclick="event.stopPropagation()">
     <div class="modal-header-custom">
-      <div class="modal-title-custom">
-        Уведомления
-      </div>
-      <button class="modal-close-btn" onclick="closeModal()">&times;</button>
+      <div class="modal-title-custom">Уведомления</div>
+      <button class="modal-close-btn" onclick="closeModal()">×</button>
     </div>
     <div class="modal-body">
       <div style="display: flex; flex-direction: column; gap: 16px;">
@@ -518,106 +445,17 @@
           <label style="margin: 0; font-weight: 600;">Уведомление об отмене событий</label>
           <input type="checkbox" checked style="width: 18px; height: 18px; cursor: pointer;" />
         </div>
-        <div style="display: flex; align-items: center; justify-content: space-between; padding: 12px; background: #111; border-radius: 10px; border: 1px solid var(--border);">
-          <label style="margin: 0; font-weight: 600;">Новые мероприятия по моим интересам</label>
-          <input type="checkbox" style="width: 18px; height: 18px; cursor: pointer;" />
-        </div>
       </div>
-
       <div class="edit-actions" style="margin-top: 20px;">
-        <button type="button" style="background: transparent; border: 1px solid var(--border); color: #888;" onclick="closeModal()">Закрыть</button>
-        <button type="submit" style="background: var(--yellow); color: #000;">Сохранить</button>
+        <button type="button" class="btn-cancel" onclick="closeModal()">Закрыть</button>
+        <button type="submit" class="btn-main">Сохранить</button>
       </div>
     </div>
   </div>
 </div>
 
-</div>
+{% endblock %}
 
-<footer id="contacts">
-  <div class="footer-inner">
-    <div class="footer-top">
-      <p class="footer-desc">
-        ТЛТКВИЗ — это дерзкая и яркая игра для активных людей Тольятти, которые любят отдыхать с друзьями в атмосфере умного и азартного соперничества.
-      </p>
-      <div class="footer-social">
-        <a href="https://vk.com/tltquiz" target="_blank">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M15.07 2H8.93C3.33 2 2 3.33 2 8.93v6.14C2 20.67 3.33 22 8.93 22h6.14C20.67 22 22 20.67 22 15.07V8.93C22 3.33 20.67 2 15.07 2z"/></svg>
-          Группа ВКонтакте
-        </a>
-      </div>
-    </div>
-
-    <div class="footer-bottom">
-      <div class="footer-copy">© 2025 TLTQUIZ · Все права защищены</div>
-      <div class="footer-city">Тольятти</div>
-    </div>
-  </div>
-</footer>
-
-<script>
-  // Settings Menu
-  function toggleSettingsMenu(e) {
-    e.preventDefault();
-    const menu = document.getElementById('settingsMenu');
-    menu.classList.toggle('active');
-    
-    // Закрыть меню при клике вне его
-    document.addEventListener('click', function closeMenu(event) {
-      if (!menu.contains(event.target) && !event.target.closest('.btn-edit')) {
-        menu.classList.remove('active');
-        document.removeEventListener('click', closeMenu);
-      }
-    });
-  }
-
-  // Modal Functions
-  function openModal(modalId) {
-    const modal = document.getElementById(modalId);
-    modal.classList.add('active');
-    const settingsMenu = document.getElementById('settingsMenu');
-    settingsMenu.classList.remove('active');
-  }
-
-  function closeModal(e) {
-    // Если это клик вне модального окна (на overlay)
-    if (e && e.target.classList.contains('modal-overlay-custom')) {
-      const modals = document.querySelectorAll('.modal-overlay-custom');
-      modals.forEach(modal => modal.classList.remove('active'));
-    }
-    // Если это клик на кнопку закрытия
-    else if (!e || !e.target.closest('.modal-box')) {
-      const modals = document.querySelectorAll('.modal-overlay-custom');
-      modals.forEach(modal => modal.classList.remove('active'));
-    }
-  }
-
-  function logout() {
-    // Здесь будет логика выхода
-    alert('Функция выхода');
-    // window.location.href = '/logout';
-  }
-
-  // Registration tabs
-  function switchRegTab(tab) {
-    // Скрыть все табы
-    document.getElementById('regTabActive').style.display = 'none';
-    document.getElementById('regTabPending').style.display = 'none';
-    document.getElementById('regTabCompleted').style.display = 'none';
-
-    // Показать выбранный таб
-    document.getElementById('regTab' + tab.charAt(0).toUpperCase() + tab.slice(1)).style.display = 'grid';
-
-    // Обновить активный класс кнопок
-    document.querySelectorAll('.profile-tab').forEach(btn => btn.classList.remove('active'));
-    event.target.classList.add('active');
-  }
-
-  function toggleMobileMenu() {
-    const menu = document.getElementById('mobileMenu');
-    menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
-  }
-</script>
-
-</body>
-</html>
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/profile.js') }}"></script>
+{% endblock %}

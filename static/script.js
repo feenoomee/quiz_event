@@ -3,7 +3,7 @@ const eventsData = [
   {
     id: 1,
     title: 'Кино и сериалы 2025',
-    emoji: '🎬',
+    emoji: '',
     category: 'cinema',
     date: '13 июня, пятница',
     time: '19:00',
@@ -16,7 +16,7 @@ const eventsData = [
   {
     id: 2,
     title: 'Угадай мелодию — Русские хиты',
-    emoji: '🎵',
+    emoji: '',
     category: 'music',
     date: '15 июня, воскресенье',
     time: '18:00',
@@ -29,7 +29,7 @@ const eventsData = [
   {
     id: 3,
     title: 'ТЛТКВИЗ — Обо всём',
-    emoji: '🧠',
+    emoji: '',
     category: 'classic',
     date: '18 июня, среда',
     time: '19:00',
@@ -42,7 +42,7 @@ const eventsData = [
   {
     id: 4,
     title: 'Эйнштейн Party — SHOW TIME',
-    emoji: '🎭',
+    emoji: '',
     category: 'show',
     date: '20 июня, пятница',
     time: '19:00',
@@ -55,7 +55,7 @@ const eventsData = [
   {
     id: 5,
     title: 'Мир кино — СССР и 90-е',
-    emoji: '📽',
+    emoji: '',
     category: 'cinema',
     date: '22 июня, воскресенье',
     time: '17:00',
@@ -68,7 +68,7 @@ const eventsData = [
   {
     id: 6,
     title: 'Музыкальный марафон',
-    emoji: '🎸',
+    emoji: '',
     category: 'music',
     date: '25 июня, среда',
     time: '19:00',
@@ -106,10 +106,10 @@ function renderEvents(filter) {
       <div class="event-card-body">
         <div class="event-card-title">${ev.title}</div>
         <div class="event-meta">
-          <div class="event-meta-row"><span class="event-meta-icon">📅</span>${ev.date}</div>
-          <div class="event-meta-row"><span class="event-meta-icon">⏰</span>${ev.time}</div>
-          <div class="event-meta-row"><span class="event-meta-icon">📍</span>${ev.place}</div>
-          <div class="event-meta-row"><span class="event-meta-icon">👥</span>Команды 4–10 человек</div>
+          <div class="event-meta-row"><span class="event-meta-icon"></span>${ev.date}</div>
+          <div class="event-meta-row"><span class="event-meta-icon"></span>${ev.time}</div>
+          <div class="event-meta-row"><span class="event-meta-icon"></span>${ev.place}</div>
+          <div class="event-meta-row"><span class="event-meta-icon"></span>Команды 4–10 человек</div>
         </div>
         <div class="event-card-footer">
           <div>
@@ -141,6 +141,8 @@ const totalSlides = 4;
 
 function initSlider() {
   const dots = document.getElementById('sliderDots');
+  const slides = document.getElementById('slides');
+  if (!dots || !slides) return;
   for (let i = 0; i < totalSlides; i++) {
     const d = document.createElement('button');
     d.className = 'slider-dot' + (i === 0 ? ' active' : '');
@@ -150,8 +152,10 @@ function initSlider() {
 }
 
 function goToSlide(n) {
+  const slides = document.getElementById('slides');
+  if (!slides) return;
   currentSlide = n;
-  document.getElementById('slides').style.transform = `translateX(-${n * 100}%)`;
+  slides.style.transform = `translateX(-${n * 100}%)`;
   document.querySelectorAll('.slider-dot').forEach((d, i) => {
     d.classList.toggle('active', i === n);
   });
@@ -160,12 +164,17 @@ function goToSlide(n) {
 function nextSlide() { goToSlide((currentSlide + 1) % totalSlides); }
 function prevSlide() { goToSlide((currentSlide - 1 + totalSlides) % totalSlides); }
 
-let sliderInterval = setInterval(nextSlide, 4500);
-document.getElementById('slides').addEventListener('mouseenter', () => clearInterval(sliderInterval));
-document.getElementById('slides').addEventListener('mouseleave', () => {
-  clearInterval(sliderInterval);
+let sliderInterval;
+
+const slidesContainer = document.getElementById('slides');
+if (slidesContainer) {
   sliderInterval = setInterval(nextSlide, 4500);
-});
+  slidesContainer.addEventListener('mouseenter', () => clearInterval(sliderInterval));
+  slidesContainer.addEventListener('mouseleave', () => {
+    clearInterval(sliderInterval);
+    sliderInterval = setInterval(nextSlide, 4500);
+  });
+}
 
 // ===== MODALS =====
 let currentRegEvent = {};
@@ -226,11 +235,36 @@ function switchAuthTab(tab, btn) {
   document.getElementById('authSubmitBtn').textContent = tab === 'login' ? 'Войти' : 'Создать аккаунт';
 }
 
-function submitAuth() {
-  const modal = document.getElementById('authModal');
-  modal.classList.remove('open');
-  document.body.style.overflow = '';
-  setTimeout(() => alert('Функция авторизации будет доступна в ближайшее время! 🚀'), 200);
+async function submitAuth() {
+  const isLoginTab = document.getElementById('loginForm').style.display !== 'none';
+  if (!isLoginTab) {
+    alert('Регистрация пока в разработке. Используйте демо-вход.');
+    return;
+  }
+
+  const identifier = document.getElementById('authIdentifier')?.value.trim();
+  if (!identifier) {
+    alert('Введите логин или email.');
+    return;
+  }
+
+  try {
+    const response = await fetch('/api/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ identifier })
+    });
+
+    const data = await response.json();
+    if (!response.ok) {
+      alert(data.message || 'Ошибка входа.');
+      return;
+    }
+
+    window.location.href = data.redirect_to || '/dashboard';
+  } catch (error) {
+    alert('Не удалось выполнить вход. Попробуйте снова.');
+  }
 }
 
 function openCorpModal(e) {
@@ -242,9 +276,9 @@ let chatOpen = false;
 const botReplies = [
   'Спасибо за ваш вопрос! Мы ответим вам в ближайшее время 😊',
   'Отличный вопрос! Напишите нам напрямую: vk.com/tltquiz',
-  'Хотите зарегистрироваться? Выберите мероприятие в календаре! 🎯',
+  'Хотите зарегистрироваться? Выберите мероприятие в календаре!',
   'Команды от 4 до 10 человек. Стоимость от 500 до 700 ₽ с игрока.',
-  'Корпоративные квизы организуем! Переходите по ссылке в ВК 🏢',
+  'Корпоративные квизы организуем! Переходите по ссылке в ВК',
 ];
 let replyIdx = 0;
 
@@ -303,10 +337,13 @@ function closeMobileMenu() {
 
 // ===== INITIALIZATION =====
 document.addEventListener('DOMContentLoaded', function() {
-  initSlider();
-  renderEvents('all');
-  
-  // Fade-in animation observer
+  if (document.getElementById('sliderDots')) {
+    initSlider();
+  }
+  if (document.getElementById('eventsGrid')) {
+    renderEvents('all');
+  }
+
   const observer = new IntersectionObserver((entries) => {
     entries.forEach(entry => {
       if (entry.isIntersecting) {
@@ -319,7 +356,6 @@ document.addEventListener('DOMContentLoaded', function() {
     observer.observe(el);
   });
 
-  // Counter animation
   const countElements = document.querySelectorAll('[data-count]');
   countElements.forEach(el => {
     const target = parseInt(el.getAttribute('data-count'));

@@ -1,10 +1,381 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Title</title>
-</head>
-<body>
+{% extends 'base.html' %}
+{% block title %}Админ-панель — TLTQUIZ{% endblock %}
+{% block styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/profile.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}">
+{% endblock %}
+{% block nav_links %}
+  <a href="/">На главную</a>
+  <a href="/#events">Календарь</a>
+  <a href="https://vk.com/tltquiz" target="_blank">Корпоратив</a>
+  <a href="#" class="btn-profile active" onclick="toggleSettingsMenu(event); return false;">Кабинет</a>
+  <a href="/admin">Админка</a>
+  <a href="/logout">Выход</a>
+{% endblock %}
+{% block mobile_menu_links %}
+  <a href="/" onclick="closeMobileMenu()">На главную</a>
+  <a href="/#events" onclick="closeMobileMenu()">Календарь</a>
+  <a href="https://vk.com/tltquiz" target="_blank" onclick="closeMobileMenu()">Корпоратив</a>
+  <a href="#" class="btn-profile" onclick="closeMobileMenu()">Кабинет</a>
+  <a href="/admin" onclick="closeMobileMenu()">Админка</a>
+  <a href="/logout" onclick="closeMobileMenu()">Выход</a>
+{% endblock %}
+{% block content %}
 
-</body>
-</html>
+<section class="profile-header">
+  <div class="profile-header-inner">
+    <div class="profile-user-info">
+      <div class="profile-avatar">{{ (current_user.name[0] if current_user else 'A')|upper }}</div>
+      <div class="profile-user-details">
+        <h1>{{ current_user.name if current_user else 'Администратор' }}</h1>
+        <p>{{ current_user.email if current_user else 'admin@example.com' }}</p>
+        <p style="font-size: 0.85rem;">Роль: Администратор</p>
+      </div>
+    </div>
+    <div class="profile-actions" style="margin-top: 20px; display: none;" id="profileActions">
+      <button class="btn-edit" onclick="toggleSettingsMenu(event)">Меню</button>
+      <button class="btn-logout" onclick="window.location.href='/logout'">Выход</button>
+    </div>
+  </div>
+</section>
+
+<div class="settings-menu" id="settingsMenu">
+  <button class="settings-menu-item" onclick="openModal('editProfileModal')">Редактировать профиль</button>
+  <button class="settings-menu-item" onclick="openModal('securityModal')">Безопасность</button>
+  <button class="settings-menu-item" onclick="openModal('notificationsModal')">Уведомления</button>
+  <button class="settings-menu-item logout" onclick="logout()">Выход</button>
+</div>
+
+<div class="modal-overlay-custom" id="editProfileModal" onclick="closeModal(event)">
+  <div class="modal-box" onclick="event.stopPropagation()">
+    <div class="modal-header-custom">
+      <div class="modal-title-custom">Редактировать профиль</div>
+      <button class="modal-close-btn" onclick="closeModal()">×</button>
+    </div>
+    <div class="modal-body">
+      <form>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Имя и фамилия</label>
+            <input type="text" value="{{ current_user.name if current_user else 'Администратор' }}" />
+          </div>
+          <div class="form-group">
+            <label>Дата рождения</label>
+            <input type="date" value="1990-05-15" />
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Email</label>
+          <input type="email" value="{{ current_user.email if current_user else 'admin@example.com' }}" />
+        </div>
+        <div class="form-group">
+          <label>Телефон</label>
+          <input type="tel" value="+7 (999) 123-45-67" />
+        </div>
+        <div class="edit-actions">
+          <button type="button" class="btn-cancel">Отменить</button>
+          <button type="submit" class="btn-main">Сохранить изменения</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay-custom" id="securityModal" onclick="closeModal(event)">
+  <div class="modal-box" onclick="event.stopPropagation()">
+    <div class="modal-header-custom">
+      <div class="modal-title-custom">Безопасность</div>
+      <button class="modal-close-btn" onclick="closeModal()">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label>Пароль</label>
+        <div style="display: flex; gap: 10px;">
+          <input type="password" value="••••••••" style="flex: 1;" />
+          <button type="button" class="btn-cancel">Изменить</button>
+        </div>
+      </div>
+      <div style="margin-top: 20px; padding: 16px; background: #111; border-radius: 10px; border: 1px solid var(--border);">
+        <div style="color: #888; font-size: 0.9rem;">
+          <strong>Двухфакторная аутентификация:</strong> Отключена
+          <button type="button" style="margin-left: 20px; color: var(--yellow); background: none; border: none; cursor: pointer; text-decoration: underline; font-weight: 600;">Включить</button>
+        </div>
+      </div>
+      <div class="edit-actions" style="margin-top: 20px;">
+        <button type="button" class="btn-cancel" onclick="closeModal()">Закрыть</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay-custom" id="notificationsModal" onclick="closeModal(event)">
+  <div class="modal-box" onclick="event.stopPropagation()">
+    <div class="modal-header-custom">
+      <div class="modal-title-custom">Уведомления</div>
+      <button class="modal-close-btn" onclick="closeModal()">×</button>
+    </div>
+    <div class="modal-body">
+      <div style="display: flex; flex-direction: column; gap: 16px;">
+        <div style="display: flex; align-items: center; justify-content: space-between; padding: 12px; background: #111; border-radius: 10px; border: 1px solid var(--border);">
+          <label style="margin: 0; font-weight: 600;">Напоминание за день до квиза</label>
+          <input type="checkbox" checked style="width: 18px; height: 18px; cursor: pointer;" />
+        </div>
+        <div style="display: flex; align-items: center; justify-content: space-between; padding: 12px; background: #111; border-radius: 10px; border: 1px solid var(--border);">
+          <label style="margin: 0; font-weight: 600;">Уведомление об отмене событий</label>
+          <input type="checkbox" checked style="width: 18px; height: 18px; cursor: pointer;" />
+        </div>
+      </div>
+      <div class="edit-actions" style="margin-top: 20px;">
+        <button type="button" class="btn-cancel" onclick="closeModal()">Закрыть</button>
+        <button type="submit" class="btn-main">Сохранить</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Quick Stats Section -->
+<section class="section stats-section">
+  <div class="section-inner">
+    <div class="section-header fade-in">
+      <h2 class="section-title">Ключевые <span>показатели</span></h2>
+    </div>
+    <div class="quick-stats fade-in">
+      <div class="stat-box">
+        <div class="stat-number" id="total-events">0</div>
+        <div class="stat-label">Активных событий</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-number" id="total-revenue">₽0</div>
+        <div class="stat-label">Общий доход</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-number" id="total-attendees">0</div>
+        <div class="stat-label">Участников</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-number" id="occupancy-rate">0%</div>
+        <div class="stat-label">Средняя заполняемость</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Events Management Section -->
+<section class="section admin-content">
+  <div class="section-inner">
+    <div class="section-header fade-in" style="display: flex; align-items: center; justify-content: space-between; gap: 20px; flex-wrap: wrap;">
+      <div>
+        <h2 class="section-title">Управление <span>мероприятиями</span></h2>
+        <p class="section-sub">Создавайте, редактируйте и закрывайте события</p>
+      </div>
+      <button class="btn-main" onclick="openCreateEventModal()">+ Создать мероприятие</button>
+    </div>
+    <div class="events-table fade-in">
+      <table>
+        <thead>
+          <tr>
+            <th>Название</th>
+            <th>Дата и время</th>
+            <th>Место</th>
+            <th>Регистрации</th>
+            <th>Занято (%)</th>
+            <th>Действия</th>
+          </tr>
+        </thead>
+        <tbody id="events-tbody">
+          <!-- Будет заполнено из API -->
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- Analytics Section -->
+<section class="section admin-content">
+  <div class="section-inner">
+    <div class="section-header fade-in">
+      <h2 class="section-title">Аналитика и <span>статистика</span></h2>
+      <div class="stats-period">
+        <select id="stats-period" onchange="updateStats()">
+          <option value="week">Последняя неделя</option>
+          <option value="month" selected>Последний месяц</option>
+          <option value="quarter">Последний квартал</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="stats-grid fade-in">
+      <!-- Посещаемость -->
+      <div class="chart-container">
+        <h3>📊 Посещаемость по дням</h3>
+        <canvas id="attendanceChart" class="chart-canvas"></canvas>
+      </div>
+
+      <!-- Доходы -->
+      <div class="chart-container">
+        <h3>💰 Доходы (₽)</h3>
+        <canvas id="revenueChart" class="chart-canvas"></canvas>
+      </div>
+
+      <!-- Распределение по категориям -->
+      <div class="chart-container">
+        <h3>🎯 Распределение событий</h3>
+        <canvas id="distributionChart" class="chart-canvas"></canvas>
+      </div>
+
+      <!-- ТОП события -->
+      <div class="chart-container">
+        <h3>🏆 ТОП события</h3>
+        <div id="top-events-list" class="top-events-list"></div>
+      </div>
+    </div>
+
+    <!-- Детальная таблица -->
+    <div class="section-header" style="margin-top: 60px;">
+      <h2 class="section-title">Статистика по <span>событиям</span></h2>
+    </div>
+    <div class="detailed-stats-table fade-in">
+      <table>
+        <thead>
+          <tr>
+            <th>Событие</th>
+            <th>Участников</th>
+            <th>Мест всего</th>
+            <th>Доход</th>
+            <th>Средняя цена</th>
+            <th>Статус</th>
+          </tr>
+        </thead>
+        <tbody id="detailed-stats-tbody">
+          <!-- Будет заполнено из API -->
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- Export Section -->
+<section class="section admin-content">
+  <div class="section-inner">
+    <div class="section-header fade-in">
+      <h2 class="section-title">Экспорт и <span>отчеты</span></h2>
+      <p class="section-sub">Скачивайте отчеты в различных форматах</p>
+    </div>
+
+    <div class="reports-grid fade-in">
+      <div class="report-card">
+        <div class="report-icon">📄</div>
+        <h3>Отчет в PDF</h3>
+        <p>Полный отчет со всеми графиками и таблицами</p>
+        <button class="btn-main" onclick="exportReport('pdf')">Скачать PDF</button>
+      </div>
+
+      <div class="report-card">
+        <div class="report-icon">📊</div>
+        <h3>Отчет в Excel</h3>
+        <p>Таблица с подробными данными по всем событиям</p>
+        <button class="btn-main" onclick="exportReport('excel')">Скачать Excel</button>
+      </div>
+
+      <div class="report-card">
+        <div class="report-icon">📈</div>
+        <h3>CSV экспорт</h3>
+        <p>Данные в формате CSV для дальнейшей обработки</p>
+        <button class="btn-main" onclick="exportReport('csv')">Скачать CSV</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Event Modal -->
+<div class="modal-overlay" id="eventModal" onclick="closeEventModal(event)">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title" id="modalTitle">Создать событие</div>
+        <div class="modal-sub">Заполните детали мероприятия и загрузите фотографию</div>
+      </div>
+      <button class="modal-close" onclick="closeEventModal()">&times;</button>
+    </div>
+    <div class="modal-body">
+      <form id="eventForm">
+        <!-- Photo Upload Section -->
+        <div class="form-group">
+          <label class="form-label">Фотография события</label>
+          <div class="photo-upload-wrapper">
+            <input type="file" id="eventPhoto" name="photo" accept="image/*" onchange="previewPhoto(event)" style="display: none;">
+            <div class="photo-upload-area" id="photoUploadArea" onclick="document.getElementById('eventPhoto').click()">
+              <div class="photo-upload-icon">📸</div>
+              <div class="photo-upload-text">Нажмите для загрузки фото</div>
+              <div class="photo-upload-hint">или перетащите файл сюда</div>
+            </div>
+            <div class="photo-preview" id="photoPreview" style="display: none;">
+              <img id="previewImg" src="" alt="Preview" style="width: 100%; height: 100%; object-fit: cover;">
+              <button type="button" class="btn-remove-photo" onclick="removePhoto()">✕</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Название события</label>
+            <input class="form-input" type="text" name="title" placeholder="Например, Кино и сериалы 2025" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Категория</label>
+            <select class="form-input" name="category" required>
+              <option value="">Выберите категорию</option>
+              <option value="cinema">🎬 Кино</option>
+              <option value="music">🎵 Музыка</option>
+              <option value="classic">🧠 Классический квиз</option>
+              <option value="show">⭐ Шоу</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Дата</label>
+            <input class="form-input" type="date" name="date" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Время</label>
+            <input class="form-input" type="time" name="time" required>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Место проведения</label>
+          <input class="form-input" type="text" name="location" placeholder="Адрес или название ресторана" required>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Максимум мест</label>
+            <input class="form-input" type="number" name="max_seats" min="1" placeholder="20" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Цена за участника (₽)</label>
+            <input class="form-input" type="number" name="price" step="50" min="0" placeholder="600" required>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Описание / Правила</label>
+          <textarea class="form-input form-textarea" name="rules" rows="3" placeholder="Команды от 4 до 10 человек..."></textarea>
+        </div>
+      </form>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" type="button" onclick="closeEventModal()">Отменить</button>
+      <button class="btn-submit" type="button" onclick="submitEventForm()">Сохранить событие</button>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="{{ url_for('static', filename='js/profile.js') }}"></script>
+<script src="{{ url_for('static', filename='js/admin.js') }}"></script>
+{% endblock %}

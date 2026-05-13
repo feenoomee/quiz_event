@@ -1,10 +1,39 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ru">
 <head>
-    <meta charset="UTF-8">
-    <title>Title</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{% block title %}TLTQUIZ{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}">
+  {% block styles %}{% endblock %}
 </head>
 <body>
+  <header>
+    <div class="header-inner">
+      <div class="logo">
+        <div class="logo-icon"><img src="{{ url_for('static', filename='../media/logo.png') }}" alt="TLTQUIZ Logo" style="width: 100px; height: 90px;"></div>
+        TLTQUIZ
+      </div>
 
+      <nav>
+        {% block nav_links %}{% endblock %}
+      </nav>
+
+      <div class="burger" onclick="toggleMobileMenu()" id="burgerBtn">
+        <span></span><span></span><span></span>
+      </div>
+    </div>
+  </header>
+
+  <div class="mobile-menu" id="mobileMenu">
+    {% block mobile_menu_links %}{% endblock %}
+  </div>
+
+  <main>
+    {% block content %}{% endblock %}
+  </main>
+  {% include 'partials/footer.html' %}
+  <script src="{{ url_for('static', filename='script.js') }}"></script>
+  {% block scripts %}{% endblock %}
 </body>
 </html>

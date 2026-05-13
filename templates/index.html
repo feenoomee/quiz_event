@@ -1,43 +1,22 @@
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>TLTQUIZ — Барные квизы в Тольятти</title>
-  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-</head>
-<body>
-
-<!-- ===== HEADER ===== -->
-<header>
-  <div class="header-inner">
-    <div class="logo">
-      <div class="logo-icon"><img src="{{ url_for('static', filename='../media/logo.png') }}" alt="TLTQUIZ Logo" style="width: 100px; height: 90px;"></div>
-      TLTQUIZ
-    </div>
-
-    <nav>
-      <a href="#events">Календарь</a>
-      <a href="https://vk.com/tltquiz" target="_blank" onclick="openCorpModal(event)">Корпоратив</a>
-      <a href="#contacts">Контакты</a>
-      <a href="#" class="btn-profile" onclick="openAuthModal(event)">Войти</a>
-    </nav>
-
-    <div class="burger" onclick="toggleMobileMenu()" id="burgerBtn">
-      <span></span><span></span><span></span>
-    </div>
-  </div>
-</header>
-
-<!-- Mobile Menu -->
-<div class="mobile-menu" id="mobileMenu">
+{% extends 'base.html' %}
+{% block title %}TLTQUIZ — Барные квизы в Тольятти{% endblock %}
+{% block styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/home.css') }}">
+{% endblock %}
+{% block nav_links %}
+  <a href="#events">Календарь</a>
+  <a href="https://vk.com/tltquiz" target="_blank" onclick="openCorpModal(event)">Корпоратив</a>
+  <a href="#contacts">Контакты</a>
+  <a href="#" class="btn-profile" onclick="openAuthModal(event)">Войти</a>
+{% endblock %}
+{% block mobile_menu_links %}
   <a href="#events" onclick="closeMobileMenu()">Календарь мероприятий</a>
   <a href="https://vk.com/tltquiz" target="_blank" onclick="closeMobileMenu()">Заказать корпоратив</a>
   <a href="#contacts" onclick="closeMobileMenu()">Контакты</a>
   <a href="#" onclick="openAuthModal(event); closeMobileMenu()">Войти / Регистрация</a>
-</div>
+{% endblock %}
+{% block content %}
 
-<!-- ===== HERO ===== -->
 <section class="hero" id="home">
   <div class="hero-bg-dots"></div>
   <div class="hero-glow"></div>
@@ -53,117 +32,85 @@
       </p>
       <div class="hero-actions">
         <button class="btn-main" onclick="document.getElementById('events').scrollIntoView({behavior:'smooth'})">
-          🎯 Все мероприятия
+          Все мероприятия
         </button>
-        <a href="/profile" class="btn-outline" style="display:inline-flex;align-items:center;gap:8px;text-decoration:none;">
-          👤 Личный кабинет
+        <a href="/dashboard" class="btn-outline" style="display:inline-flex;align-items:center;gap:8px;text-decoration:none;">
+          Личный кабинет
         </a>
       </div>
     </div>
 
-    <!-- Current quiz card -->
     <div class="hero-card fade-in">
       <div class="hero-card-label">
         <div class="pulse-dot"></div>
         Ближайший квиз
       </div>
       <div class="hero-card-img">
-        🎬
+        
         <div class="hero-card-img-overlay"></div>
       </div>
       <div class="hero-card-title">Кино и сериалы 2025</div>
       <div class="hero-card-meta">
-        <div class="hero-card-meta-row"><span class="meta-icon">📅</span> Пятница, 13 июня 2026</div>
-        <div class="hero-card-meta-row"><span class="meta-icon">⏰</span> 19:00 — старт игры</div>
-        <div class="hero-card-meta-row"><span class="meta-icon">📍</span> ТЦ Ёлки, ул. 40 лет Победы 33</div>
-        <div class="hero-card-meta-row"><span class="meta-icon">👥</span> Команды от 4 до 10 человек</div>
+        <div class="hero-card-meta-row"><span class="meta-icon"></span> Пятница, 13 июня 2026</div>
+        <div class="hero-card-meta-row"><span class="meta-icon"></span> 19:00 — старт игры</div>
+        <div class="hero-card-meta-row"><span class="meta-icon"></span> ТЦ Ёлки, ул. 40 лет Победы 33</div>
+        <div class="hero-card-meta-row"><span class="meta-icon"></span> Команды от 4 до 10 человек</div>
       </div>
       <div class="hero-price">600 ₽ <small style="font-size:0.7rem;color:#888;font-weight:500">с игрока</small></div>
-      <div class="hero-seats">🔥 Осталось всего 6 мест!</div>
-      <button class="btn-main" onclick="openRegModal('Кино и сериалы 2025', '13 июня, 19:00', '600 ₽', '🎬')">
+      <div class="hero-seats">Осталось всего 6 мест!</div>
+      <button class="btn-main" onclick="openRegModal('Кино и сериалы 2025', '13 июня, 19:00', '600 ₽', '')">
         Зарегистрироваться →
       </button>
     </div>
   </div>
 </section>
 
-<!-- ===== STATS ===== -->
- <!-- Подумаю ещё об этом -->
-<!-- <div class="stats">
-  <div class="stats-inner">
-    <div class="stat-card fade-in">
-      <div class="stat-num" data-count="150">0</div>
-      <div class="stat-label">Игр проведено</div>
-    </div>
-    <div class="stat-card fade-in">
-      <div class="stat-num" data-count="3200">0</div>
-      <div class="stat-label">Участников</div>
-    </div>
-    <div class="stat-card fade-in">
-      <div class="stat-num" data-count="48">0</div>
-      <div class="stat-label">Команд</div>
-    </div>
-    <div class="stat-card fade-in">
-      <div class="stat-num" data-count="5">0</div>
-      <div class="stat-label">Площадок в городе</div>
-    </div>
-  </div>
-</div> -->
-
-<!-- ===== SLIDER ===== -->
 <section class="section slider-section" id="results">
   <div class="section-inner">
     <div class="section-header fade-in">
-      <!-- <div class="section-tag">Фотоотчёты</div> -->
       <h2 class="section-title">Прошлые <span>игры</span></h2>
       <p class="section-sub">Смотрите, как это было — эмоции, призы и командный дух</p>
     </div>
 
     <div class="slider-wrap fade-in">
       <div class="slides" id="slides">
-
         <div class="slide">
-          <div class="slide-emoji"><img src="{{ url_for('static', filename='../media/result_games.jpg') }}" alt="TLTQUIZ Logo"style="width: 5100m; height: 320px;"></div>
+          <div class="slide-emoji"><img src="{{ url_for('static', filename='../media/result_games.jpg') }}" alt="Фотоотчёт" style="width: 100%; height: auto;"></div>
           <div>
             <div class="slide-num">Игра #28 · Апрель 2025</div>
             <div class="slide-title">Угадай мелодию — Русские хиты</div>
             <p class="slide-desc">Незабываемый вечер с хитами российской эстрады. Команды пели, подпевали и угадывали любимые песни под живые эмоции зала!</p>
-            <div class="slide-result">🏆 Победитель: «Ушастые интеллектуалы» · 1 место</div>
+            <div class="slide-result">Победитель: «Ушастые интеллектуалы» · 1 место</div>
           </div>
         </div>
-
         <div class="slide">
-          <div class="slide-emoji">🎬</div>
+          <div class="slide-emoji"></div>
           <div>
             <div class="slide-num">Игра #27 · Март 2025</div>
             <div class="slide-title">Кино и Музыка — Классика</div>
             <p class="slide-desc">Раунды по легендарным фильмам, саундтрекам и режиссёрам. 12 команд сразились за главный приз этого вечера!</p>
-            <div class="slide-result">🏆 Победитель: «Звёздные мозги» · 1 место</div>
+            <div class="slide-result">Победитель: «Звёздные мозги» · 1 место</div>
           </div>
         </div>
-
         <div class="slide">
-          <div class="slide-emoji">🧠</div>
+          <div class="slide-emoji"></div>
           <div>
             <div class="slide-num">Игра #26 · Февраль 2025</div>
             <div class="slide-title">ТЛТКВИЗ — Обо всём</div>
             <p class="slide-desc">Классический формат: эрудиция, логика, интуиция и чувство юмора. Самый сложный и самый захватывающий квиз этого сезона!</p>
-            <div class="slide-result">🏆 Победитель: «Профессора диванных наук» · 1 место</div>
+            <div class="slide-result">Победитель: «Профессора диванных наук» · 1 место</div>
           </div>
         </div>
-
         <div class="slide">
-          <div class="slide-emoji">🎭</div>
+          <div class="slide-emoji"></div>
           <div>
             <div class="slide-num">Игра #25 · Январь 2025</div>
             <div class="slide-title">Эйнштейн Party — SHOW TIME</div>
             <p class="slide-desc">«100 к 1», «Где логика?», «Устами младенца» — форматы популярных передач в одном вечере. Незабываемо и очень весело!</p>
-            <div class="slide-result">🏆 Победитель: «Нейронные сети» · 1 место</div>
+            <div class="slide-result">Победитель: «Нейронные сети» · 1 место</div>
           </div>
         </div>
-
       </div>
-
       <div class="slider-controls">
         <button class="slider-btn" onclick="prevSlide()">←</button>
         <div class="slider-dots" id="sliderDots"></div>
@@ -173,95 +120,28 @@
   </div>
 </section>
 
-<!-- ===== EVENTS CALENDAR ===== -->
 <section class="section events-section" id="events">
   <div class="section-inner">
     <div class="section-header fade-in">
-      <!-- <div class="section-tag">📅 Расписание</div> -->
       <h2 class="section-title">Календарь <span>мероприятий</span></h2>
       <p class="section-sub">Выбирайте тему, собирайте команду и регистрируйтесь!</p>
     </div>
-
     <div class="events-filters fade-in" id="filtersRow">
       <button class="filter-btn active" onclick="filterEvents('all', this)">Все</button>
-      <button class="filter-btn" onclick="filterEvents('music', this)">🎵 Музыка</button>
-      <button class="filter-btn" onclick="filterEvents('cinema', this)">🎬 Кино</button>
-      <button class="filter-btn" onclick="filterEvents('classic', this)">🧠 Классика</button>
-      <button class="filter-btn" onclick="filterEvents('show', this)">🎭 Шоу</button>
+      <button class="filter-btn" onclick="filterEvents('music', this)">Музыка</button>
+      <button class="filter-btn" onclick="filterEvents('cinema', this)"> Кино</button>
+      <button class="filter-btn" onclick="filterEvents('classic', this)">Классика</button>
+      <button class="filter-btn" onclick="filterEvents('show', this)">Шоу</button>
     </div>
-
     <div class="events-grid" id="eventsGrid"></div>
   </div>
 </section>
 
-<!-- ===== FOOTER ===== -->
-<footer id="contacts">
-  <div class="footer-inner">
-    <div class="footer-top">
-      <div>
-        <!-- <div class="footer-brand-name">
-          <div class="logo-icon" style="width:32px;height:32px;font-size:1rem;"><img src="{{ url_for('static', filename='../media/logo.png') }}" alt="TLTQUIZ Logo" style="width: 70px; height: 70px;"></div>
-        </div> -->
-        <p class="footer-desc">
-          ТЛТКВИЗ — это дерзкая и яркая игра для активных людей Тольятти, которые любят отдыхать с друзьями в атмосфере умного и азартного соперничества. Интеллектуальные бои в новом динамичном формате в комфортной обстановке ресторанов города.
-        </p>
-        <div class="footer-social">
-          <a href="https://vk.com/tltquiz" target="_blank">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M15.07 2H8.93C3.33 2 2 3.33 2 8.93v6.14C2 20.67 3.33 22 8.93 22h6.14C20.67 22 22 20.67 22 15.07V8.93C22 3.33 20.67 2 15.07 2zm3.08 13.75h-1.63c-.62 0-.81-.5-1.93-1.63-1-.95-1.44-.86-1.44-.86s-.14.21-.14.86v1.63h-1.8s-3.4 0-5.97-3.06C3.59 10.23 2 7.08 2 7.08h1.81s.12.12.24.37c.38.8 1.63 3.36 3.49 4.39 0 0 .74-3.58-1.35-5.54 0 0-.12-.12-.03-.25.09-.12.47-.12.47-.12h2.1s1.62.62 2.28 2.49c.61 1.75.41 3.15.41 3.15s.95-1.78.95-3.74c0-1.5-.74-2.4-1.2-2.82 0 0-.12-.12.05-.25.17-.12.67-.12.67-.12h2.7s2.3.49 2.3 3.25c0 2.1-1.63 5.4-1.63 5.4s1.93-2.67 2.79-4.14c.5-.86.81-1.75.81-1.75h2.1s.62.09.74.49c.12.41-.12 1.07-1.5 2.92-2.1 2.79-2.35 2.79-2.35 2.79s-.25.21 1.07 1.5c1.25 1.17 1.5 1.75 1.5 1.75s.74 1.3-.36 1.3z"/></svg>
-            Группа ВКонтакте
-          </a>
-        </div>
-      </div>
-
-      <div>
-        <div class="footer-col-title">Навигация</div>
-        <div class="footer-links">
-          <a href="#events">Календарь мероприятий</a>
-          <a href="#results">Фотоотчёты</a>
-          <a href="https://vk.com/tltquiz" target="_blank">Заказать корпоратив</a>
-          <a href="#" onclick="openAuthModal(event)">Войти / Регистрация</a>
-        </div>
-      </div>
-
-      <div id="contacts-block">
-        <div class="footer-col-title">Контакты</div>
-        <!-- Не нужно ещё -->
-        <!-- <div class="footer-contact-item">
-          <span class="footer-contact-icon">📍</span>
-          <span>Тольятти, ул. Юбилейная 6а<br>Ресторан Весна</span>
-        </div>
-        <div class="footer-contact-item">
-          <span class="footer-contact-icon">📍</span>
-          <span>Тольятти, ул. Юбилейная 8<br>Бар Штаб-Квартира</span>
-        </div> -->
-        <div class="footer-contact-item">
-          <span class="footer-contact-icon"></span>
-          <span>Тольятти, 40 лет Победы 33</span>
-        </div>
-        <div class="footer-contact-item">
-          <span class="footer-contact-icon"></span>
-          <a href="https://vk.com/tltquiz" target="_blank" style="color:#f5c518;">vk.com/tltquiz</a>
-        </div>
-        <div class="footer-contact-item">
-          <span class="footer-contact-icon"></span>
-          <span>Тольятти, Самарская обл.</span>
-        </div>
-      </div>
-    </div>
-
-    <div class="footer-bottom">
-      <div class="footer-copy">© 2025 TLTQUIZ · Все права защищены</div>
-      <div class="footer-city">Тольятти</div>
-    </div>
-  </div>
-</footer>
-
-<!-- ===== CHAT FAB ===== -->
 <div class="chat-fab">
   <div class="chat-panel" id="chatPanel">
     <div class="chat-header">
       <div class="chat-header-info">
-        <div class="chat-avatar">🧠</div>
+        <div class="chat-avatar"></div>
         <div>
           <div class="chat-title">TLTQUIZ Чат</div>
           <div class="chat-status">Онлайн • Отвечаем быстро</div>
@@ -271,11 +151,11 @@
     </div>
     <div class="chat-messages" id="chatMessages">
       <div class="chat-msg bot">
-        Привет! 👋 Добро пожаловать в TLTQUIZ!
+        Привет! Добро пожаловать в TLTQUIZ!
         <div class="chat-msg-time">Сейчас</div>
       </div>
       <div class="chat-msg bot">
-        Здесь вы можете задать любой вопрос про мероприятия, регистрацию или корпоративы 🎯
+        Здесь вы можете задать любой вопрос про мероприятия, регистрацию или корпоративы 
         <div class="chat-msg-time">Сейчас</div>
       </div>
     </div>
@@ -290,7 +170,6 @@
   </button>
 </div>
 
-<!-- ===== REGISTRATION MODAL ===== -->
 <div class="modal-overlay" id="regModal" onclick="closeRegModal(event)">
   <div class="modal" onclick="event.stopPropagation()">
     <div class="modal-header">
@@ -298,52 +177,50 @@
         <div class="modal-title">Регистрация на игру</div>
         <div class="modal-sub">Заполните данные, мы свяжемся с вами</div>
       </div>
-      <button class="modal-close" onclick="closeRegModal()">✕</button>
+      <button class="modal-close" onclick="closeRegModal(event)">&times;</button>
     </div>
     <div class="modal-body">
       <div class="modal-event-info">
-        <div class="modal-event-icon" id="regEventIcon">🎬</div>
+        <div class="modal-event-icon" id="regEventIcon"></div>
         <div>
-          <div class="modal-event-name" id="regEventName">Название квиза</div>
-          <div class="modal-event-date" id="regEventDate">Дата и время</div>
-          <div class="modal-event-price" id="regEventPrice">600 ₽ с игрока</div>
+          <div class="modal-event-name" id="regEventName">Кино и сериалы 2025</div>
+          <div class="modal-event-date" id="regEventDate">13 июня, 19:00</div>
+          <div class="modal-event-price" id="regEventPrice">600 ₽</div>
         </div>
       </div>
-
-      <div id="regForm">
+      <form id="regForm">
         <div class="form-group">
-          <label class="form-label">Название команды *</label>
-          <input class="form-input" type="text" placeholder="Придумайте крутое название!" id="teamName" />
+          <label>Название команды</label>
+          <input id="teamName" type="text" placeholder="Например, Квизмастера" />
         </div>
         <div class="form-row">
           <div class="form-group">
-            <label class="form-label">Ваше имя *</label>
-            <input class="form-input" type="text" placeholder="Иван" id="regName" />
+            <label>Имя игрока</label>
+            <input id="regName" type="text" placeholder="Ваше имя" />
           </div>
           <div class="form-group">
-            <label class="form-label">Телефон *</label>
-            <input class="form-input" type="tel" placeholder="+7 (999) 000-00-00" id="regPhone" />
+            <label>Телефон</label>
+            <input id="regPhone" type="tel" placeholder="Телефон" />
           </div>
         </div>
         <div class="form-group">
-          <label class="form-label">Количество игроков *</label>
-          <input class="form-input" type="number" placeholder="от 4 до 10" min="4" max="10" id="regCount" />
+          <label>Количество игроков</label>
+          <input id="regCount" type="number" min="1" max="10" value="4" />
         </div>
         <div class="form-group">
-          <label class="form-label">Комментарий</label>
-          <input class="form-input" type="text" placeholder="Пожелания, вопросы..." id="regComment" />
+          <label>Комментарий</label>
+          <input id="regComment" type="text" placeholder="Дополнительно" />
         </div>
-      </div>
-
+      </form>
       <div class="success-state" id="regSuccess">
-        <div class="success-icon">🎉</div>
-        <div class="success-title">Заявка отправлена!</div>
-        <p class="success-desc">Мы получили вашу заявку. Наш менеджер свяжется с вами для подтверждения. До встречи на квизе! 🧠</p>
+        <div class="success-icon">✅</div>
+        <div class="success-title">Заявка принята!</div>
+        <div class="success-desc">Мы свяжемся с вами в ближайшее время для подтверждения участия.</div>
       </div>
     </div>
     <div class="modal-footer" id="regModalFooter">
-      <button class="btn-cancel" onclick="closeRegModal()">Отмена</button>
-      <button class="btn-submit" onclick="submitReg()">Зарегистрироваться 🎯</button>
+      <button class="btn-cancel" onclick="closeRegModal(event)">Отменить</button>
+      <button class="btn-submit" type="button" onclick="submitReg()">Отправить</button>
     </div>
   </div>
 </div>
@@ -366,12 +243,13 @@
       <div id="loginForm">
         <div class="form-group">
           <label class="form-label">Телефон или Email</label>
-          <input class="form-input" type="text" placeholder="+7 (999) 000-00-00" />
+          <input id="authIdentifier" class="form-input" type="text" placeholder="user123 или admin123" />
         </div>
         <div class="form-group">
           <label class="form-label">Пароль</label>
-          <input class="form-input" type="password" placeholder="Введите пароль" />
+          <input id="authPassword" class="form-input" type="password" placeholder="Введите пароль (демо)" />
         </div>
+        <p style="margin-top: 12px; color: #aaa; font-size: 0.85rem;">Демо-доступ: <strong>user123</strong> (профиль) или <strong>admin123</strong> (админка)</p>
       </div>
 
       <div id="registerForm" style="display:none;">
@@ -379,7 +257,7 @@
           <div class="form-group">
             <label class="form-label">Имя</label>
             <input class="form-input" type="text" placeholder="Иван" />
-          </div>s
+          </div>
           <div class="form-group">
             <label class="form-label">Фамилия</label>
             <input class="form-input" type="text" placeholder="Иванов" />
@@ -406,8 +284,4 @@
   </div>
 </div>
 
-<!-- ===== SCRIPTS ===== -->
-<script src="{{ url_for('static', filename='script.js') }}"></script>
-
-</body>
-</html>
+{% endblock %}
