@@ -6,20 +6,22 @@ A Flask-based web application for managing bar quiz events in Tolyatti.
 
 ```
 quiz_event/
-├── app.py                 # Flask application & routes
-├── run.py                 # Application entry point
-├── config.py              # Configuration settings
-├── requirements.txt       # Python dependencies
+├── app.py                 # Тонкая обёртка: create_app() из пакета quiz_app
+├── run.py                 # Запуск: from app import app
+├── quiz_app/              # Логика Flask (макет + демо)
+│   ├── __init__.py        # create_app(), пути к templates/ и static/
+│   ├── config.py          # SECRET_KEY и задел под БД (комментарии)
+│   └── routes.py          # Маршруты и демо-данные users/events
+├── requirements.txt
 ├── static/
-│   ├── style.css         # Main stylesheet
-│   └── script.js         # Frontend JavaScript
+│   ├── css/               # base.css (общее), home.css, profile.css, admin.css; style.css — не подключён
+│   ├── js/                # profile.js, admin.js
+│   └── script.js          # Главная: календарь, слайдер, чат, модалки
 ├── templates/
-│   ├── index.html        # Landing page (main)
-│   ├── admin.html        # Admin panel
-│   ├── base.html         # Base template
-│   ├── login.html        # Login page
-│   └── register.html     # Registration page
-└── instance/             # Instance-specific files
+│   ├── layout/base.html   # Шапка, main, футер
+│   ├── pages/             # index, profile, admin
+│   └── partials/          # footer, блок аватара
+└── media/                 # Картинки и ассеты
 ```
 
 ## 🚀 Getting Started
@@ -39,7 +41,7 @@ The app will be available at `http://localhost:5000`
 ## 📋 Features
 
 ### Frontend
-- **Landing Page** (`templates/index.html`)
+- **Landing Page** (`templates/pages/index.html`)
   - Hero section with featured event
   - Statistics section
   - Event slider with past games
@@ -48,7 +50,7 @@ The app will be available at `http://localhost:5000`
   - Chat widget
   - Footer with contacts
 
-- **Styling** (`static/style.css`)
+- **Styling** (`static/css/base.css` + страничные `home.css` / `profile.css` / `admin.css`)
   - Dark theme with yellow accents
   - Fully responsive design
   - CSS variables for theming
@@ -101,7 +103,7 @@ Categories: cinema, music, classic, show
 Edit the `eventsData` array in `static/script.js` to add/modify events.
 
 ### Update Styling
-Modify CSS variables at the top of `static/style.css` for theming.
+Modify CSS variables at the top of `static/css/base.css` (и при необходимости страничных CSS) for theming.
 
 ### Add New Routes
 Edit `app.py` to add new Flask routes and endpoints.
@@ -128,8 +130,3 @@ Edit `app.py` to add new Flask routes and endpoints.
 5. Implement chat functionality with backend
 6. Add email notifications
 
----
-
-**Author**: Quiz Event Team  
-**License**: MIT  
-**City**: Tolyatti, Russia 🏙️

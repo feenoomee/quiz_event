@@ -622,6 +622,149 @@
   min-height: 100px;
 }
 
+/* --- Таблица результатов игры (туры / Σ / место) --- */
+.scoreboard-empty {
+  color: #888;
+  font-size: 0.95rem;
+  margin: 0 0 16px;
+  line-height: 1.5;
+}
+.scoreboard-hint {
+  color: #b89a2a;
+  font-size: 0.88rem;
+  margin: 0 0 20px;
+  line-height: 1.45;
+}
+.scoreboard-wrap {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+.scoreboard-banner {
+  background: linear-gradient(180deg, rgba(245,197,24,0.18) 0%, rgba(0,0,0,0.2) 100%);
+  color: var(--yellow);
+  font-weight: 900;
+  font-size: clamp(1.1rem, 2.5vw, 1.45rem);
+  text-align: center;
+  padding: 18px 16px;
+  letter-spacing: 0.04em;
+  border-bottom: 1px solid var(--border);
+}
+.scoreboard-table-scroll {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+.scoreboard-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 640px;
+}
+.scoreboard-table th,
+.scoreboard-table td {
+  border-bottom: 1px solid var(--border);
+  padding: 10px 8px;
+  text-align: center;
+  vertical-align: middle;
+}
+.scoreboard-th-team {
+  text-align: left !important;
+  min-width: 160px;
+  background: var(--dark);
+  color: var(--yellow);
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.scoreboard-th-tour {
+  background: var(--dark);
+  color: var(--yellow);
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+.scoreboard-th-round {
+  background: #151515;
+  color: #ccc;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+.scoreboard-th-sum,
+.scoreboard-th-place {
+  background: var(--dark);
+  color: var(--yellow);
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  min-width: 52px;
+}
+.scoreboard-team-name {
+  text-align: left !important;
+  font-weight: 700;
+  color: #fff;
+  padding-left: 14px !important;
+  max-width: 220px;
+}
+.scoreboard-td-round {
+  padding: 6px 4px !important;
+}
+.score-round-input {
+  width: 100%;
+  max-width: 64px;
+  margin: 0 auto;
+  display: block;
+  background: var(--card2);
+  border: 1.5px solid rgba(255,255,255,0.1);
+  border-radius: 8px;
+  color: #fff;
+  padding: 8px 6px;
+  font-size: 0.9rem;
+  font-weight: 700;
+  text-align: center;
+  outline: none;
+  font-family: inherit;
+}
+.score-round-input:focus {
+  border-color: rgba(245,197,24,0.55);
+  box-shadow: 0 0 0 2px rgba(245,197,24,0.12);
+}
+.score-round-input::placeholder {
+  color: #555;
+  font-weight: 600;
+}
+.scoreboard-total,
+.scoreboard-place {
+  font-weight: 800;
+  color: var(--yellow);
+  font-size: 1rem;
+  background: rgba(245,197,24,0.06);
+}
+.scoreboard-place {
+  min-width: 56px;
+}
+.scoreboard-table tbody tr:hover {
+  background: rgba(245,197,24,0.04);
+}
+.scoreboard-no-teams {
+  text-align: center;
+  color: #888;
+  padding: 28px 16px !important;
+}
+.scoreboard-actions {
+  padding: 16px 20px 20px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  border-top: 1px solid var(--border);
+  background: rgba(0,0,0,0.15);
+}
+.scoreboard-actions .btn-submit {
+  flex: 0 0 auto;
+  min-width: 220px;
+}
+.modal.modal--scoreboard-pick {
+  max-width: 480px;
+}
+
 /* Responsive */
 @media (max-width: 1024px) {
   .quick-stats {

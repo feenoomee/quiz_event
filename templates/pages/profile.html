@@ -1,4 +1,4 @@
-{% extends 'base.html' %}
+{% extends 'layout/base.html' %}
 {% block title %}Личный кабинет — TLTQUIZ{% endblock %}
 {% block styles %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/profile.css') }}">
@@ -24,11 +24,12 @@
   <a href="/logout" onclick="closeMobileMenu()">Выход</a>
 {% endblock %}
 {% block content %}
+{# Шапка ЛК → блоки «Регистрации» / «Команды» → скрытая секция настроек → выпадающее меню → модальные окна #}
 
 <section class="profile-header">
   <div class="profile-header-inner">
     <div class="profile-user-info">
-      <div class="profile-avatar">{{ (current_user.name[0] if current_user else 'U')|upper }}</div>
+      {% include 'partials/profile_avatar_block.html' %}
       <div class="profile-user-details">
         <h1>{{ current_user.name if current_user else 'Пользователь' }}</h1>
         <p>{{ current_user.email if current_user else 'user@example.com' }}</p>
@@ -58,6 +59,7 @@
   </div>
 </section>
 
+<!-- Основной контент: вкладки регистраций и карточки команд -->
 <div class="profile-content">
   <section class="profile-section">
     <div class="profile-section-title">Мои регистрации</div>
@@ -346,6 +348,7 @@
   </section>
 </div>
 
+<!-- Выпадающее меню по кнопке «Меню» -->
 <div class="settings-menu" id="settingsMenu">
   <button class="settings-menu-item" onclick="openModal('editProfileModal')">Редактировать профиль</button>
   <button class="settings-menu-item" onclick="openModal('securityModal')">Безопасность</button>
@@ -353,6 +356,7 @@
   <button class="settings-menu-item logout" onclick="logout()">Выход</button>
 </div>
 
+<!-- Модальные окна профиля -->
 <div class="modal-overlay-custom" id="editProfileModal" onclick="closeModal(event)">
   <div class="modal-box" onclick="event.stopPropagation()">
     <div class="modal-header-custom">

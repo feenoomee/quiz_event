@@ -1,4 +1,4 @@
-{% extends 'base.html' %}
+{% extends 'layout/base.html' %}
 {% block title %}TLTQUIZ — Барные квизы в Тольятти{% endblock %}
 {% block styles %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/home.css') }}">
@@ -16,7 +16,9 @@
   <a href="#" onclick="openAuthModal(event); closeMobileMenu()">Войти / Регистрация</a>
 {% endblock %}
 {% block content %}
+{# Порядок блока: герой → прошлые игры (слайдер) → календарь → виджет чата → модалки #}
 
+<!-- 1. Герой и карточка ближайшего квиза -->
 <section class="hero" id="home">
   <div class="hero-bg-dots"></div>
   <div class="hero-glow"></div>
@@ -65,6 +67,7 @@
   </div>
 </section>
 
+<!-- 2. Слайдер «Прошлые игры» -->
 <section class="section slider-section" id="results">
   <div class="section-inner">
     <div class="section-header fade-in">
@@ -120,6 +123,7 @@
   </div>
 </section>
 
+<!-- 3. Календарь мероприятий (сетка заполняется из static/script.js) -->
 <section class="section events-section" id="events">
   <div class="section-inner">
     <div class="section-header fade-in">
@@ -137,6 +141,7 @@
   </div>
 </section>
 
+<!-- 4. Плавающий чат (UI) -->
 <div class="chat-fab">
   <div class="chat-panel" id="chatPanel">
     <div class="chat-header">
@@ -170,6 +175,7 @@
   </button>
 </div>
 
+<!-- 5. Модалка регистрации на игру -->
 <div class="modal-overlay" id="regModal" onclick="closeRegModal(event)">
   <div class="modal" onclick="event.stopPropagation()">
     <div class="modal-header">
@@ -215,7 +221,7 @@
       <div class="success-state" id="regSuccess">
         <div class="success-icon">✅</div>
         <div class="success-title">Заявка принята!</div>
-        <div class="success-desc">Мы свяжемся с вами в ближайшее время для подтверждения участия.</div>
+        <div class="success-desc">За день до игры будет необходимо подтвердить регистрацию на игру, мы пришлем вам уведомление.</div>
       </div>
     </div>
     <div class="modal-footer" id="regModalFooter">
@@ -225,6 +231,7 @@
   </div>
 </div>
 
+<!-- 6. Модалка входа / регистрации (демо-логин через /api/login) -->
 <!-- ===== AUTH MODAL ===== -->
 <div class="modal-overlay" id="authModal" onclick="closeAuthModal(event)">
   <div class="modal" onclick="event.stopPropagation()">

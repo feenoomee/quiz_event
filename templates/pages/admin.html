@@ -1,4 +1,4 @@
-{% extends 'base.html' %}
+{% extends 'layout/base.html' %}
 {% block title %}Админ-панель — TLTQUIZ{% endblock %}
 {% block styles %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/profile.css') }}">
@@ -8,24 +8,27 @@
   <a href="/">На главную</a>
   <a href="/#events">Календарь</a>
   <a href="https://vk.com/tltquiz" target="_blank">Корпоратив</a>
-  <a href="#" class="btn-profile active" onclick="toggleSettingsMenu(event); return false;">Кабинет</a>
-  <a href="/admin">Админка</a>
+  {% if current_user and current_user.role == 'admin' %}
+    <a href="/admin" class="btn-profile active">Админка</a>
+  {% endif %}
   <a href="/logout">Выход</a>
 {% endblock %}
 {% block mobile_menu_links %}
   <a href="/" onclick="closeMobileMenu()">На главную</a>
   <a href="/#events" onclick="closeMobileMenu()">Календарь</a>
   <a href="https://vk.com/tltquiz" target="_blank" onclick="closeMobileMenu()">Корпоратив</a>
-  <a href="#" class="btn-profile" onclick="closeMobileMenu()">Кабинет</a>
-  <a href="/admin" onclick="closeMobileMenu()">Админка</a>
+  {% if current_user and current_user.role == 'admin' %}
+    <a href="/admin" class="btn-profile active" onclick="closeMobileMenu()">Админка</a>
+  {% endif %}
   <a href="/logout" onclick="closeMobileMenu()">Выход</a>
 {% endblock %}
 {% block content %}
+{# Админка: шапка → меню настроек → модалки → KPI → таблица событий → графики → экспорт → модалка создания события #}
 
 <section class="profile-header">
   <div class="profile-header-inner">
     <div class="profile-user-info">
-      <div class="profile-avatar">{{ (current_user.name[0] if current_user else 'A')|upper }}</div>
+      {% include 'partials/profile_avatar_block.html' %}
       <div class="profile-user-details">
         <h1>{{ current_user.name if current_user else 'Администратор' }}</h1>
         <p>{{ current_user.email if current_user else 'admin@example.com' }}</p>
@@ -39,6 +42,7 @@
   </div>
 </section>
 
+<!-- Выпадающее меню настроек (как в ЛК) -->
 <div class="settings-menu" id="settingsMenu">
   <button class="settings-menu-item" onclick="openModal('editProfileModal')">Редактировать профиль</button>
   <button class="settings-menu-item" onclick="openModal('securityModal')">Безопасность</button>
@@ -46,6 +50,7 @@
   <button class="settings-menu-item logout" onclick="logout()">Выход</button>
 </div>
 
+<!-- Модалки редактирования профиля / безопасности / уведомлений -->
 <div class="modal-overlay-custom" id="editProfileModal" onclick="closeModal(event)">
   <div class="modal-box" onclick="event.stopPropagation()">
     <div class="modal-header-custom">
@@ -133,33 +138,6 @@
   </div>
 </div>
 
-<!-- Quick Stats Section -->
-<section class="section stats-section">
-  <div class="section-inner">
-    <div class="section-header fade-in">
-      <h2 class="section-title">Ключевые <span>показатели</span></h2>
-    </div>
-    <div class="quick-stats fade-in">
-      <div class="stat-box">
-        <div class="stat-number" id="total-events">0</div>
-        <div class="stat-label">Активных событий</div>
-      </div>
-      <div class="stat-box">
-        <div class="stat-number" id="total-revenue">₽0</div>
-        <div class="stat-label">Общий доход</div>
-      </div>
-      <div class="stat-box">
-        <div class="stat-number" id="total-attendees">0</div>
-        <div class="stat-label">Участников</div>
-      </div>
-      <div class="stat-box">
-        <div class="stat-number" id="occupancy-rate">0%</div>
-        <div class="stat-label">Средняя заполняемость</div>
-      </div>
-    </div>
-  </div>
-</section>
-
 <!-- Events Management Section -->
 <section class="section admin-content">
   <div class="section-inner">
@@ -190,69 +168,57 @@
   </div>
 </section>
 
-<!-- Analytics Section -->
+<!-- Таблица результатов игры (туры, сумма, места) -->
 <section class="section admin-content">
   <div class="section-inner">
-    <div class="section-header fade-in">
-      <h2 class="section-title">Аналитика и <span>статистика</span></h2>
-      <div class="stats-period">
-        <select id="stats-period" onchange="updateStats()">
-          <option value="week">Последняя неделя</option>
-          <option value="month" selected>Последний месяц</option>
-          <option value="quarter">Последний квартал</option>
-        </select>
+    <div class="section-header fade-in" style="display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; flex-wrap: wrap;">
+      <div>
+        <h2 class="section-title">Результаты <span>последней игры</span></h2>
+        <p class="section-sub">Выберите игру из списка недавних, введите очки по турам. Сумма считается сразу; места — когда заполнены все ячейки таблицы.</p>
       </div>
+      <button type="button" class="btn-main" id="btn-open-game-modal">Выбрать игру</button>
     </div>
 
-    <div class="stats-grid fade-in">
-      <!-- Посещаемость -->
-      <div class="chart-container">
-        <h3>📊 Посещаемость по дням</h3>
-        <canvas id="attendanceChart" class="chart-canvas"></canvas>
-      </div>
+    <p class="scoreboard-empty fade-in" id="scoreboard-empty">Игра не выбрана. Нажмите «Выбрать игру», чтобы загрузить команды и таблицу туров.</p>
+    <p class="scoreboard-hint fade-in" id="scoreboard-places-hint" hidden>Заполните все 7 туров у каждой команды — тогда места проставятся автоматически.</p>
 
-      <!-- Доходы -->
-      <div class="chart-container">
-        <h3>💰 Доходы (₽)</h3>
-        <canvas id="revenueChart" class="chart-canvas"></canvas>
+    <div class="scoreboard-wrap fade-in" id="scoreboard-wrap" hidden>
+      <div class="scoreboard-banner" id="scoreboard-banner-title">—</div>
+      <div class="scoreboard-table-scroll">
+        <table class="scoreboard-table" id="scoreboard-table">
+          <thead id="scoreboard-thead"></thead>
+          <tbody id="scoreboard-tbody"></tbody>
+        </table>
       </div>
-
-      <!-- Распределение по категориям -->
-      <div class="chart-container">
-        <h3>🎯 Распределение событий</h3>
-        <canvas id="distributionChart" class="chart-canvas"></canvas>
+      <div class="scoreboard-actions">
+        <button type="button" class="btn-submit" id="btn-save-scoreboard">Сохранить результаты</button>
       </div>
-
-      <!-- ТОП события -->
-      <div class="chart-container">
-        <h3>🏆 ТОП события</h3>
-        <div id="top-events-list" class="top-events-list"></div>
-      </div>
-    </div>
-
-    <!-- Детальная таблица -->
-    <div class="section-header" style="margin-top: 60px;">
-      <h2 class="section-title">Статистика по <span>событиям</span></h2>
-    </div>
-    <div class="detailed-stats-table fade-in">
-      <table>
-        <thead>
-          <tr>
-            <th>Событие</th>
-            <th>Участников</th>
-            <th>Мест всего</th>
-            <th>Доход</th>
-            <th>Средняя цена</th>
-            <th>Статус</th>
-          </tr>
-        </thead>
-        <tbody id="detailed-stats-tbody">
-          <!-- Будет заполнено из API -->
-        </tbody>
-      </table>
     </div>
   </div>
 </section>
+
+<!-- Модалка: выбор недавней игры -->
+<div class="modal-overlay" id="gameSelectModal" onclick="closeGameSelectModal(event)">
+  <div class="modal modal--scoreboard-pick" onclick="event.stopPropagation()">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title">Выбор игры</div>
+        <div class="modal-sub">Показываются последние игры из базы (события), по убыванию даты</div>
+      </div>
+      <button type="button" class="modal-close" onclick="closeGameSelectModal()">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label" for="game-select">Игра</label>
+        <select class="form-input" id="game-select"></select>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button type="button" class="btn-cancel" onclick="closeGameSelectModal()">Отмена</button>
+      <button type="button" class="btn-submit" onclick="confirmGameSelection()">Показать таблицу</button>
+    </div>
+  </div>
+</div>
 
 <!-- Export Section -->
 <section class="section admin-content">
@@ -325,10 +291,10 @@
             <label class="form-label">Категория</label>
             <select class="form-input" name="category" required>
               <option value="">Выберите категорию</option>
-              <option value="cinema">🎬 Кино</option>
-              <option value="music">🎵 Музыка</option>
-              <option value="classic">🧠 Классический квиз</option>
-              <option value="show">⭐ Шоу</option>
+              <option value="cinema">Кино</option>
+              <option value="music">Музыка</option>
+              <option value="classic">Классический квиз</option>
+              <option value="show">Шоу</option>
             </select>
           </div>
         </div>
@@ -375,7 +341,6 @@
 
 {% endblock %}
 {% block scripts %}
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="{{ url_for('static', filename='js/profile.js') }}"></script>
 <script src="{{ url_for('static', filename='js/admin.js') }}"></script>
 {% endblock %}

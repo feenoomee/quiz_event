@@ -20,7 +20,14 @@
   align-items: center;
   gap: 24px;
 }
+.profile-avatar-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+}
 .profile-avatar {
+  position: relative;
   width: 100px;
   height: 100px;
   background: linear-gradient(135deg, var(--yellow), var(--yellow-dark));
@@ -30,6 +37,53 @@
   justify-content: center;
   font-size: 3rem;
   border: 2px solid var(--yellow);
+  overflow: hidden;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.profile-avatar-input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+.profile-avatar-img {
+  display: none;
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 14px;
+}
+.profile-avatar.has-image .profile-avatar-img {
+  display: block;
+}
+.profile-avatar.has-image .profile-avatar-letter {
+  display: none;
+}
+.profile-avatar-letter {
+  font-weight: 800;
+  color: #0d0d0d;
+  user-select: none;
+}
+.profile-avatar-remove {
+  padding: 4px 0;
+  font-size: 0.8rem;
+  color: #888;
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.profile-avatar-remove:hover {
+  color: var(--yellow);
 }
 .profile-user-details h1 {
   font-size: 1.8rem;

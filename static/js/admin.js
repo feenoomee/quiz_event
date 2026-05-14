@@ -1,44 +1,43 @@
 // Admin panel JavaScript
-let chartsInstances = {};
 let statsData = null;
 
-// Initialize on page load
-document.addEventListener('DOMContentLoaded', function() {
+/** @type {number | null} */
+let scoreboardEventId = null;
+
+document.addEventListener('DOMContentLoaded', function () {
   loadStats();
   initializePhotoUpload();
   observeFadeInElements();
+  initScoreboardUi();
 });
 
-// Observe fade-in elements
 function observeFadeInElements() {
-  const observer = new IntersectionObserver((entries) => {
-    entries.forEach(entry => {
-      if (entry.isIntersecting) {
-        entry.target.classList.add('visible');
-        observer.unobserve(entry.target);
-      }
-    });
-  }, { threshold: 0.1 });
+  const observer = new IntersectionObserver(
+    (entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('visible');
+          observer.unobserve(entry.target);
+        }
+      });
+    },
+    { threshold: 0.1 }
+  );
 
-  document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
+  document.querySelectorAll('.fade-in').forEach((el) => observer.observe(el));
 }
 
-// Load statistics from API
 function loadStats() {
   fetch('/api/stats')
-    .then(response => response.json())
-    .then(data => {
+    .then((response) => response.json())
+    .then((data) => {
       statsData = data;
       updateQuickStats(data);
       populateEventsTable(data.events);
-      populateDetailedStats(data.events);
-      populateTopEvents(data.top_events);
-      initializeCharts(data);
     })
-    .catch(error => console.error('Error loading stats:', error));
+    .catch((error) => console.error('Error loading stats:', error));
 }
 
-// Update quick stats boxes
 function updateQuickStats(data) {
   document.getElementById('total-events').textContent = data.total_events;
   document.getElementById('total-revenue').textContent = '₽' + formatNumber(data.total_revenue);
@@ -46,18 +45,17 @@ function updateQuickStats(data) {
   document.getElementById('occupancy-rate').textContent = data.occupancy_rate + '%';
 }
 
-// Populate events table
 function populateEventsTable(events) {
   const tbody = document.getElementById('events-tbody');
   tbody.innerHTML = '';
-  
+
   for (const [id, event] of Object.entries(events)) {
     const occupancy = Math.round((event.registered / event.max_seats) * 100);
     const row = document.createElement('tr');
     row.innerHTML = `
-      <td><strong>${event.title}</strong></td>
-      <td>${event.date}, ${event.time}</td>
-      <td>${event.location}</td>
+      <td><strong>${escapeHtml(event.title)}</strong></td>
+      <td>${escapeHtml(event.date)}, ${escapeHtml(event.time)}</td>
+      <td>${escapeHtml(event.location)}</td>
       <td>${event.registered}/${event.max_seats}</td>
       <td>${occupancy}%</td>
       <td>
@@ -70,200 +68,275 @@ function populateEventsTable(events) {
   }
 }
 
-// Populate detailed statistics table
-function populateDetailedStats(events) {
-  const tbody = document.getElementById('detailed-stats-tbody');
+// --- Таблица результатов (туры / сумма / места) ---
+
+function initScoreboardUi() {
+  const openBtn = document.getElementById('btn-open-game-modal');
+  if (openBtn) {
+    openBtn.addEventListener('click', openGameSelectModal);
+  }
+  const saveBtn = document.getElementById('btn-save-scoreboard');
+  if (saveBtn) {
+    saveBtn.addEventListener('click', saveScoreboard);
+  }
+  const tbody = document.getElementById('scoreboard-tbody');
+  if (tbody) {
+    tbody.addEventListener('input', onScoreboardInput);
+  }
+}
+
+function openGameSelectModal() {
+  const modal = document.getElementById('gameSelectModal');
+  const select = document.getElementById('game-select');
+  if (!modal || !select) return;
+
+  select.innerHTML = '<option value="">Загрузка…</option>';
+  modal.classList.add('show');
+  document.body.style.overflow = 'hidden';
+
+  fetch('/api/admin/recent-games', { credentials: 'same-origin' })
+    .then((r) => r.json())
+    .then((data) => {
+      select.innerHTML = '';
+      const games = data.games || [];
+      if (!games.length) {
+        select.innerHTML = '<option value="">Нет игр</option>';
+        return;
+      }
+      games.forEach((g) => {
+        const opt = document.createElement('option');
+        opt.value = String(g.id);
+        opt.textContent = `${g.title} — ${g.date} ${g.time}`;
+        select.appendChild(opt);
+      });
+    })
+    .catch(() => {
+      select.innerHTML = '<option value="">Ошибка загрузки</option>';
+    });
+}
+
+function closeGameSelectModal(e) {
+  const modal = document.getElementById('gameSelectModal');
+  if (!modal) return;
+  if (e && e.target !== modal) return;
+  modal.classList.remove('show');
+  document.body.style.overflow = '';
+}
+
+function confirmGameSelection() {
+  const select = document.getElementById('game-select');
+  if (!select || !select.value) {
+    alert('Выберите игру из списка.');
+    return;
+  }
+  const id = parseInt(select.value, 10);
+  if (Number.isNaN(id)) return;
+
+  fetch(`/api/admin/games/${id}/scoreboard`, { credentials: 'same-origin' })
+    .then((r) => {
+      if (r.status === 403) {
+        alert('Нет доступа. Войдите как администратор.');
+        throw new Error('403');
+      }
+      return r.json();
+    })
+    .then((data) => {
+      if (data.status === 'error') {
+        alert(data.message || 'Ошибка');
+        return;
+      }
+      scoreboardEventId = data.event_id;
+      renderScoreboard(data);
+      closeGameSelectModal();
+      const emptyEl = document.getElementById('scoreboard-empty');
+      const wrap = document.getElementById('scoreboard-wrap');
+      const hint = document.getElementById('scoreboard-places-hint');
+      if (emptyEl) emptyEl.hidden = true;
+      if (wrap) wrap.hidden = false;
+      if (hint) hint.hidden = false;
+    })
+    .catch((err) => {
+      if (err.message !== '403') console.error(err);
+    });
+}
+
+function renderScoreboard(data) {
+  const banner = document.getElementById('scoreboard-banner-title');
+  const thead = document.getElementById('scoreboard-thead');
+  const tbody = document.getElementById('scoreboard-tbody');
+  if (!thead || !tbody || !banner) return;
+
+  const teams = data.teams || [];
+  const rounds = data.rounds || 7;
+  const scores = data.scores || [];
+
+  banner.textContent = data.title || '—';
+
+  const headRow1 = document.createElement('tr');
+  headRow1.innerHTML = `
+    <th class="scoreboard-th-team" rowspan="2">Команда</th>
+    <th class="scoreboard-th-tour" colspan="${rounds}">Тур</th>
+    <th class="scoreboard-th-sum" rowspan="2">Σ</th>
+    <th class="scoreboard-th-place" rowspan="2">Место</th>
+  `;
+  const headRow2 = document.createElement('tr');
+  for (let r = 1; r <= rounds; r++) {
+    const th = document.createElement('th');
+    th.className = 'scoreboard-th-round';
+    th.textContent = String(r);
+    headRow2.appendChild(th);
+  }
+  thead.innerHTML = '';
+  thead.appendChild(headRow1);
+  thead.appendChild(headRow2);
+
   tbody.innerHTML = '';
-  
-  for (const [id, event] of Object.entries(events)) {
-    const revenue = event.registered * event.price;
+  if (!teams.length) {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td colspan="${rounds + 3}" class="scoreboard-no-teams">Для этой игры пока нет команд в базе.</td>`;
+    tbody.appendChild(tr);
+    refreshScoreboardTotals();
+    return;
+  }
+
+  teams.forEach((team, ti) => {
     const row = document.createElement('tr');
+    const nameTd = document.createElement('td');
+    nameTd.className = 'scoreboard-team-name';
+    nameTd.textContent = team.name;
+
+    const inputsHtml = [];
+    const rowScores = scores[ti] || [];
+    for (let ri = 0; ri < rounds; ri++) {
+      const v = rowScores[ri];
+      const val = v === null || v === undefined ? '' : String(v);
+      inputsHtml.push(`
+        <td class="scoreboard-td-round">
+          <input type="number" min="0" step="1" class="score-round-input" inputmode="numeric"
+            data-team-index="${team.index}" data-round="${ri}" value="${escapeAttr(val)}" placeholder="—" />
+        </td>
+      `);
+    }
+
     row.innerHTML = `
-      <td><strong>${event.title}</strong></td>
-      <td>${event.registered}</td>
-      <td>${event.max_seats}</td>
-      <td>₽${formatNumber(revenue)}</td>
-      <td>₽${event.price}</td>
-      <td><span class="status-active">✓ Активно</span></td>
+      ${nameTd.outerHTML}
+      ${inputsHtml.join('')}
+      <td class="scoreboard-total" data-total-for="${team.index}">0</td>
+      <td class="scoreboard-place" data-place-for="${team.index}">—</td>
     `;
+    row.dataset.teamIndex = String(team.index);
     tbody.appendChild(row);
-  }
-}
-
-// Populate top events list
-function populateTopEvents(topEvents) {
-  const container = document.getElementById('top-events-list');
-  container.innerHTML = '';
-  
-  topEvents.forEach((event, index) => {
-    const item = document.createElement('div');
-    item.className = 'top-event-item';
-    item.innerHTML = `
-      <div>
-        <div style="display:flex;align-items:center;gap:10px;">
-          <span style="font-size:1.5rem;">${['🥇', '🥈', '🥉'][index]}</span>
-          <div class="top-event-title">${event.title}</div>
-        </div>
-      </div>
-      <div class="top-event-count">${event.registered} уч.</div>
-    `;
-    container.appendChild(item);
   });
+
+  refreshScoreboardTotals();
 }
 
-// Initialize charts
-function initializeCharts(data) {
-  initAttendanceChart(data.attendance_data);
-  initRevenueChart(data.revenue_data);
-  initDistributionChart(data.event_distribution);
+function onScoreboardInput(ev) {
+  const el = ev.target;
+  if (!el || !el.classList || !el.classList.contains('score-round-input')) return;
+  refreshScoreboardTotals();
 }
 
-// Attendance Chart
-function initAttendanceChart(attendanceData) {
-  const ctx = document.getElementById('attendanceChart').getContext('2d');
-  
-  // Destroy old chart if exists
-  if (chartsInstances.attendance) {
-    chartsInstances.attendance.destroy();
-  }
-  
-  chartsInstances.attendance = new Chart(ctx, {
-    type: 'line',
-    data: {
-      labels: attendanceData.labels,
-      datasets: [{
-        label: 'Посещаемость',
-        data: attendanceData.values,
-        borderColor: '#f5c518',
-        backgroundColor: 'rgba(245,197,24,0.1)',
-        tension: 0.4,
-        fill: true,
-        pointBackgroundColor: '#f5c518',
-        pointBorderColor: '#fff',
-        pointBorderWidth: 2,
-        pointRadius: 6,
-        pointHoverRadius: 8
-      }]
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: true,
-      plugins: {
-        legend: {
-          display: false
-        }
-      },
-      scales: {
-        y: {
-          beginAtZero: true,
-          grid: { color: '#333', drawBorder: false },
-          ticks: { color: '#888' }
-        },
-        x: {
-          grid: { color: '#333', drawBorder: false },
-          ticks: { color: '#888' }
-        }
-      }
+function parseRoundValue(raw) {
+  if (raw === '' || raw === null || raw === undefined) return null;
+  const n = Number(raw);
+  if (!Number.isFinite(n) || Number.isNaN(n)) return null;
+  return Math.trunc(n);
+}
+
+function readScoresMatrixFromDom() {
+  const tbody = document.getElementById('scoreboard-tbody');
+  if (!tbody) return { matrix: [], complete: false };
+
+  const rows = tbody.querySelectorAll('tr[data-team-index]');
+  const matrix = [];
+  let complete = rows.length > 0;
+
+  rows.forEach((tr) => {
+    const inputs = tr.querySelectorAll('.score-round-input');
+    const row = [];
+    inputs.forEach((inp) => {
+      const v = parseRoundValue(inp.value);
+      row.push(v);
+      if (v === null) complete = false;
+    });
+    matrix.push(row);
+  });
+
+  return { matrix, complete };
+}
+
+function rowSum(row) {
+  return row.reduce((acc, v) => acc + (v === null ? 0 : v), 0);
+}
+
+/** Позиции 1,2,2,4 при равенстве сумм */
+function computePlaces(totals) {
+  const n = totals.length;
+  const placeByIndex = new Array(n).fill(null);
+  const indexed = totals.map((t, i) => ({ t, i }));
+  indexed.sort((a, b) => b.t - a.t);
+  let rank = 1;
+  let k = 0;
+  while (k < indexed.length) {
+    const score = indexed[k].t;
+    let span = 0;
+    while (k + span < indexed.length && indexed[k + span].t === score) span++;
+    for (let j = 0; j < span; j++) {
+      placeByIndex[indexed[k + j].i] = rank;
     }
-  });
-}
-
-// Revenue Chart
-function initRevenueChart(revenueData) {
-  const ctx = document.getElementById('revenueChart').getContext('2d');
-  
-  // Destroy old chart if exists
-  if (chartsInstances.revenue) {
-    chartsInstances.revenue.destroy();
+    rank += span;
+    k += span;
   }
-  
-  chartsInstances.revenue = new Chart(ctx, {
-    type: 'bar',
-    data: {
-      labels: revenueData.labels,
-      datasets: [{
-        label: 'Доходы (₽)',
-        data: revenueData.values,
-        backgroundColor: '#f5c518',
-        borderColor: '#c9a000',
-        borderWidth: 1,
-        borderRadius: 8,
-        hoverBackgroundColor: '#ffe566'
-      }]
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: true,
-      plugins: {
-        legend: { display: false }
-      },
-      scales: {
-        y: {
-          beginAtZero: true,
-          grid: { color: '#333', drawBorder: false },
-          ticks: { color: '#888' }
-        },
-        x: {
-          grid: { color: '#333', drawBorder: false },
-          ticks: { color: '#888' }
-        }
-      }
-    }
+  return placeByIndex;
+}
+
+function refreshScoreboardTotals() {
+  const tbody = document.getElementById('scoreboard-tbody');
+  const { matrix, complete } = readScoresMatrixFromDom();
+  const totals = matrix.map(rowSum);
+  const places = complete && totals.length ? computePlaces(totals) : null;
+
+  const rows = tbody ? tbody.querySelectorAll('tr[data-team-index]') : [];
+  rows.forEach((tr, ti) => {
+    const totalCell = tr.querySelector('.scoreboard-total');
+    const placeCell = tr.querySelector('.scoreboard-place');
+    if (totalCell) totalCell.textContent = String(totals[ti] ?? 0);
+    if (placeCell) placeCell.textContent = places ? String(places[ti]) : '—';
   });
 }
 
-// Distribution Chart (Pie)
-function initDistributionChart(distributionData) {
-  const ctx = document.getElementById('distributionChart').getContext('2d');
-  
-  // Destroy old chart if exists
-  if (chartsInstances.distribution) {
-    chartsInstances.distribution.destroy();
+function saveScoreboard() {
+  if (scoreboardEventId === null) {
+    alert('Сначала выберите игру.');
+    return;
   }
-  
-  chartsInstances.distribution = new Chart(ctx, {
-    type: 'doughnut',
-    data: {
-      labels: distributionData.labels,
-      datasets: [{
-        data: distributionData.values,
-        backgroundColor: [
-          '#f5c518',
-          '#ffe566',
-          '#c9a000',
-          '#ffaa00'
-        ],
-        borderColor: '#1e1e1e',
-        borderWidth: 2
-      }]
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: true,
-      plugins: {
-        legend: {
-          position: 'bottom',
-          labels: { color: '#888', padding: 16 }
-        }
+  const { matrix } = readScoresMatrixFromDom();
+  const tbody = document.getElementById('scoreboard-tbody');
+  if (tbody && !tbody.querySelector('tr[data-team-index]')) {
+    alert('Нет строк для сохранения.');
+    return;
+  }
+
+  fetch(`/api/admin/games/${scoreboardEventId}/scoreboard`, {
+    method: 'POST',
+    credentials: 'same-origin',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ scores: matrix }),
+  })
+    .then((r) => r.json().then((body) => ({ ok: r.ok, body })))
+    .then(({ ok, body }) => {
+      if (!ok || body.status === 'error') {
+        alert(body.message || 'Не удалось сохранить');
+        return;
       }
-    }
-  });
+      alert('Сохранено.');
+    })
+    .catch(() => alert('Ошибка сети'));
 }
 
-// Update stats by period
-function updateStats() {
-  const period = document.getElementById('stats-period').value;
-  console.log('Updating stats for period:', period);
-  
-  // Trigger chart redraw
-  setTimeout(() => {
-    if (chartsInstances.attendance) chartsInstances.attendance.resize();
-    if (chartsInstances.revenue) chartsInstances.revenue.resize();
-    if (chartsInstances.distribution) chartsInstances.distribution.resize();
-  }, 100);
-}
+// --- Модалка события и прочее ---
 
-// Modal functions
 function openCreateEventModal() {
   document.getElementById('modalTitle').textContent = 'Создать событие';
   document.getElementById('eventForm').reset();
@@ -274,17 +347,17 @@ function openCreateEventModal() {
 
 function editEvent(id) {
   if (!statsData || !statsData.events[id]) return;
-  
+
   const event = statsData.events[id];
   document.getElementById('modalTitle').textContent = 'Редактировать событие';
-  
+
   document.querySelector('input[name="title"]').value = event.title;
   document.querySelector('input[name="date"]').value = event.date;
   document.querySelector('input[name="time"]').value = event.time;
   document.querySelector('input[name="location"]').value = event.location;
   document.querySelector('input[name="max_seats"]').value = event.max_seats;
   document.querySelector('input[name="price"]').value = event.price;
-  
+
   document.getElementById('eventModal').classList.add('show');
   document.body.style.overflow = 'hidden';
 }
@@ -298,7 +371,6 @@ function closeEventModal(e) {
 function deleteEvent(id) {
   if (confirm('Вы уверены? Это действие нельзя отменить!')) {
     console.log('Deleting event:', id);
-    // API call here
     loadStats();
   }
 }
@@ -306,22 +378,20 @@ function deleteEvent(id) {
 function closeEvent(id) {
   if (confirm('Закрыть событие досрочно? Новые регистрации будут невозможны.')) {
     console.log('Closing event:', id);
-    // API call here
     loadStats();
   }
 }
 
-// Photo upload functions
 function previewPhoto(event) {
   const file = event.target.files[0];
   if (!file) return;
-  
+
   const reader = new FileReader();
-  reader.onload = function(e) {
+  reader.onload = function (e) {
     const preview = document.getElementById('photoPreview');
     const uploadArea = document.getElementById('photoUploadArea');
     const previewImg = document.getElementById('previewImg');
-    
+
     previewImg.src = e.target.result;
     uploadArea.style.display = 'none';
     preview.style.display = 'block';
@@ -338,15 +408,18 @@ function removePhoto() {
 
 function submitEventForm() {
   const form = document.getElementById('eventForm');
-  const formData = new FormData(form);
-  
-  // Validate form
-  if (!form.title.value || !form.date.value || !form.time.value || 
-      !form.location.value || !form.max_seats.value || !form.price.value) {
+  if (
+    !form.title.value ||
+    !form.date.value ||
+    !form.time.value ||
+    !form.location.value ||
+    !form.max_seats.value ||
+    !form.price.value
+  ) {
     alert('Пожалуйста, заполните все обязательные поля!');
     return;
   }
-  
+
   console.log('Submitting event form with data:', {
     title: form.title.value,
     date: form.date.value,
@@ -356,62 +429,69 @@ function submitEventForm() {
     price: form.price.value,
     category: form.category.value,
     rules: form.rules.value,
-    photo: document.getElementById('eventPhoto').files[0]
+    photo: document.getElementById('eventPhoto').files[0],
   });
-  
-  // Here would be the API call to save event
+
   closeEventModal();
   loadStats();
 }
 
-// Export functions
 function exportReport(format) {
   const formats = {
-    'pdf': 'PDF',
-    'excel': 'Excel',
-    'csv': 'CSV'
+    pdf: 'PDF',
+    excel: 'Excel',
+    csv: 'CSV',
   };
   alert(`Начинаем экспорт в ${formats[format]}...`);
-  // Here would be the actual export logic
 }
 
-// Utility function to format numbers
 function formatNumber(num) {
   return new Intl.NumberFormat('ru-RU').format(num);
 }
 
-// Initialize photo upload with drag & drop
+function escapeHtml(s) {
+  return String(s)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+function escapeAttr(s) {
+  return escapeHtml(s).replace(/'/g, '&#39;');
+}
+
 function initializePhotoUpload() {
   const uploadArea = document.getElementById('photoUploadArea');
   const fileInput = document.getElementById('eventPhoto');
-  
+
   if (!uploadArea || !fileInput) return;
-  
-  // Prevent default drag behaviors
-  ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+
+  ['dragenter', 'dragover', 'dragleave', 'drop'].forEach((eventName) => {
     uploadArea.addEventListener(eventName, preventDefaults, false);
     document.body.addEventListener(eventName, preventDefaults, false);
   });
-  
-  // Highlight drop area when item is dragged over it
-  ['dragenter', 'dragover'].forEach(eventName => {
+
+  ['dragenter', 'dragover'].forEach((eventName) => {
     uploadArea.addEventListener(eventName, highlight, false);
   });
-  
-  ['dragleave', 'drop'].forEach(eventName => {
+
+  ['dragleave', 'drop'].forEach((eventName) => {
     uploadArea.addEventListener(eventName, unhighlight, false);
   });
-  
-  // Handle dropped files
+
   uploadArea.addEventListener('drop', handleDrop, false);
-  
-  // Close modal on ESC key
-  document.addEventListener('keydown', function(event) {
-    if (event.key === 'Escape') {
-      const modal = document.getElementById('eventModal');
-      if (modal && modal.classList.contains('show')) {
-        closeEventModal();
-      }
+
+  document.addEventListener('keydown', function (event) {
+    if (event.key !== 'Escape') return;
+    const eventModal = document.getElementById('eventModal');
+    if (eventModal && eventModal.classList.contains('show')) {
+      closeEventModal();
+      return;
+    }
+    const gameModal = document.getElementById('gameSelectModal');
+    if (gameModal && gameModal.classList.contains('show')) {
+      closeGameSelectModal();
     }
   });
 }
@@ -421,12 +501,12 @@ function preventDefaults(e) {
   e.stopPropagation();
 }
 
-function highlight(e) {
+function highlight() {
   document.getElementById('photoUploadArea').style.borderColor = 'rgba(245,197,24,0.8)';
   document.getElementById('photoUploadArea').style.backgroundColor = 'rgba(245,197,24,0.1)';
 }
 
-function unhighlight(e) {
+function unhighlight() {
   document.getElementById('photoUploadArea').style.borderColor = 'rgba(245,197,24,0.3)';
   document.getElementById('photoUploadArea').style.backgroundColor = 'rgba(245,197,24,0.02)';
 }
@@ -434,7 +514,7 @@ function unhighlight(e) {
 function handleDrop(e) {
   const dt = e.dataTransfer;
   const files = dt.files;
-  
+
   if (files.length > 0) {
     document.getElementById('eventPhoto').files = files;
     previewPhoto({ target: { files: files } });

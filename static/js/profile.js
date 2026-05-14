@@ -26,3 +26,50 @@ function closeModal(e) {
 function logout() {
   window.location.href = '/logout';
 }
+
+(function initProfileAvatarPreview() {
+  const MAX_BYTES = 2 * 1024 * 1024;
+  const input = document.getElementById('profileAvatarInput');
+  const label = input && input.closest('.profile-avatar');
+  const img = document.querySelector('.profile-avatar-img');
+  const removeBtn = document.getElementById('profileAvatarRemove');
+  if (!input || !label || !img || !removeBtn) return;
+
+  let objectUrl = null;
+
+  function clearPreview() {
+    if (objectUrl) {
+      URL.revokeObjectURL(objectUrl);
+      objectUrl = null;
+    }
+    img.removeAttribute('src');
+    label.classList.remove('has-image');
+    removeBtn.hidden = true;
+    input.value = '';
+  }
+
+  input.addEventListener('change', function () {
+    const file = input.files && input.files[0];
+    if (!file) return;
+    if (!/^image\/(png|jpeg|gif|webp)$/i.test(file.type)) {
+      alert('Выберите изображение PNG, JPEG, GIF или WebP.');
+      input.value = '';
+      return;
+    }
+    if (file.size > MAX_BYTES) {
+      alert('Файл не больше 2 МБ.');
+      input.value = '';
+      return;
+    }
+    if (objectUrl) URL.revokeObjectURL(objectUrl);
+    objectUrl = URL.createObjectURL(file);
+    img.src = objectUrl;
+    label.classList.add('has-image');
+    removeBtn.hidden = false;
+  });
+
+  removeBtn.addEventListener('click', function (e) {
+    e.preventDefault();
+    clearPreview();
+  });
+})();
