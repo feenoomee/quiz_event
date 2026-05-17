@@ -1,7 +1,5 @@
 // Admin panel JavaScript
 let statsData = null;
-
-/** @type {number | null} */
 let scoreboardEventId = null;
 
 document.addEventListener('DOMContentLoaded', function () {
@@ -9,7 +7,39 @@ document.addEventListener('DOMContentLoaded', function () {
   initializePhotoUpload();
   observeFadeInElements();
   initScoreboardUi();
+  initCustomModals();
 });
+
+function initCustomModals() {
+  const modals = document.querySelectorAll('.modal-overlay-custom');
+  modals.forEach(function(modal) {
+    const closeBtn = modal.querySelector('.modal-close-btn');
+    if (closeBtn) {
+      closeBtn.addEventListener('click', function() {
+        modal.classList.remove('active');
+      });
+    }
+  });
+}
+
+function openModal(modalId) {
+  const modal = document.getElementById(modalId);
+  if (modal) {
+    modal.classList.add('active');
+    const dropdowns = document.querySelectorAll('.cabinet-dropdown');
+    dropdowns.forEach(function(dropdown) {
+      dropdown.classList.remove('show');
+    });
+  }
+}
+
+function closeModal(e) {
+  if (e && e.target !== e.currentTarget) return;
+  const overlays = document.querySelectorAll('.modal-overlay-custom');
+  overlays.forEach(function(overlay) {
+    overlay.classList.remove('active');
+  });
+}
 
 function observeFadeInElements() {
   const observer = new IntersectionObserver(
@@ -28,7 +58,7 @@ function observeFadeInElements() {
 }
 
 function loadStats() {
-  fetch('/api/stats')
+  fetch('/api/stats', { credentials: 'same-origin' })
     .then((response) => response.json())
     .then((data) => {
       statsData = data;
@@ -49,6 +79,11 @@ function populateEventsTable(events) {
   const tbody = document.getElementById('events-tbody');
   tbody.innerHTML = '';
 
+  if (!events || Object.keys(events).length === 0) {
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:20px;">Нет мероприятий</td></tr>';
+    return;
+  }
+
   for (const [id, event] of Object.entries(events)) {
     const occupancy = Math.round((event.registered / event.max_seats) * 100);
     const row = document.createElement('tr');
@@ -59,13 +94,15 @@ function populateEventsTable(events) {
       <td>${event.registered}/${event.max_seats}</td>
       <td>${occupancy}%</td>
       <td>
-        <button class="btn-edit" onclick="editEvent(${id})">✏️ Редакт.</button>
-        <button class="btn-delete" onclick="deleteEvent(${id})">🗑️ Удал.</button>
-        <button class="btn-close" onclick="closeEvent(${id})">⊗ Закрыть</button>
+        <button class="btn-edit" onclick="editEvent(${id})">Редакт.</button>
+        <button class="btn-delete" onclick="deleteEvent(${id})">Удал.</button>
+        <button class="btn-close" onclick="closeEvent(${id})">Закрыть</button>
       </td>
     `;
     tbody.appendChild(row);
   }
+
+  console.log('populateEventsTable: added', tbody.children.length, 'rows');
 }
 
 // --- Таблица результатов (туры / сумма / места) ---
@@ -520,3 +557,29 @@ function handleDrop(e) {
     previewPhoto({ target: { files: files } });
   }
 }
+
+function toggleCabinetDropdown(event) {
+  event.stopPropagation();
+  const dropdown = document.getElementById('cabinetDropdown') || document.getElementById('cabinetDropdownMobile');
+  if (dropdown) {
+    dropdown.classList.toggle('show');
+  }
+}
+
+document.addEventListener('click', function (e) {
+  const dropdowns = document.querySelectorAll('.cabinet-dropdown');
+  dropdowns.forEach(function(dropdown) {
+    if (!dropdown.parentElement.contains(e.target)) {
+      dropdown.classList.remove('show');
+    }
+  });
+});
+
+document.addEventListener('keydown', function (event) {
+  if (event.key === 'Escape') {
+    const dropdowns = document.querySelectorAll('.cabinet-dropdown');
+    dropdowns.forEach(function(dropdown) {
+      dropdown.classList.remove('show');
+    });
+  }
+});

@@ -45,6 +45,24 @@ events = {
         "registered": 32,
         "price": 650,
     },
+    4: {
+        "title": "Наука и технологии",
+        "date": "2026-07-04",
+        "time": "18:00",
+        "location": "Коворкинг Старт",
+        "max_seats": 20,
+        "registered": 15,
+        "price": 500,
+    },
+    5: {
+        "title": "География мира",
+        "date": "2026-07-11",
+        "time": "20:00",
+        "location": "Бар Квиз",
+        "max_seats": 40,
+        "registered": 38,
+        "price": 700,
+    },
 }
 
 # Демо: команды по событиям (замена на регистрации из БД)
@@ -52,6 +70,8 @@ EVENT_TEAMS = {
     1: ["ПО КОЛЕНО!", "Квиз-пати", "Мозголомы", "Три кота", "Ночные совы"],
     2: ["Мелодисты", "Дикие ноты", "Оркестр"],
     3: ["Историки", "Культура превыше всего", "Память века", "Хроники"],
+    4: ["Квантовый разум", "Техно-гики", "Инноваторы"],
+    5: ["Планета Земля", "Путешественники", "Картографы", "Миротворцы", "Атлас"],
 }
 
 # Число туров в таблице (как на макете)
@@ -65,6 +85,29 @@ scoreboards = {
         [17, 16, 20, None, None, None, None],
         [16, 12, 18, None, None, None, None],
         [15, 13, 19, None, None, None, None],
+    ],
+    2: [
+        [20, 18, 24, None, None, None, None],
+        [19, 16, 22, None, None, None, None],
+        [18, 17, 20, None, None, None, None],
+    ],
+    3: [
+        [22, 19, 28, None, None, None, None],
+        [21, 18, 26, None, None, None, None],
+        [20, 17, 24, None, None, None, None],
+        [19, 16, 22, None, None, None, None],
+    ],
+    4: [
+        [17, 14, 20, None, None, None, None],
+        [16, 15, 18, None, None, None, None],
+        [15, 13, 17, None, None, None, None],
+    ],
+    5: [
+        [25, 22, 30, None, None, None, None],
+        [24, 21, 28, None, None, None, None],
+        [23, 20, 26, None, None, None, None],
+        [22, 19, 24, None, None, None, None],
+        [21, 18, 22, None, None, None, None],
     ],
 }
 
