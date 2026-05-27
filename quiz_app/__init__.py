@@ -1,17 +1,15 @@
-"""
-Пакет Flask-приложения TLTQUIZ (макет + демо-логика).
-
-Дальше: сюда же blueprints, инициализация БД, регистрация CLI-команд.
-"""
 import os
 
 from flask import Flask
+from flask_sqlalchemy import SQLAlchemy
+
 
 from .config import Config
 
-# Каталог проекта (родитель пакета quiz_app/) — здесь лежат templates/ и static/
+
 _PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 
+db = SQLAlchemy()
 
 def create_app(config_class=Config):
     app = Flask(
@@ -22,7 +20,12 @@ def create_app(config_class=Config):
     )
     app.config.from_object(config_class)
 
-    from . import routes
+    db.init_app(app)
+
+    from . import models, routes
+
+    with app.app_context():
+        db.create_all()
 
     routes.register_routes(app)
     return app

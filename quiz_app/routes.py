@@ -130,6 +130,21 @@ def _ensure_scoreboard(event_id):
     return scoreboards[event_id]
 
 
+def _format_short_name(full_name):
+    parts = (full_name or "").split()
+    if len(parts) >= 2:
+        return f"{parts[-1]} {parts[0][0]}."
+    return full_name or "Кабинет"
+
+
+def _safe_next_url(value):
+    if not value or not isinstance(value, str):
+        return None
+    if not value.startswith("/") or value.startswith("//"):
+        return None
+    return value
+
+
 def get_current_user():
     user_id = session.get("user_id")
     if not user_id:
@@ -138,7 +153,7 @@ def get_current_user():
     if not user:
         session.pop("user_id", None)
         return None
-    return {"id": user_id, **user}
+    return {"id": user_id, "short_name": _format_short_name(user.get("name")), **user}
 
 
 def register_routes(app):
@@ -157,6 +172,9 @@ def register_routes(app):
 
     @app.route("/api/register", methods=["POST"])
     def register_team():
+        current_user = get_current_user()
+        if not current_user:
+            return jsonify({"status": "error", "message": "Войдите в аккаунт"}), 401
         return {"status": "success", "message": "Registration received"}
 
     @app.route("/profile")
@@ -164,8 +182,6 @@ def register_routes(app):
         current_user = get_current_user()
         if not current_user:
             return redirect(url_for("index"))
-        if current_user["role"] == "admin":
-            return redirect(url_for("admin"))
         return render_template("pages/profile.html", current_user=current_user)
 
     @app.route("/admin")
@@ -203,10 +219,20 @@ def register_routes(app):
             return jsonify({"status": "error", "message": "Пользователь не найден"}), 401
 
         session["user_id"] = matched_user_id
-        destination = (
-            url_for("admin") if users[matched_user_id]["role"] == "admin" else url_for("profile")
+        destination = _safe_next_url(payload.get("next_url")) or url_for("dashboard")
+        user = {"id": matched_user_id, **users[matched_user_id]}
+        return jsonify(
+            {
+                "status": "success",
+                "redirect_to": destination,
+                "user": {
+                    "id": user["id"],
+                    "name": user["name"],
+                    "short_name": _format_short_name(user["name"]),
+                    "role": user["role"],
+                },
+            }
         )
-        return jsonify({"status": "success", "redirect_to": destination})
 
     @app.route("/logout")
     def logout():
@@ -232,6 +258,10 @@ def register_routes(app):
             )
         rows.sort(key=lambda r: (r["date"], r["time"]), reverse=True)
         return jsonify({"games": rows[:limit]})
+
+
+    def register_user():
+        None
 
     @app.route("/api/admin/games/<int:event_id>/scoreboard", methods=["GET"])
     def admin_get_scoreboard(event_id):

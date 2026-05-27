@@ -7,13 +7,21 @@
   <a href="#events">Календарь</a>
   <a href="https://vk.com/tltquiz" target="_blank" onclick="openCorpModal(event)">Корпоратив</a>
   <a href="#contacts">Контакты</a>
-  <a href="#" class="btn-profile" onclick="openAuthModal(event)">Войти</a>
+  {% if current_user %}
+    <a href="{{ url_for('dashboard') }}" class="btn-profile">{{ current_user.short_name }}</a>
+  {% else %}
+    <a href="#" class="btn-profile" onclick="openAuthModal(event)">Войти</a>
+  {% endif %}
 {% endblock %}
 {% block mobile_menu_links %}
   <a href="#events" onclick="closeMobileMenu()">Календарь мероприятий</a>
   <a href="https://vk.com/tltquiz" target="_blank" onclick="closeMobileMenu()">Заказать корпоратив</a>
   <a href="#contacts" onclick="closeMobileMenu()">Контакты</a>
-  <a href="#" onclick="openAuthModal(event); closeMobileMenu()">Войти / Регистрация</a>
+  {% if current_user %}
+    <a href="{{ url_for('dashboard') }}" onclick="closeMobileMenu()">{{ current_user.short_name }}</a>
+  {% else %}
+    <a href="#" onclick="openAuthModal(event); closeMobileMenu()">Войти / Регистрация</a>
+  {% endif %}
 {% endblock %}
 {% block content %}
 {# Порядок блока: герой → прошлые игры (слайдер) → календарь → виджет чата → модалки #}
@@ -36,9 +44,15 @@
         <button class="btn-main" onclick="document.getElementById('events').scrollIntoView({behavior:'smooth'})">
           Все мероприятия
         </button>
-        <a href="/dashboard" class="btn-outline" style="display:inline-flex;align-items:center;gap:8px;text-decoration:none;">
-          Личный кабинет
-        </a>
+        {% if current_user %}
+          <a href="{{ url_for('dashboard') }}" class="btn-outline" style="display:inline-flex;align-items:center;gap:8px;text-decoration:none;">
+            Личный кабинет
+          </a>
+        {% else %}
+          <button class="btn-outline" onclick="openAuthModal(event)">
+            Войти
+          </button>
+        {% endif %}
       </div>
     </div>
 
@@ -291,4 +305,10 @@
   </div>
 </div>
 
+{% endblock %}
+
+{% block scripts %}
+<script>
+  window.currentUser = {{ current_user|tojson if current_user else 'null' }};
+</script>
 {% endblock %}

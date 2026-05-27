@@ -7,21 +7,19 @@
   <a href="/">На главную</a>
   <a href="/#events">Календарь</a>
   <a href="https://vk.com/tltquiz" target="_blank">Корпоратив</a>
-  <a href="/profile" class="btn-profile">Кабинет</a>
+  <button type="button" class="btn-profile" onclick="toggleSettingsMenu(event)">Кабинет</button>
   {% if current_user and current_user.role == 'admin' %}
     <a href="/admin">Админка</a>
   {% endif %}
-  <a href="/logout">Выход</a>
 {% endblock %}
 {% block mobile_menu_links %}
   <a href="/" onclick="closeMobileMenu()">На главную</a>
   <a href="/#events" onclick="closeMobileMenu()">Календарь</a>
   <a href="https://vk.com/tltquiz" target="_blank" onclick="closeMobileMenu()">Корпоратив</a>
-  <a href="/profile" class="btn-profile" onclick="closeMobileMenu()">Кабинет</a>
+  <button type="button" class="btn-profile" onclick="toggleSettingsMenu(event); closeMobileMenu()">Кабинет</button>
   {% if current_user and current_user.role == 'admin' %}
     <a href="/admin" onclick="closeMobileMenu()">Админка</a>
   {% endif %}
-  <a href="/logout" onclick="closeMobileMenu()">Выход</a>
 {% endblock %}
 {% block content %}
 {# Шапка ЛК → блоки «Регистрации» / «Команды» → скрытая секция настроек → выпадающее меню → модальные окна #}

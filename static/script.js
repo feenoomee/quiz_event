@@ -178,9 +178,34 @@ if (slidesContainer) {
 
 // ===== MODALS =====
 let currentRegEvent = {};
+const pendingRegStorageKey = 'tltquizPendingRegistration';
+
+function isAuthenticated() {
+  return Boolean(window.currentUser);
+}
+
+function savePendingRegistration(regEvent) {
+  sessionStorage.setItem(pendingRegStorageKey, JSON.stringify(regEvent));
+}
+
+function popPendingRegistration() {
+  const raw = sessionStorage.getItem(pendingRegStorageKey);
+  if (!raw) return null;
+  sessionStorage.removeItem(pendingRegStorageKey);
+  try {
+    return JSON.parse(raw);
+  } catch (error) {
+    return null;
+  }
+}
 
 function openRegModal(name, date, price, icon) {
   currentRegEvent = { name, date, price, icon };
+  if (!isAuthenticated()) {
+    savePendingRegistration(currentRegEvent);
+    openAuthModal();
+    return;
+  }
   document.getElementById('regEventName').textContent = name;
   document.getElementById('regEventDate').textContent = date;
   document.getElementById('regEventPrice').textContent = price;
@@ -198,7 +223,7 @@ function closeRegModal(e) {
   document.body.style.overflow = '';
 }
 
-function submitReg() {
+async function submitReg() {
   const team = document.getElementById('teamName').value.trim();
   const name = document.getElementById('regName').value.trim();
   const phone = document.getElementById('regPhone').value.trim();
@@ -207,6 +232,36 @@ function submitReg() {
     alert('Пожалуйста, заполните все обязательные поля!');
     return;
   }
+
+  try {
+    const response = await fetch('/api/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        event: currentRegEvent,
+        team,
+        name,
+        phone,
+        count,
+        comment: document.getElementById('regComment').value.trim()
+      })
+    });
+    const data = await response.json();
+    if (response.status === 401) {
+      savePendingRegistration(currentRegEvent);
+      closeRegModal();
+      openAuthModal();
+      return;
+    }
+    if (!response.ok) {
+      alert(data.message || 'Не удалось отправить регистрацию.');
+      return;
+    }
+  } catch (error) {
+    alert('Не удалось отправить регистрацию. Попробуйте снова.');
+    return;
+  }
+
   document.getElementById('regForm').style.display = 'none';
   document.getElementById('regModalFooter').style.display = 'none';
   document.getElementById('regSuccess').style.display = 'block';
@@ -249,10 +304,12 @@ async function submitAuth() {
   }
 
   try {
+    const pendingReg = sessionStorage.getItem(pendingRegStorageKey);
+    const nextUrl = pendingReg ? '/#events' : `${window.location.pathname}${window.location.search}${window.location.hash}`;
     const response = await fetch('/api/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ identifier })
+      body: JSON.stringify({ identifier, next_url: nextUrl })
     });
 
     const data = await response.json();
@@ -261,7 +318,7 @@ async function submitAuth() {
       return;
     }
 
-    window.location.href = data.redirect_to || '/dashboard';
+    window.location.href = data.redirect_to || nextUrl || '/';
   } catch (error) {
     alert('Не удалось выполнить вход. Попробуйте снова.');
   }
@@ -342,6 +399,14 @@ document.addEventListener('DOMContentLoaded', function() {
   }
   if (document.getElementById('eventsGrid')) {
     renderEvents('all');
+  }
+  if (isAuthenticated() && document.getElementById('regModal')) {
+    const pendingReg = popPendingRegistration();
+    if (pendingReg) {
+      setTimeout(() => {
+        openRegModal(pendingReg.name, pendingReg.date, pendingReg.price, pendingReg.icon);
+      }, 250);
+    }
   }
 
   const observer = new IntersectionObserver((entries) => {

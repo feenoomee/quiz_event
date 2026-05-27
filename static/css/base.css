@@ -88,6 +88,11 @@ nav a:hover { color: var(--yellow); background: rgba(245,197,24,0.08); }
   padding: 8px 18px !important;
   transition: all 0.2s !important;
 }
+button.btn-profile {
+  border: none;
+  cursor: pointer;
+  font: inherit;
+}
 .btn-profile:hover { background: var(--yellow-light) !important; transform: translateY(-1px); box-shadow: var(--shadow-y); }
 .burger {
   display: none;

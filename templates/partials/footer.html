@@ -16,10 +16,14 @@
       <div>
         <div class="footer-col-title">Навигация</div>
         <div class="footer-links">
-          <a href="#events">Календарь мероприятий</a>
-          <a href="#results">Фотоотчёты</a>
+          <a href="/#events">Календарь мероприятий</a>
+          <a href="/#results">Фотоотчёты</a>
           <a href="https://vk.com/tltquiz" target="_blank">Заказать корпоратив</a>
-          <a href="#" onclick="openAuthModal(event)">Войти / Регистрация</a>
+          {% if current_user %}
+            <a href="{{ url_for('dashboard') }}">{{ current_user.short_name }}</a>
+          {% else %}
+            <a href="#" onclick="openAuthModal(event)">Войти / Регистрация</a>
+          {% endif %}
         </div>
       </div>
 
