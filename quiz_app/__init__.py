@@ -2,6 +2,7 @@ import os
 
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
+from flask_migrate import Migrate
 
 
 from .config import Config
@@ -10,6 +11,7 @@ from .config import Config
 _PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 
 db = SQLAlchemy()
+
 
 def create_app(config_class=Config):
     app = Flask(
@@ -21,11 +23,9 @@ def create_app(config_class=Config):
     app.config.from_object(config_class)
 
     db.init_app(app)
+    migrate = Migrate( app, db )
 
     from . import models, routes
-
-    with app.app_context():
-        db.create_all()
 
     routes.register_routes(app)
     return app

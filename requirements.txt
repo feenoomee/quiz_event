@@ -4,3 +4,5 @@ Flask-Login==0.6.3
 Flask-WTF==1.2.1
 sqlalchemy_utils
 phonenumbers
+python-dotenv
+flask-migrate
