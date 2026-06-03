@@ -290,26 +290,35 @@ function switchAuthTab(tab, btn) {
   document.getElementById('authSubmitBtn').textContent = tab === 'login' ? 'Войти' : 'Создать аккаунт';
 }
 
+
 async function submitAuth() {
   const isLoginTab = document.getElementById('loginForm').style.display !== 'none';
-  if (!isLoginTab) {
-    alert('Регистрация пока в разработке. Используйте демо-вход.');
-    return;
-  }
 
-  const identifier = document.getElementById('authIdentifier')?.value.trim();
-  if (!identifier) {
-    alert('Введите логин или email.');
+  const endpoint = isLoginTab ? '/api/login' : '/api/signup';
+  const payload = isLoginTab
+    ? {
+        email: document.getElementById('authIdentifier')?.value.trim(),
+        password: document.getElementById('authPassword')?.value
+      }
+    : {
+        first_name: document.getElementById('signupFirstName')?.value.trim(),
+        second_name: document.getElementById('signupSecondName')?.value.trim(),
+        phone: document.getElementById('signupPhone')?.value.trim(),
+        email: document.getElementById('signupEmail')?.value.trim(),
+        password: document.getElementById('signupPassword')?.value
+      };
+
+  const requiredValues = Object.values(payload);
+  if (requiredValues.some(value => !value)) {
+    alert(isLoginTab ? 'Введите email и пароль.' : 'Заполните все поля регистрации.');
     return;
   }
 
   try {
-    const pendingReg = sessionStorage.getItem(pendingRegStorageKey);
-    const nextUrl = pendingReg ? '/#events' : `${window.location.pathname}${window.location.search}${window.location.hash}`;
-    const response = await fetch('/api/login', {
+    const response = await fetch(endpoint, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ identifier, next_url: nextUrl })
+      body: JSON.stringify(payload)
     });
 
     const data = await response.json();
@@ -318,9 +327,9 @@ async function submitAuth() {
       return;
     }
 
-    window.location.href = data.redirect_to || nextUrl || '/';
+    window.location.href = data.redirect_to || '/';
   } catch (error) {
-    alert('Не удалось выполнить вход. Попробуйте снова.');
+    alert('Не удалось выполнить действие. Попробуйте снова.');
   }
 }
 

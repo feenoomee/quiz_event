@@ -23,6 +23,66 @@ function closeModal(e) {
   overlays.forEach(overlay => overlay.classList.remove('active'));
 }
 
+async function submitProfileEdit(event) {
+  event.preventDefault();
+  const payload = {
+    first_name: document.getElementById('editFirstName').value.trim(),
+    second_name: document.getElementById('editSecondName').value.trim(),
+    email: document.getElementById('editEmail').value.trim(),
+    phone: document.getElementById('editPhone').value.trim(),
+  };
+  if (!payload.first_name || !payload.second_name || !payload.email) {
+    alert('Имя, фамилия и email обязательны');
+    return;
+  }
+  try {
+    const resp = await fetch('/api/profile', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    const data = await resp.json();
+    if (!resp.ok) {
+      alert(data.message || 'Ошибка сохранения');
+      return;
+    }
+    alert('Профиль обновлён');
+    location.reload();
+  } catch {
+    alert('Не удалось сохранить профиль');
+  }
+}
+
+async function submitProfileEditModal(event) {
+  event.preventDefault();
+  const payload = {
+    first_name: document.getElementById('modalEditFirstName').value.trim(),
+    second_name: document.getElementById('modalEditSecondName').value.trim(),
+    email: document.getElementById('modalEditEmail').value.trim(),
+    phone: document.getElementById('modalEditPhone').value.trim(),
+  };
+  if (!payload.first_name || !payload.second_name || !payload.email) {
+    alert('Имя, фамилия и email обязательны');
+    return;
+  }
+  try {
+    const resp = await fetch('/api/profile', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    const data = await resp.json();
+    if (!resp.ok) {
+      alert(data.message || 'Ошибка сохранения');
+      return;
+    }
+    alert('Профиль обновлён');
+    location.reload();
+  } catch {
+    alert('Не удалось сохранить профиль');
+  }
+}
+
 function logout() {
   window.location.href = '/logout';
 }

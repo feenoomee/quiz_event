@@ -245,7 +245,7 @@
   </div>
 </div>
 
-<!-- 6. Модалка входа / регистрации (демо-логин через /api/login) -->
+<!-- 6. Модалка входа / регистрации -->
 <!-- ===== AUTH MODAL ===== -->
 <div class="modal-overlay" id="authModal" onclick="closeAuthModal(event)">
   <div class="modal" onclick="event.stopPropagation()">
@@ -263,38 +263,37 @@
 
       <div id="loginForm">
         <div class="form-group">
-          <label class="form-label">Телефон или Email</label>
-          <input id="authIdentifier" class="form-input" type="text" placeholder="user123 или admin123" />
+          <label class="form-label">Email</label>
+          <input id="authIdentifier" class="form-input" type="email" placeholder="email@example.com" />
         </div>
         <div class="form-group">
           <label class="form-label">Пароль</label>
-          <input id="authPassword" class="form-input" type="password" placeholder="Введите пароль (демо)" />
+          <input id="authPassword" class="form-input" type="password" placeholder="Введите пароль" />
         </div>
-        <p style="margin-top: 12px; color: #aaa; font-size: 0.85rem;">Демо-доступ: <strong>user123</strong> (профиль) или <strong>admin123</strong> (админка)</p>
       </div>
 
       <div id="registerForm" style="display:none;">
         <div class="form-row">
           <div class="form-group">
             <label class="form-label">Имя</label>
-            <input class="form-input" type="text" placeholder="Иван" />
+            <input id="signupFirstName" class="form-input" type="text" placeholder="Иван" />
           </div>
           <div class="form-group">
             <label class="form-label">Фамилия</label>
-            <input class="form-input" type="text" placeholder="Иванов" />
+            <input id="signupSecondName" class="form-input" type="text" placeholder="Иванов" />
           </div>
         </div>
         <div class="form-group">
           <label class="form-label">Телефон</label>
-          <input class="form-input" type="tel" placeholder="+7 (999) 000-00-00" />
+          <input id="signupPhone" class="form-input" type="tel" placeholder="+7 (999) 000-00-00" />
         </div>
         <div class="form-group">
           <label class="form-label">Email</label>
-          <input class="form-input" type="email" placeholder="email@example.com" />
+          <input id="signupEmail" class="form-input" type="email" placeholder="email@example.com" />
         </div>
         <div class="form-group">
           <label class="form-label">Пароль</label>
-          <input class="form-input" type="password" placeholder="Придумайте пароль" />
+          <input id="signupPassword" class="form-input" type="password" placeholder="Придумайте пароль" />
         </div>
       </div>
     </div>

@@ -31,7 +31,7 @@
       <div class="profile-user-details">
         <h1>{{ current_user.name if current_user else 'Пользователь' }}</h1>
         <p>{{ current_user.email if current_user else 'user@example.com' }}</p>
-        <p style="font-size: 0.85rem;">Присоединился 15 марта 2025</p>
+        <p style="font-size: 0.85rem;">Присоединился {{ current_user.created_at if current_user and current_user.created_at else '—' }}</p>
       </div>
     </div>
     <div>
@@ -268,41 +268,27 @@
   <section class="profile-section" id="editSection" style="display: none;">
     <div class="edit-section">
       <div class="edit-section-title">Редактировать профиль</div>
-      <form>
+      <form id="editProfileForm" onsubmit="submitProfileEdit(event)">
         <div class="form-row">
           <div class="form-group">
-            <label>Имя и фамилия</label>
-            <input type="text" value="Игорь Кравченко" />
+            <label>Имя</label>
+            <input type="text" id="editFirstName" name="first_name" value="{{ current_user.first_name if current_user else '' }}" />
           </div>
           <div class="form-group">
-            <label>Дата рождения</label>
-            <input type="date" value="1990-05-15" />
+            <label>Фамилия</label>
+            <input type="text" id="editSecondName" name="second_name" value="{{ current_user.second_name if current_user else '' }}" />
           </div>
         </div>
         <div class="form-group">
           <label>Email</label>
-          <input type="email" value="igor@email.com" />
+          <input type="email" id="editEmail" name="email" value="{{ current_user.email if current_user else '' }}" />
         </div>
         <div class="form-group">
           <label>Телефон</label>
-          <input type="tel" value="+7 (999) 123-45-67" />
-        </div>
-        <div class="form-group">
-          <label>О себе</label>
-          <textarea placeholder="Расскажите о себе, какие темы квизов вам нравятся?">Люблю кино, музыку и интеллектуальные игры. Опыт квизов — 2 года.</textarea>
-        </div>
-        <div class="form-row" style="margin-top: 20px;">
-          <div class="form-group">
-            <label>Город</label>
-            <input type="text" value="Тольятти" />
-          </div>
-          <div class="form-group">
-            <label>Язык интерфейса</label>
-            <input type="text" value="Русский" />
-          </div>
+          <input type="tel" id="editPhone" name="phone" value="{{ current_user.phone if current_user else '' }}" />
         </div>
         <div class="edit-actions">
-          <button type="button" class="btn-cancel">Отменить</button>
+          <button type="button" class="btn-cancel" onclick="document.getElementById('editSection').style.display='none'">Отменить</button>
           <button type="submit" class="btn-main">Сохранить изменения</button>
         </div>
       </form>
@@ -362,41 +348,27 @@
       <button class="modal-close-btn" onclick="closeModal()">×</button>
     </div>
     <div class="modal-body">
-      <form>
+      <form id="editProfileModalForm" onsubmit="submitProfileEditModal(event)">
         <div class="form-row">
           <div class="form-group">
-            <label>Имя и фамилия</label>
-            <input type="text" value="Игорь Кравченко" />
+            <label>Имя</label>
+            <input type="text" id="modalEditFirstName" name="first_name" value="{{ current_user.first_name if current_user else '' }}" />
           </div>
           <div class="form-group">
-            <label>Дата рождения</label>
-            <input type="date" value="1990-05-15" />
+            <label>Фамилия</label>
+            <input type="text" id="modalEditSecondName" name="second_name" value="{{ current_user.second_name if current_user else '' }}" />
           </div>
         </div>
         <div class="form-group">
           <label>Email</label>
-          <input type="email" value="igor@email.com" />
+          <input type="email" id="modalEditEmail" name="email" value="{{ current_user.email if current_user else '' }}" />
         </div>
         <div class="form-group">
           <label>Телефон</label>
-          <input type="tel" value="+7 (999) 123-45-67" />
-        </div>
-        <div class="form-group">
-          <label>О себе</label>
-          <textarea>Люблю кино, музыку и интеллектуальные игры. Опыт квизов — 2 года.</textarea>
-        </div>
-        <div class="form-row" style="margin-top: 20px;">
-          <div class="form-group">
-            <label>Город</label>
-            <input type="text" value="Тольятти" />
-          </div>
-          <div class="form-group">
-            <label>Язык интерфейса</label>
-            <input type="text" value="Русский" />
-          </div>
+          <input type="tel" id="modalEditPhone" name="phone" value="{{ current_user.phone if current_user else '' }}" />
         </div>
         <div class="edit-actions">
-          <button type="button" class="btn-cancel">Отменить</button>
+          <button type="button" class="btn-cancel" onclick="closeModal()">Отменить</button>
           <button type="submit" class="btn-main">Сохранить изменения</button>
         </div>
       </form>

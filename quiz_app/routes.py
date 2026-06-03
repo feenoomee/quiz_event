@@ -1,21 +1,11 @@
-"""
-Маршруты и демо-данные.
-
-Замена на «настоящий» бэкенд:
-  — вынести users / events в модели + БД или внешний API;
-  — заменить заглушки /api/register, /api/stats на реальную логику;
-  — добавить авторизацию (пароль, JWT, Flask-Login и т.д.).
-"""
 import os
 
-from flask import jsonify, redirect, render_template, request, send_from_directory, session, url_for
+from flask import jsonify, redirect, render_template, request, send_from_directory, url_for
+from flask_login import current_user, login_required, login_user, logout_user
 
+from . import db
+from .models import User
 
-# --- Демо-данные в памяти (вместо БД) ---
-users = {
-    "user123": {"name": "Иван Петров", "role": "user", "email": "ivan@example.com"},
-    "admin123": {"name": "Администратор", "role": "admin", "email": "admin@example.com"},
-}
 
 events = {
     1: {
@@ -113,10 +103,9 @@ scoreboards = {
 
 
 def _require_admin_json():
-    user = get_current_user()
-    if not user or user.get("role") != "admin":
+    if not current_user.is_authenticated or current_user.role != "admin":
         return None
-    return user
+    return current_user
 
 
 def _empty_score_row():
@@ -137,6 +126,18 @@ def _format_short_name(full_name):
     return full_name or "Кабинет"
 
 
+_MONTHS_RU = [
+    "", "января", "февраля", "марта", "апреля", "мая", "июня",
+    "июля", "августа", "сентября", "октября", "ноября", "декабря",
+]
+
+
+def _format_date_ru(dt):
+    if not dt:
+        return None
+    return f"{dt.day} {_MONTHS_RU[dt.month]} {dt.year}"
+
+
 def _safe_next_url(value):
     if not value or not isinstance(value, str):
         return None
@@ -146,14 +147,19 @@ def _safe_next_url(value):
 
 
 def get_current_user():
-    user_id = session.get("user_id")
-    if not user_id:
+    if not current_user.is_authenticated:
         return None
-    user = users.get(user_id)
-    if not user:
-        session.pop("user_id", None)
-        return None
-    return {"id": user_id, "short_name": _format_short_name(user.get("name")), **user}
+    return {
+        "id": current_user.id,
+        "name": current_user.name,
+        "first_name": current_user.first_name,
+        "second_name": current_user.second_name,
+        "short_name": _format_short_name(current_user.name),
+        "role": current_user.role,
+        "email": current_user.email,
+        "phone": str(current_user.number_telephone),
+        "created_at": _format_date_ru(current_user.created_at),
+    }
 
 
 def register_routes(app):
@@ -172,12 +178,12 @@ def register_routes(app):
 
     @app.route("/api/register", methods=["POST"])
     def register_team():
-        current_user = get_current_user()
-        if not current_user:
+        if not current_user.is_authenticated:
             return jsonify({"status": "error", "message": "Войдите в аккаунт"}), 401
         return {"status": "success", "message": "Registration received"}
 
     @app.route("/profile")
+    @login_required
     def profile():
         current_user = get_current_user()
         if not current_user:
@@ -185,6 +191,7 @@ def register_routes(app):
         return render_template("pages/profile.html", current_user=current_user)
 
     @app.route("/admin")
+    @login_required
     def admin():
         current_user = get_current_user()
         if not current_user:
@@ -194,6 +201,7 @@ def register_routes(app):
         return render_template("pages/admin.html", current_user=current_user)
 
     @app.route("/dashboard")
+    @login_required
     def dashboard():
         current_user = get_current_user()
         if not current_user:
@@ -203,40 +211,109 @@ def register_routes(app):
         return redirect(url_for("profile"))
 
     @app.route("/api/login", methods=["POST"])
-    def login():
+    def login_account():
         payload = request.get_json(silent=True) or {}
-        identifier = (payload.get("identifier") or "").strip().lower()
-        if not identifier:
-            return jsonify({"status": "error", "message": "Укажите логин или email"}), 400
+        email = (payload.get("email") or payload.get("identifier") or "").strip().lower()
+        password = payload.get("password") or ""
+        if not email or not password:
+            return jsonify({"status": "error", "message": "Укажите email и пароль"}), 400
 
-        matched_user_id = None
-        for user_id, user in users.items():
-            if user_id.lower() == identifier or user["email"].lower() == identifier:
-                matched_user_id = user_id
-                break
+        user = User.query.filter_by(email=email).first()
+        if not user or not user.check_password(password):
+            return jsonify({"status": "error", "message": "Неверный email или пароль"}), 401
 
-        if not matched_user_id:
-            return jsonify({"status": "error", "message": "Пользователь не найден"}), 401
-
-        session["user_id"] = matched_user_id
-        destination = _safe_next_url(payload.get("next_url")) or url_for("dashboard")
-        user = {"id": matched_user_id, **users[matched_user_id]}
+        login_user(user)
         return jsonify(
             {
                 "status": "success",
-                "redirect_to": destination,
+                "redirect_to": url_for("index"),
                 "user": {
-                    "id": user["id"],
-                    "name": user["name"],
-                    "short_name": _format_short_name(user["name"]),
-                    "role": user["role"],
+                    "id": user.id,
+                    "name": user.name,
+                    "short_name": _format_short_name(user.name),
+                    "role": user.role,
                 },
             }
         )
 
+    @app.route("/api/signup", methods=["POST"])
+    def signup():
+        payload = request.get_json(silent=True) or {}
+        first_name = (payload.get("first_name") or "").strip()
+        second_name = (payload.get("second_name") or "").strip()
+        phone = (payload.get("phone") or "").strip()
+        email = (payload.get("email") or "").strip().lower()
+        password = payload.get("password") or ""
+
+        if not all([first_name, second_name, phone, email, password]):
+            return jsonify({"status": "error", "message": "Заполните все поля регистрации"}), 400
+
+        if User.query.filter_by(email=email).first():
+            return jsonify({"status": "error", "message": "Пользователь с таким email уже существует"}), 409
+
+        user = User(
+            first_name=first_name,
+            second_name=second_name,
+            email=email,
+            role="user",
+            number_telephone=phone,
+        )
+        user.sd(password)
+
+        try:
+            db.session.add(user)
+            db.session.commit()
+        except Exception:
+            db.session.rollback()
+            return jsonify({"status": "error", "message": "Не удалось создать аккаунт"}), 500
+
+        login_user(user)
+        return jsonify(
+            {
+                "status": "success",
+                "redirect_to": url_for("index"),
+                "user": {
+                    "id": user.id,
+                    "name": user.name,
+                    "short_name": _format_short_name(user.name),
+                    "role": user.role,
+                },
+            }
+        ), 201
+
+    @app.route("/api/profile", methods=["PUT"])
+    @login_required
+    def update_profile():
+        payload = request.get_json(silent=True) or {}
+        first_name = (payload.get("first_name") or "").strip()
+        second_name = (payload.get("second_name") or "").strip()
+        email = (payload.get("email") or "").strip().lower()
+        phone = (payload.get("phone") or "").strip()
+
+        if not all([first_name, second_name, email]):
+            return jsonify({"status": "error", "message": "Имя, фамилия и email обязательны"}), 400
+
+        if email != current_user.email:
+            existing = User.query.filter_by(email=email).first()
+            if existing:
+                return jsonify({"status": "error", "message": "Этот email уже занят"}), 409
+
+        current_user.first_name = first_name
+        current_user.second_name = second_name
+        current_user.email = email
+        if phone:
+            current_user.number_telephone = phone
+
+        try:
+            db.session.commit()
+            return jsonify({"status": "success", "message": "Профиль обновлён"})
+        except Exception:
+            db.session.rollback()
+            return jsonify({"status": "error", "message": "Не удалось сохранить"}), 500
+
     @app.route("/logout")
     def logout():
-        session.clear()
+        logout_user()
         return redirect(url_for("index"))
 
     @app.route("/api/admin/recent-games")
@@ -258,10 +335,6 @@ def register_routes(app):
             )
         rows.sort(key=lambda r: (r["date"], r["time"]), reverse=True)
         return jsonify({"games": rows[:limit]})
-
-
-    def register_user():
-        None
 
     @app.route("/api/admin/games/<int:event_id>/scoreboard", methods=["GET"])
     def admin_get_scoreboard(event_id):
