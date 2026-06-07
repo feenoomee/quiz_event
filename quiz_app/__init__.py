@@ -29,11 +29,16 @@ def create_app(config_class=Config):
     login_manager.login_view = "index"
     migrate = Migrate( app, db )
 
-    from . import models, routes
+    from . import models
 
     @login_manager.user_loader
     def load_user(user_id):
         return models.User.query.get(int(user_id))
 
-    routes.register_routes(app)
+    from .blueptints.pages import pages_bp
+    from .blueptints.api import api_bp
+
+    app.register_blueprint( api_bp )
+    app.register_blueprint(pages_bp)
+
     return app

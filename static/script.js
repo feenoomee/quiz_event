@@ -234,7 +234,7 @@ async function submitReg() {
   }
 
   try {
-    const response = await fetch('/api/register', {
+    const response = await fetch('/api/register_team', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({

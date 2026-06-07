@@ -16,7 +16,7 @@ class User( UserMixin, db.Model ):
     role = db.Column( db.String( 20 ), nullable = False, default = "user" )
     password_hash = db.Column( db.String( 255 ), nullable = False )
     number_telephone = db.Column( PhoneNumberType(), nullable = False )
-    created_at = db.Column( db.DateTime, nullable = False, default = datetime.utcnow )
+    created_at = db.Column( db.DateTime, nullable = False, server_default=db.func.now() )
 
     # Хеширование пароля
     @property
@@ -57,7 +57,7 @@ class Event( db.Model ):
     location = db.Column( db.String( 120 ), nullable = False )
     seats = db.Column( db.Integer, nullable = False )
 
-class Registrations( db.Model ):
+class RegistrationsEvent( db.Model ):
     __tablename__ = "registrations"
 
     id = db.Column( db.Integer, primary_key = True )

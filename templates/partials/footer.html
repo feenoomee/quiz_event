@@ -20,7 +20,7 @@
           <a href="/#results">Фотоотчёты</a>
           <a href="https://vk.com/tltquiz" target="_blank">Заказать корпоратив</a>
           {% if current_user %}
-            <a href="{{ url_for('dashboard') }}">{{ current_user.short_name }}</a>
+            <a href="{{ url_for('pages.dashboard') }}">{{ current_user.short_name }}</a>
           {% else %}
             <a href="#" onclick="openAuthModal(event)">Войти / Регистрация</a>
           {% endif %}

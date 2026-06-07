@@ -8,7 +8,7 @@
   <a href="https://vk.com/tltquiz" target="_blank" onclick="openCorpModal(event)">Корпоратив</a>
   <a href="#contacts">Контакты</a>
   {% if current_user %}
-    <a href="{{ url_for('dashboard') }}" class="btn-profile">{{ current_user.short_name }}</a>
+    <a href="{{ url_for('pages.dashboard') }}" class="btn-profile">{{ current_user.short_name }}</a>
   {% else %}
     <a href="#" class="btn-profile" onclick="openAuthModal(event)">Войти</a>
   {% endif %}
@@ -18,7 +18,7 @@
   <a href="https://vk.com/tltquiz" target="_blank" onclick="closeMobileMenu()">Заказать корпоратив</a>
   <a href="#contacts" onclick="closeMobileMenu()">Контакты</a>
   {% if current_user %}
-    <a href="{{ url_for('dashboard') }}" onclick="closeMobileMenu()">{{ current_user.short_name }}</a>
+    <a href="{{ url_for('pages.dashboard') }}" onclick="closeMobileMenu()">{{ current_user.short_name }}</a>
   {% else %}
     <a href="#" onclick="openAuthModal(event); closeMobileMenu()">Войти / Регистрация</a>
   {% endif %}
@@ -45,7 +45,7 @@
           Все мероприятия
         </button>
         {% if current_user %}
-          <a href="{{ url_for('dashboard') }}" class="btn-outline" style="display:inline-flex;align-items:center;gap:8px;text-decoration:none;">
+          <a href="{{ url_for('pages.dashboard') }}" class="btn-outline" style="display:inline-flex;align-items:center;gap:8px;text-decoration:none;">
             Личный кабинет
           </a>
         {% else %}
