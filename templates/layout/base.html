@@ -1,4 +1,4 @@
-{# Общий каркас сайта: head, шапка, мобильное меню, <main>, футер, script.js и {% block scripts %} #}
+{# Общий каркас сайта: head, шапка, мобильное меню, <main>, футер, js/*.js и {% block scripts %} #}
 <!DOCTYPE html>
 <html lang="ru">
 <head>
@@ -34,7 +34,12 @@
     {% block content %}{% endblock %}
   </main>
   {% include 'partials/footer.html' %}
-  <script src="{{ url_for('static', filename='script.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/events.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/slider.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/auth.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/chat.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/mobile-menu.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/app.js') }}"></script>
   {% block scripts %}{% endblock %}
 </body>
 </html>

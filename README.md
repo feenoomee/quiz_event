@@ -16,7 +16,12 @@ quiz_event/
 ├── static/
 │   ├── css/               # base.css (общее), home.css, profile.css, admin.css; style.css — не подключён
 │   ├── js/                # profile.js, admin.js
-│   └── script.js          # Главная: календарь, слайдер, чат, модалки
+│   ├── js/events.js       # Данные календаря, фильтрация, рендер карточек
+│   ├── js/slider.js       # Карусель «Прошлые игры»
+│   ├── js/auth.js         # Модалки входа / регистрации
+│   ├── js/chat.js         # Виджет чата с ботом
+│   ├── js/mobile-menu.js  # Мобильное бургер-меню
+│   └── js/app.js          # Инициализация, IntersectionObserver, счётчики
 ├── templates/
 │   ├── layout/base.html   # Шапка, main, футер
 │   ├── pages/             # index, profile, admin
@@ -56,7 +61,7 @@ The app will be available at `http://localhost:5000`
   - CSS variables for theming
   - Smooth animations and transitions
 
-- **Interactivity** (`static/script.js`)
+- **Interactivity** (`static/js/*.js`)
   - Event filtering
   - Slider carousel
   - Modal windows (registration, auth)
@@ -100,7 +105,7 @@ Categories: cinema, music, classic, show
 ## 🔧 Customization
 
 ### Update Events
-Edit the `eventsData` array in `static/script.js` to add/modify events.
+Edit the `eventsData` array in `static/js/events.js` to add/modify events.
 
 ### Update Styling
 Modify CSS variables at the top of `static/css/base.css` (и при необходимости страничных CSS) for theming.
