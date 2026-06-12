@@ -17,21 +17,6 @@ def _require_admin_json():
         return None
     return current_user
 
-# EVENT_TEAMS, SCOREBOARD_ROUNDS, scoreboards - ВРЕМЕННЫЕ ФАЙЛЫ КОТОРЫЕ БЫЛ ДО ЭТОГО, БУДЕТ ЗАМЕНА НА ДАННЫЕ ИЗ БД
-def _ensure_scoreboard(event_id):
-    teams = EVENT_TEAMS.get(event_id, [])
-    if event_id not in scoreboards or len(scoreboards[event_id]) != len(teams):
-        scoreboards[event_id] = [_empty_score_row() for _ in teams]
-    return scoreboards[event_id]
-
-def _empty_score_row():
-    return [None] * SCOREBOARD_ROUNDS
-
-def _require_admin_json():
-    if not current_user.is_authenticated or current_user.role != "admin":
-        return None
-    return current_user
-
 def _format_date_ru(dt):
     if not dt:
         return None

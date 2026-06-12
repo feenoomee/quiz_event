@@ -1,85 +1,25 @@
-const eventsData = [
-  {
-    id: 1,
-    title: 'Кино и сериалы 2025',
-    emoji: '',
-    category: 'cinema',
-    date: '13 июня, пятница',
-    time: '19:00',
-    place: 'Ресторан Весна, Юбилейная 6а',
-    price: 600,
-    total: 20,
-    booked: 14,
-    tag: 'Скоро'
-  },
-  {
-    id: 2,
-    title: 'Угадай мелодию — Русские хиты',
-    emoji: '',
-    category: 'music',
-    date: '15 июня, воскресенье',
-    time: '18:00',
-    place: 'Бар Штаб-Квартира, Юбилейная 8',
-    price: 500,
-    total: 16,
-    booked: 6,
-    tag: 'Новое'
-  },
-  {
-    id: 3,
-    title: 'ТЛТКВИЗ — Обо всём',
-    emoji: '',
-    category: 'classic',
-    date: '18 июня, среда',
-    time: '19:00',
-    place: 'ТЦ Акварель, Южное шоссе',
-    price: 600,
-    total: 24,
-    booked: 24,
-    tag: ''
-  },
-  {
-    id: 4,
-    title: 'Эйнштейн Party — SHOW TIME',
-    emoji: '',
-    category: 'show',
-    date: '20 июня, пятница',
-    time: '19:00',
-    place: 'Ресторан Весна, Юбилейная 6а',
-    price: 700,
-    total: 30,
-    booked: 18,
-    tag: 'Хит'
-  },
-  {
-    id: 5,
-    title: 'Мир кино — СССР и 90-е',
-    emoji: '',
-    category: 'cinema',
-    date: '22 июня, воскресенье',
-    time: '17:00',
-    place: 'ТЦ Акварель, Южное шоссе',
-    price: 550,
-    total: 20,
-    booked: 8,
-    tag: ''
-  },
-  {
-    id: 6,
-    title: 'Музыкальный марафон',
-    emoji: '',
-    category: 'music',
-    date: '25 июня, среда',
-    time: '19:00',
-    place: '40 лет Победы 33',
-    price: 600,
-    total: 20,
-    booked: 3,
-    tag: 'Новое'
-  }
-];
-
+let eventsData = [];
 let currentFilter = 'all';
+
+function loadEvents() {
+  const grid = document.getElementById('eventsGrid');
+  if (grid) {
+    grid.innerHTML = '<div style="text-align:center;padding:40px;color:#888;">Загрузка мероприятий...</div>';
+  }
+
+  fetch('/api/events', { credentials: 'same-origin' })
+    .then(r => r.json())
+    .then(data => {
+      eventsData = data;
+      renderEvents(currentFilter);
+    })
+    .catch(err => {
+      console.error('Failed to load events:', err);
+      if (grid) {
+        grid.innerHTML = '<div style="text-align:center;padding:40px;color:#888;">Не удалось загрузить мероприятия</div>';
+      }
+    });
+}
 
 function getSeatsInfo(event) {
   const left = event.total - event.booked;
@@ -99,7 +39,7 @@ function renderEvents(filter) {
     card.style.animationDelay = (i * 0.08) + 's';
     card.innerHTML = `
       <div class="event-card-img">
-        <div style="font-size:3.5rem;position:relative;z-index:1;">${ev.emoji}</div>
+        <div style="font-size:3.5rem;position:relative;z-index:1;"></div>
         ${ev.tag ? `<div class="event-tag">${ev.tag}</div>` : ''}
       </div>
       <div class="event-card-body">
@@ -117,7 +57,7 @@ function renderEvents(filter) {
           <div class="seats-badge ${seats.cls}">${seats.text}</div>
         </div>
         <button class="btn-register" ${seats.disabled ? 'disabled' : ''}
-          onclick="openRegModal('${ev.title}', '${ev.date}, ${ev.time}', '${ev.price} ₽ с игрока', '${ev.emoji}')">
+          onclick="openRegModal('${ev.title.replace(/'/g, "\\'")}', '${ev.date}, ${ev.time}', '${ev.price} ₽ с игрока', '')">
           ${seats.disabled ? 'Мест нет' : 'Зарегистрироваться →'}
         </button>
       </div>
@@ -133,3 +73,5 @@ function filterEvents(filter, btn) {
   btn.classList.add('active');
   renderEvents(filter);
 }
+
+document.addEventListener('DOMContentLoaded', loadEvents);

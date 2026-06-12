@@ -1,6 +1,6 @@
-// Admin panel JavaScript
 let statsData = null;
 let scoreboardEventId = null;
+let editingEventId = null;
 
 document.addEventListener('DOMContentLoaded', function () {
   loadStats();
@@ -59,33 +59,49 @@ function observeFadeInElements() {
 
 function loadStats() {
   fetch('/api/stats', { credentials: 'same-origin' })
-    .then((response) => response.json())
+    .then((response) => {
+      if (response.status === 403) {
+        throw new Error('Доступ запрещён');
+      }
+      return response.json();
+    })
     .then((data) => {
       statsData = data;
       updateQuickStats(data);
       populateEventsTable(data.events);
     })
-    .catch((error) => console.error('Error loading stats:', error));
+    .catch((error) => {
+      console.error('Error loading stats:', error);
+      const tbody = document.getElementById('events-tbody');
+      if (tbody) {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:20px;color:#888;">Ошибка загрузки данных</td></tr>';
+      }
+    });
 }
 
 function updateQuickStats(data) {
-  document.getElementById('total-events').textContent = data.total_events;
-  document.getElementById('total-revenue').textContent = '₽' + formatNumber(data.total_revenue);
-  document.getElementById('total-attendees').textContent = data.total_attendees;
-  document.getElementById('occupancy-rate').textContent = data.occupancy_rate + '%';
+  const setText = (id, val) => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = val;
+  };
+  setText('total-events', data.total_events);
+  setText('total-revenue', '₽' + formatNumber(data.total_revenue));
+  setText('total-attendees', data.total_attendees);
+  setText('occupancy-rate', data.occupancy_rate + '%');
 }
 
 function populateEventsTable(events) {
   const tbody = document.getElementById('events-tbody');
+  if (!tbody) return;
   tbody.innerHTML = '';
 
   if (!events || Object.keys(events).length === 0) {
-    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:20px;">Нет мероприятий</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:30px;color:#888;">Пока мероприятий нет</td></tr>';
     return;
   }
 
   for (const [id, event] of Object.entries(events)) {
-    const occupancy = Math.round((event.registered / event.max_seats) * 100);
+    const occupancy = event.max_seats ? Math.round((event.registered / event.max_seats) * 100) : 0;
     const row = document.createElement('tr');
     row.innerHTML = `
       <td><strong>${escapeHtml(event.title)}</strong></td>
@@ -101,8 +117,6 @@ function populateEventsTable(events) {
     `;
     tbody.appendChild(row);
   }
-
-  console.log('populateEventsTable: added', tbody.children.length, 'rows');
 }
 
 // --- Таблица результатов (туры / сумма / места) ---
@@ -307,7 +321,6 @@ function rowSum(row) {
   return row.reduce((acc, v) => acc + (v === null ? 0 : v), 0);
 }
 
-/** Позиции 1,2,2,4 при равенстве сумм */
 function computePlaces(totals) {
   const n = totals.length;
   const placeByIndex = new Array(n).fill(null);
@@ -375,6 +388,7 @@ function saveScoreboard() {
 // --- Модалка события и прочее ---
 
 function openCreateEventModal() {
+  editingEventId = null;
   document.getElementById('modalTitle').textContent = 'Создать событие';
   document.getElementById('eventForm').reset();
   removePhoto();
@@ -385,6 +399,7 @@ function openCreateEventModal() {
 function editEvent(id) {
   if (!statsData || !statsData.events[id]) return;
 
+  editingEventId = id;
   const event = statsData.events[id];
   document.getElementById('modalTitle').textContent = 'Редактировать событие';
 
@@ -394,6 +409,8 @@ function editEvent(id) {
   document.querySelector('input[name="location"]').value = event.location;
   document.querySelector('input[name="max_seats"]').value = event.max_seats;
   document.querySelector('input[name="price"]').value = event.price;
+  const catSelect = document.querySelector('select[name="category"]');
+  if (catSelect && event.category) catSelect.value = event.category;
 
   document.getElementById('eventModal').classList.add('show');
   document.body.style.overflow = 'hidden';
@@ -406,16 +423,37 @@ function closeEventModal(e) {
 }
 
 function deleteEvent(id) {
-  if (confirm('Вы уверены? Это действие нельзя отменить!')) {
-    console.log('Deleting event:', id);
-    loadStats();
-  }
+  if (!confirm('Вы уверены? Это действие нельзя отменить!')) return;
+  fetch(`/api/events/${id}`, {
+    method: 'DELETE',
+    credentials: 'same-origin',
+  })
+    .then((r) => r.json())
+    .then((result) => {
+      if (result.status === 'success') {
+        loadStats();
+      } else {
+        alert(result.message || 'Ошибка');
+      }
+    })
+    .catch(() => alert('Ошибка сети'));
 }
 
 function closeEvent(id) {
   if (confirm('Закрыть событие досрочно? Новые регистрации будут невозможны.')) {
-    console.log('Closing event:', id);
-    loadStats();
+    fetch(`/api/events/${id}`, {
+      method: 'DELETE',
+      credentials: 'same-origin',
+    })
+      .then((r) => r.json())
+      .then((result) => {
+        if (result.status === 'success') {
+          loadStats();
+        } else {
+          alert(result.message || 'Ошибка');
+        }
+      })
+      .catch(() => alert('Ошибка сети'));
   }
 }
 
@@ -457,20 +495,36 @@ function submitEventForm() {
     return;
   }
 
-  console.log('Submitting event form with data:', {
+  const data = {
     title: form.title.value,
+    category: form.category.value,
     date: form.date.value,
     time: form.time.value,
     location: form.location.value,
-    max_seats: form.max_seats.value,
-    price: form.price.value,
-    category: form.category.value,
-    rules: form.rules.value,
-    photo: document.getElementById('eventPhoto').files[0],
-  });
+    max_seats: parseInt(form.max_seats.value, 10),
+    price: parseInt(form.price.value, 10),
+    description: form.rules.value,
+  };
 
-  closeEventModal();
-  loadStats();
+  const url = editingEventId ? `/api/events/${editingEventId}` : '/api/events';
+  const method = editingEventId ? 'PUT' : 'POST';
+
+  fetch(url, {
+    method: method,
+    credentials: 'same-origin',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  })
+    .then((r) => r.json())
+    .then((result) => {
+      if (result.status === 'success') {
+        closeEventModal();
+        loadStats();
+      } else {
+        alert(result.message || 'Ошибка');
+      }
+    })
+    .catch(() => alert('Ошибка сети'));
 }
 
 function exportReport(format) {

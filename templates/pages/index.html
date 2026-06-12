@@ -56,6 +56,7 @@
       </div>
     </div>
 
+    {% if nearest_event %}
     <div class="hero-card fade-in">
       <div class="hero-card-label">
         <div class="pulse-dot"></div>
@@ -65,19 +66,20 @@
         
         <div class="hero-card-img-overlay"></div>
       </div>
-      <div class="hero-card-title">Кино и сериалы 2025</div>
+      <div class="hero-card-title">{{ nearest_event.name }}</div>
       <div class="hero-card-meta">
-        <div class="hero-card-meta-row"><span class="meta-icon"></span> Пятница, 13 июня 2026</div>
-        <div class="hero-card-meta-row"><span class="meta-icon"></span> 19:00 — старт игры</div>
-        <div class="hero-card-meta-row"><span class="meta-icon"></span> ТЦ Ёлки, ул. 40 лет Победы 33</div>
+        <div class="hero-card-meta-row"><span class="meta-icon"></span> {{ nearest_event.date }}</div>
+        <div class="hero-card-meta-row"><span class="meta-icon"></span> {{ nearest_event.time }} — старт игры</div>
+        <div class="hero-card-meta-row"><span class="meta-icon"></span> {{ nearest_event.location }}</div>
         <div class="hero-card-meta-row"><span class="meta-icon"></span> Команды от 4 до 10 человек</div>
       </div>
-      <div class="hero-price">600 ₽ <small style="font-size:0.7rem;color:#888;font-weight:500">с игрока</small></div>
-      <div class="hero-seats">Осталось всего 6 мест!</div>
-      <button class="btn-main" onclick="openRegModal('Кино и сериалы 2025', '13 июня, 19:00', '600 ₽', '')">
+      <div class="hero-price">{{ nearest_event.price }} ₽ <small style="font-size:0.7rem;color:#888;font-weight:500">с игрока</small></div>
+      <div class="hero-seats">{% if nearest_event.seats_left == 0 %}Мест нет{% else %}Осталось {{ nearest_event.seats_left }} мест!{% endif %}</div>
+      <button class="btn-main" onclick="openRegModal('{{ nearest_event.name }}', '{{ nearest_event.date }}, {{ nearest_event.time }}', '{{ nearest_event.price }} ₽', '')">
         Зарегистрироваться →
       </button>
     </div>
+    {% endif %}
   </div>
 </section>
 

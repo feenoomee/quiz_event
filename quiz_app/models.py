@@ -56,6 +56,9 @@ class Event( db.Model ):
     time = db.Column( db.DateTime, nullable = False )
     location = db.Column( db.String( 120 ), nullable = False )
     seats = db.Column( db.Integer, nullable = False )
+    price = db.Column( db.Integer, nullable = False, default = 0 )
+    booked = db.Column( db.Integer, nullable = False, default = 0 )
+    tag = db.Column( db.String( 20 ), nullable = True )
 
 class RegistrationsEvent( db.Model ):
     __tablename__ = "registrations"

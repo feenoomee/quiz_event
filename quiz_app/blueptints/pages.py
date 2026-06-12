@@ -3,9 +3,15 @@ import os
 from flask import Blueprint, url_for, send_from_directory, current_app, redirect, render_template
 from flask_login import login_required, current_user, logout_user
 
-from ..helpers import get_current_user
+from ..helpers import get_current_user, _MONTHS_RU
 
 pages_bp = Blueprint( "pages", __name__)
+
+
+_WEEKDAYS_RU = [
+    "понедельник", "вторник", "среда", "четверг",
+    "пятница", "суббота", "воскресенье",
+]
 
 
 @pages_bp.context_processor
@@ -15,7 +21,27 @@ def inject_current_user():
 
 @pages_bp.route( "/" )
 def index():
-    return render_template( "pages/index.html" )
+    from datetime import datetime
+    from quiz_app.models import Event
+    now = datetime.now()
+    nearest = Event.query.filter(Event.date >= now).order_by(Event.date).first()
+    nearest_event = None
+    if nearest:
+        d = nearest.date
+        date_ru = f"{d.day} {_MONTHS_RU[d.month]}, {_WEEKDAYS_RU[d.weekday()]}"
+        seats_left = nearest.seats - nearest.booked
+        nearest_event = {
+            "id": nearest.id,
+            "name": nearest.name,
+            "date": date_ru,
+            "time": d.strftime("%H:%M"),
+            "location": nearest.location,
+            "price": nearest.price,
+            "seats": nearest.seats,
+            "booked": nearest.booked,
+            "seats_left": seats_left,
+        }
+    return render_template( "pages/index.html", nearest_event=nearest_event )
 
 
 @pages_bp.route( "/media/<filename>" )
