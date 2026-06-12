@@ -16,6 +16,10 @@ class Config:
     )
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
+    UPLOAD_FOLDER = os.path.join(BASE_DIR, "media", "uploads")
+    MAX_CONTENT_LENGTH = 16 * 1024 * 1024
+    ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg", "gif", "webp"}
+
 
 class DevelopmentConfig(Config):
     DEBUG = True

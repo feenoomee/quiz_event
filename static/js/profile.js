@@ -108,7 +108,18 @@ function logout() {
     input.value = '';
   }
 
-  input.addEventListener('change', function () {
+  async function uploadAvatar(file) {
+    const formData = new FormData();
+    formData.append('file', file);
+    try {
+      const resp = await fetch('/api/upload/avatar', { method: 'POST', body: formData });
+      const data = await resp.json();
+      if (!resp.ok) { alert(data.message || 'Ошибка загрузки'); return null; }
+      return data.url;
+    } catch { alert('Ошибка сети при загрузке'); return null; }
+  }
+
+  input.addEventListener('change', async function () {
     const file = input.files && input.files[0];
     if (!file) return;
     if (!/^image\/(png|jpeg|gif|webp)$/i.test(file.type)) {
@@ -121,11 +132,12 @@ function logout() {
       input.value = '';
       return;
     }
-    if (objectUrl) URL.revokeObjectURL(objectUrl);
-    objectUrl = URL.createObjectURL(file);
-    img.src = objectUrl;
+    const url = await uploadAvatar(file);
+    if (!url) { input.value = ''; return; }
+    img.src = url;
     label.classList.add('has-image');
     removeBtn.hidden = false;
+    if (objectUrl) { URL.revokeObjectURL(objectUrl); objectUrl = null; }
   });
 
   removeBtn.addEventListener('click', function (e) {

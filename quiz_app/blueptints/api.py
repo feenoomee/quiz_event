@@ -1,7 +1,10 @@
+import os
+import uuid
 from datetime import datetime
 
-from flask import Blueprint, jsonify, request, url_for
+from flask import Blueprint, jsonify, request, url_for, current_app
 from flask_login import login_required, current_user, login_user
+from werkzeug.utils import secure_filename
 
 from quiz_app import db
 from quiz_app.models import User, Event
@@ -20,6 +23,7 @@ _WEEKDAYS_RU = [
 
 def _format_event(event):
     d = event.date or datetime.now()
+    photo_url = url_for("pages.serve_media", filename=event.photo) if event.photo else None
     return {
         "id": event.id,
         "title": event.name,
@@ -32,7 +36,56 @@ def _format_event(event):
         "total": event.seats,
         "booked": event.booked,
         "tag": event.tag or "",
+        "photo": photo_url,
     }
+
+
+def _allowed_file(filename):
+    return "." in filename and filename.rsplit(".", 1)[1].lower() in current_app.config.get("ALLOWED_EXTENSIONS", set())
+
+def _save_upload(file, subfolder):
+    if not file or not _allowed_file(file.filename):
+        return None
+    ext = file.filename.rsplit(".", 1)[1].lower()
+    unique_name = f"{uuid.uuid4().hex}.{ext}"
+    folder = os.path.join(current_app.config["UPLOAD_FOLDER"], subfolder)
+    os.makedirs(folder, exist_ok=True)
+    file.save(os.path.join(folder, unique_name))
+    return f"uploads/{subfolder}/{unique_name}"
+
+
+@api_bp.route("/upload/avatar", methods=["POST"])
+@login_required
+def upload_avatar():
+    if "file" not in request.files:
+        return jsonify({"status": "error", "message": "Файл не передан"}), 400
+    file = request.files["file"]
+    rel_path = _save_upload(file, "avatars")
+    if not rel_path:
+        return jsonify({"status": "error", "message": "Недопустимый формат файла"}), 400
+    current_user.avatar = rel_path
+    try:
+        db.session.commit()
+        photo_url = url_for("pages.serve_media", filename=rel_path)
+        return jsonify({"status": "success", "url": photo_url})
+    except Exception:
+        db.session.rollback()
+        return jsonify({"status": "error", "message": "Не удалось сохранить"}), 500
+
+
+@api_bp.route("/upload/event-photo", methods=["POST"])
+@login_required
+def upload_event_photo():
+    if not _require_admin_json():
+        return jsonify({"status": "error", "message": "Нет доступа"}), 403
+    if "file" not in request.files:
+        return jsonify({"status": "error", "message": "Файл не передан"}), 400
+    file = request.files["file"]
+    rel_path = _save_upload(file, "events")
+    if not rel_path:
+        return jsonify({"status": "error", "message": "Недопустимый формат файла"}), 400
+    photo_url = url_for("pages.serve_media", filename=rel_path)
+    return jsonify({"status": "success", "url": photo_url, "path": rel_path})
 
 
 # Events CRUD
@@ -75,6 +128,8 @@ def create_event():
     except ValueError:
         return jsonify({"status": "error", "message": "Неверный формат даты или времени"}), 400
 
+    photo_path = (data.get("photo_path") or "").strip()
+
     event = Event(
         name=name,
         description=description or name,
@@ -85,6 +140,7 @@ def create_event():
         seats=seats,
         price=price,
         tag=tag,
+        photo=photo_path or None,
     )
 
     try:
@@ -117,6 +173,9 @@ def update_event(event_id):
         event.description = data["description"].strip() or event.description
     if "tag" in data:
         event.tag = data["tag"].strip()
+    if "photo_path" in data:
+        val = (data["photo_path"] or "").strip()
+        event.photo = val or None
     if "price" in data:
         try:
             event.price = int(data["price"])
@@ -382,6 +441,7 @@ def get_stats():
 
     events_list = {}
     for e in all_events:
+        photo_url = url_for("pages.serve_media", filename=e.photo) if e.photo else None
         events_list[e.id] = {
             "id": e.id,
             "title": e.name,
@@ -392,6 +452,8 @@ def get_stats():
             "max_seats": e.seats,
             "registered": e.booked,
             "category": e.category,
+            "photo": photo_url,
+            "photo_path": e.photo,
         }
 
     top_events = sorted(

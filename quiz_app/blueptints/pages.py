@@ -40,13 +40,14 @@ def index():
             "seats": nearest.seats,
             "booked": nearest.booked,
             "seats_left": seats_left,
+            "photo": nearest.photo,
         }
     return render_template( "pages/index.html", nearest_event=nearest_event )
 
 
-@pages_bp.route( "/media/<filename>" )
+@pages_bp.route( "/media/<path:filename>" )
 def serve_media( filename ):
-    """Файлы из папки media/ рядом с приложением (как раньше в app.py)."""
+    """Файлы из папки media/ (включая подпапки uploads/)."""
     return send_from_directory( os.path.join( current_app.root_path, "media" ), filename )
 
 

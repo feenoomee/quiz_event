@@ -1,6 +1,8 @@
 let statsData = null;
 let scoreboardEventId = null;
 let editingEventId = null;
+let currentPhotoPath = null;
+let pendingPhotoFile = null;
 
 document.addEventListener('DOMContentLoaded', function () {
   loadStats();
@@ -389,6 +391,8 @@ function saveScoreboard() {
 
 function openCreateEventModal() {
   editingEventId = null;
+  currentPhotoPath = null;
+  pendingPhotoFile = null;
   document.getElementById('modalTitle').textContent = 'Создать событие';
   document.getElementById('eventForm').reset();
   removePhoto();
@@ -411,6 +415,23 @@ function editEvent(id) {
   document.querySelector('input[name="price"]').value = event.price;
   const catSelect = document.querySelector('select[name="category"]');
   if (catSelect && event.category) catSelect.value = event.category;
+
+  currentPhotoPath = event.photo_path || null;
+  pendingPhotoFile = null;
+
+  const preview = document.getElementById('photoPreview');
+  const uploadArea = document.getElementById('photoUploadArea');
+  const previewImg = document.getElementById('previewImg');
+
+  if (currentPhotoPath && event.photo) {
+    previewImg.src = event.photo;
+    uploadArea.style.display = 'none';
+    preview.style.display = 'block';
+  } else {
+    preview.style.display = 'none';
+    uploadArea.style.display = 'block';
+    previewImg.src = '';
+  }
 
   document.getElementById('eventModal').classList.add('show');
   document.body.style.overflow = 'hidden';
@@ -461,6 +482,8 @@ function previewPhoto(event) {
   const file = event.target.files[0];
   if (!file) return;
 
+  pendingPhotoFile = file;
+
   const reader = new FileReader();
   reader.onload = function (e) {
     const preview = document.getElementById('photoPreview');
@@ -479,9 +502,11 @@ function removePhoto() {
   document.getElementById('photoPreview').style.display = 'none';
   document.getElementById('photoUploadArea').style.display = 'block';
   document.getElementById('previewImg').src = '';
+  pendingPhotoFile = null;
+  currentPhotoPath = null;
 }
 
-function submitEventForm() {
+async function submitEventForm() {
   const form = document.getElementById('eventForm');
   if (
     !form.title.value ||
@@ -506,25 +531,46 @@ function submitEventForm() {
     description: form.rules.value,
   };
 
+  if (pendingPhotoFile) {
+    const formData = new FormData();
+    formData.append('file', pendingPhotoFile);
+    try {
+      const resp = await fetch('/api/upload/event-photo', { method: 'POST', body: formData });
+      const result = await resp.json();
+      if (result.status === 'success') {
+        data.photo_path = result.path;
+      } else {
+        alert(result.message || 'Ошибка загрузки фото');
+        return;
+      }
+    } catch {
+      alert('Ошибка сети при загрузке фото');
+      return;
+    }
+  } else if (currentPhotoPath) {
+    data.photo_path = currentPhotoPath;
+  }
+
   const url = editingEventId ? `/api/events/${editingEventId}` : '/api/events';
   const method = editingEventId ? 'PUT' : 'POST';
 
-  fetch(url, {
-    method: method,
-    credentials: 'same-origin',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data),
-  })
-    .then((r) => r.json())
-    .then((result) => {
-      if (result.status === 'success') {
-        closeEventModal();
-        loadStats();
-      } else {
-        alert(result.message || 'Ошибка');
-      }
-    })
-    .catch(() => alert('Ошибка сети'));
+  try {
+    const resp = await fetch(url, {
+      method: method,
+      credentials: 'same-origin',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+    const result = await resp.json();
+    if (result.status === 'success') {
+      closeEventModal();
+      loadStats();
+    } else {
+      alert(result.message || 'Ошибка');
+    }
+  } catch {
+    alert('Ошибка сети');
+  }
 }
 
 function exportReport(format) {

@@ -62,8 +62,8 @@
         <div class="pulse-dot"></div>
         Ближайший квиз
       </div>
-      <div class="hero-card-img">
-        
+      <div class="hero-card-img" {% if nearest_event.photo %}style="background-image:url('{{ url_for('pages.serve_media', filename=nearest_event.photo) }}');background-size:cover;background-position:center;"{% endif %}>
+        {% if not nearest_event.photo %} <div class = "hero-card-img-overlay"></div>{% endif %}
         <div class="hero-card-img-overlay"></div>
       </div>
       <div class="hero-card-title">{{ nearest_event.name }}</div>

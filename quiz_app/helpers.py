@@ -33,6 +33,10 @@ def _safe_next_url(value):
 def get_current_user():
     if not current_user.is_authenticated:
         return None
+    avatar_url = None
+    if current_user.avatar:
+        from flask import url_for
+        avatar_url = url_for("pages.serve_media", filename=current_user.avatar)
     return {
         "id": current_user.id,
         "name": current_user.name,
@@ -43,4 +47,5 @@ def get_current_user():
         "email": current_user.email,
         "phone": str(current_user.number_telephone),
         "created_at": _format_date_ru(current_user.created_at),
+        "avatar": avatar_url,
     }

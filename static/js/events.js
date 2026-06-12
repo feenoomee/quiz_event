@@ -37,9 +37,10 @@ function renderEvents(filter) {
     const card = document.createElement('div');
     card.className = 'event-card fade-in';
     card.style.animationDelay = (i * 0.08) + 's';
+    const photoStyle = ev.photo ? `background-image:url('${ev.photo}');background-size:cover;background-position:center;` : '';
     card.innerHTML = `
-      <div class="event-card-img">
-        <div style="font-size:3.5rem;position:relative;z-index:1;"></div>
+      <div class="event-card-img" style="${photoStyle}">
+        ${ev.photo ? '' : '<div style="font-size:3.5rem;position:relative;z-index:1;"></div>'}
         ${ev.tag ? `<div class="event-tag">${ev.tag}</div>` : ''}
       </div>
       <div class="event-card-body">
