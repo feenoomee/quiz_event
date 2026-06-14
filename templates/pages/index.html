@@ -33,7 +33,7 @@
   <div class="hero-inner">
     <div>
       <h1 class="hero-title">
-        TLTQUIZ —<br>
+        ТЛТКВИЗ —<br>
         квиз, который<br>
         <span>заряжает!</span>
       </h1>
@@ -75,7 +75,7 @@
       </div>
       <div class="hero-price">{{ nearest_event.price }} ₽ <small style="font-size:0.7rem;color:#888;font-weight:500">с игрока</small></div>
       <div class="hero-seats">{% if nearest_event.seats_left == 0 %}Мест нет{% else %}Осталось {{ nearest_event.seats_left }} мест!{% endif %}</div>
-      <button class="btn-main" onclick="openRegModal('{{ nearest_event.name }}', '{{ nearest_event.date }}, {{ nearest_event.time }}', '{{ nearest_event.price }} ₽', '')">
+      <button class="btn-main" onclick="openRegModal({{ nearest_event.id }}, '{{ nearest_event.name }}', '{{ nearest_event.date }}, {{ nearest_event.time }}', '{{ nearest_event.price }} ₽')">
         Зарегистрироваться →
       </button>
     </div>
@@ -197,52 +197,59 @@
     <div class="modal-header">
       <div>
         <div class="modal-title">Регистрация на игру</div>
-        <div class="modal-sub">Заполните данные, мы свяжемся с вами</div>
+        <div class="modal-sub">Выберите команду или создайте новую</div>
       </div>
       <button class="modal-close" onclick="closeRegModal(event)">&times;</button>
     </div>
     <div class="modal-body">
       <div class="modal-event-info">
-        <div class="modal-event-icon" id="regEventIcon"></div>
         <div>
-          <div class="modal-event-name" id="regEventName">Кино и сериалы 2025</div>
-          <div class="modal-event-date" id="regEventDate">13 июня, 19:00</div>
-          <div class="modal-event-price" id="regEventPrice">600 ₽</div>
+          <div class="modal-event-name" id="regEventName">—</div>
+          <div class="modal-event-date" id="regEventDate">—</div>
+          <div class="modal-event-price" id="regEventPrice">—</div>
         </div>
       </div>
-      <form id="regForm">
+
+      <div id="regStepTeam">
         <div class="form-group">
-          <label>Название команды</label>
-          <input id="teamName" type="text" placeholder="Например, Квизмастера" />
+          <label class="form-label">Ваша команда</label>
+          <select class="form-input" id="regTeamSelect">
+            <option value="">— Загружаем команды...</option>
+          </select>
         </div>
-        <div class="form-row">
-          <div class="form-group">
-            <label>Имя игрока</label>
-            <input id="regName" type="text" placeholder="Ваше имя" />
-          </div>
-          <div class="form-group">
-            <label>Телефон</label>
-            <input id="regPhone" type="tel" placeholder="Телефон" />
-          </div>
+        <div style="text-align:center;margin:12px 0;">
+          <button type="button" class="btn-outline" style="font-size:0.85rem;padding:6px 16px;" onclick="showCreateTeam()">+ Создать новую команду</button>
         </div>
+      </div>
+
+      <div id="regStepCreate" style="display:none;">
         <div class="form-group">
-          <label>Количество игроков</label>
-          <input id="regCount" type="number" min="1" max="10" value="4" />
+          <label class="form-label">Название новой команды</label>
+          <input class="form-input" id="regNewTeamName" type="text" placeholder="Например, Квизмастера" />
         </div>
-        <div class="form-group">
-          <label>Комментарий</label>
-          <input id="regComment" type="text" placeholder="Дополнительно" />
+        <div style="text-align:center;margin:8px 0;">
+          <button type="button" class="btn-outline" style="font-size:0.85rem;padding:6px 16px;" onclick="hideCreateTeam()">← Выбрать существующую</button>
         </div>
-      </form>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Количество игроков</label>
+        <input class="form-input" id="regCount" type="number" min="1" value="4" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Комментарий</label>
+        <input class="form-input" id="regComment" type="text" placeholder="Дополнительно" />
+      </div>
+
       <div class="success-state" id="regSuccess">
         <div class="success-icon">✅</div>
         <div class="success-title">Заявка принята!</div>
-        <div class="success-desc">За день до игры будет необходимо подтвердить регистрацию на игру, мы пришлем вам уведомление.</div>
+        <div class="success-desc">За день до игры будет необходимо подтвердить регистрацию. Мы пришлем вам уведомление.</div>
       </div>
     </div>
     <div class="modal-footer" id="regModalFooter">
       <button class="btn-cancel" onclick="closeRegModal(event)">Отменить</button>
-      <button class="btn-submit" type="button" onclick="submitReg()">Отправить</button>
+      <button class="btn-submit" type="button" onclick="submitReg()">Зарегистрироваться</button>
     </div>
   </div>
 </div>
@@ -255,7 +262,6 @@
       <div>
         <div class="modal-title" id="authModalTitle">Войти в TLTQUIZ</div>
       </div>
-      <button class="modal-close" onclick="closeAuthModal()">✕</button>
     </div>
     <div class="modal-body">
       <div class="auth-tabs">
@@ -271,6 +277,9 @@
         <div class="form-group">
           <label class="form-label">Пароль</label>
           <input id="authPassword" class="form-input" type="password" placeholder="Введите пароль" />
+        </div>
+        <div style="text-align:right;margin-top:-4px;margin-bottom:12px;">
+          <a href="#" style="color:#888;font-size:0.82rem;text-decoration:underline;" onclick="alert('Функция восстановления пароля будет добавлена позже');return false;">Забыли пароль?</a>
         </div>
       </div>
 
@@ -297,6 +306,11 @@
           <label class="form-label">Пароль</label>
           <input id="signupPassword" class="form-input" type="password" placeholder="Придумайте пароль" />
         </div>
+        <div class="form-group">
+          <label class="form-label">Подтвердите пароль</label>
+          <input id="signupPasswordConfirm" class="form-input" type="password" placeholder="Повторите пароль" />
+        </div>
+        <div id="signupPasswordError" class="form-error" style="color:#e53935;font-size:0.85rem;margin-top:-8px;margin-bottom:8px;display:none;">Пароли не совпадают</div>
       </div>
     </div>
     <div class="modal-footer">

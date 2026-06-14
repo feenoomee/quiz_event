@@ -267,6 +267,16 @@
   font-weight: 700;
   text-transform: uppercase;
 }
+.team-role-member {
+  display: inline-block;
+  background: rgba(33, 150, 243, 0.2);
+  color: #2196f3;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
 .team-members {
   margin-bottom: 16px;
   padding-bottom: 16px;

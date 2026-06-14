@@ -9,7 +9,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const pendingReg = popPendingRegistration();
     if (pendingReg) {
       setTimeout(() => {
-        openRegModal(pendingReg.name, pendingReg.date, pendingReg.price, pendingReg.icon);
+        openRegModal(pendingReg.eventId, pendingReg.name, pendingReg.date, pendingReg.price);
       }, 250);
     }
   }

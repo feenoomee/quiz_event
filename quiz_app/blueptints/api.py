@@ -1,57 +1,17 @@
-import os
-import uuid
 from datetime import datetime
 
-from flask import Blueprint, jsonify, request, url_for, current_app
+from flask import Blueprint, jsonify, request, url_for#, current_app
 from flask_login import login_required, current_user, login_user
-from werkzeug.utils import secure_filename
+# from werkzeug.utils import secure_filename
 
 from quiz_app import db
-from quiz_app.models import User, Event
-from ..helpers import _format_short_name, _require_admin_json, _MONTHS_RU
+from quiz_app.models import User, Event, Team, RegistrationsEvent
+from ..helpers import _format_short_name, _require_admin_json, _MONTHS_RU, _format_event, _save_upload #,_allowed_file,  _WEEKDAYS_RU
 
 api_bp = Blueprint("api", __name__, url_prefix="/api")
 
 scoreboards = {}
 SCOREBOARD_ROUNDS = 7
-
-_WEEKDAYS_RU = [
-    "понедельник", "вторник", "среда", "четверг",
-    "пятница", "суббота", "воскресенье",
-]
-
-
-def _format_event(event):
-    d = event.date or datetime.now()
-    photo_url = url_for("pages.serve_media", filename=event.photo) if event.photo else None
-    return {
-        "id": event.id,
-        "title": event.name,
-        "description": event.description,
-        "category": event.category,
-        "date": f"{d.day} {_MONTHS_RU[d.month]}, {_WEEKDAYS_RU[d.weekday()]}",
-        "time": d.strftime("%H:%M"),
-        "place": event.location,
-        "price": event.price,
-        "total": event.seats,
-        "booked": event.booked,
-        "tag": event.tag or "",
-        "photo": photo_url,
-    }
-
-
-def _allowed_file(filename):
-    return "." in filename and filename.rsplit(".", 1)[1].lower() in current_app.config.get("ALLOWED_EXTENSIONS", set())
-
-def _save_upload(file, subfolder):
-    if not file or not _allowed_file(file.filename):
-        return None
-    ext = file.filename.rsplit(".", 1)[1].lower()
-    unique_name = f"{uuid.uuid4().hex}.{ext}"
-    folder = os.path.join(current_app.config["UPLOAD_FOLDER"], subfolder)
-    os.makedirs(folder, exist_ok=True)
-    file.save(os.path.join(folder, unique_name))
-    return f"uploads/{subfolder}/{unique_name}"
 
 
 @api_bp.route("/upload/avatar", methods=["POST"])
@@ -135,7 +95,6 @@ def create_event():
         description=description or name,
         category=category,
         date=event_date,
-        time=event_date,
         location=location,
         seats=seats,
         price=price,
@@ -194,7 +153,6 @@ def update_event(event_id):
             d = datetime.strptime(date_str, "%Y-%m-%d").date()
             t = datetime.strptime(time_str, "%H:%M").time()
             event.date = datetime.combine(d, t)
-            event.time = event.date
         except ValueError:
             pass
 
@@ -224,12 +182,209 @@ def delete_event(event_id):
         return jsonify({"status": "error", "message": "Не удалось удалить"}), 500
 
 
-# Регистрация на ивент
+# Мои команды
+@api_bp.route("/my/teams", methods=["GET"])
+@login_required
+def my_teams():
+    teams = current_user.teams
+    result = []
+    for t in teams:
+        result.append({
+            "id": t.id,
+            "name": t.name,
+            "is_captain": t.user_id == current_user.id,
+            "members": [{"id": m.id, "name": m.name, "short_name": _format_short_name(m.name)} for m in t.members],
+        })
+    return jsonify(result)
+
+
+# Создать команду
+@api_bp.route("/teams", methods=["POST"])
+@login_required
+def create_team():
+    data = request.get_json(silent=True) or {}
+    name = (data.get("name") or "").strip()
+    if not name:
+        return jsonify({"status": "error", "message": "Укажите название команды"}), 400
+
+    team = Team(name=name, user_id=current_user.id)
+    team.members.append(current_user)
+    try:
+        db.session.add(team)
+        db.session.commit()
+        return jsonify({"status": "success", "team": {"id": team.id, "name": team.name}}), 201
+    except Exception:
+        db.session.rollback()
+        return jsonify({"status": "error", "message": "Не удалось создать команду"}), 500
+
+
+# Вступить в команду по id капитана
+@api_bp.route("/teams/<int:team_id>/join", methods=["POST"])
+@login_required
+def join_team(team_id):
+    team = Team.query.get(team_id)
+    if not team:
+        return jsonify({"status": "error", "message": "Команда не найдена"}), 404
+    if current_user in team.members:
+        return jsonify({"status": "error", "message": "Вы уже в этой команде"}), 409
+    team.members.append(current_user)
+    try:
+        db.session.commit()
+        return jsonify({"status": "success"})
+    except Exception:
+        db.session.rollback()
+        return jsonify({"status": "error", "message": "Не удалось присоединиться"}), 500
+
+
+# Выйти из команды
+@api_bp.route("/teams/<int:team_id>/leave", methods=["POST"])
+@login_required
+def leave_team(team_id):
+    team = Team.query.get(team_id)
+    if not team:
+        return jsonify({"status": "error", "message": "Команда не найдена"}), 404
+    if current_user not in team.members:
+        return jsonify({"status": "error", "message": "Вы не в этой команде"}), 404
+    if team.user_id == current_user.id:
+        return jsonify({"status": "error", "message": "Капитан не может выйти из команды. Удалите команду."}), 400
+    team.members.remove(current_user)
+    try:
+        db.session.commit()
+        return jsonify({"status": "success"})
+    except Exception:
+        db.session.rollback()
+        return jsonify({"status": "error", "message": "Не удалось выйти"}), 500
+
+
+# Удалить команду (только капитан)
+@api_bp.route("/teams/<int:team_id>", methods=["DELETE"])
+@login_required
+def delete_team(team_id):
+    team = Team.query.get(team_id)
+    if not team:
+        return jsonify({"status": "error", "message": "Команда не найдена"}), 404
+    if team.user_id != current_user.id:
+        return jsonify({"status": "error", "message": "Только капитан может удалить команду"}), 403
+    try:
+        db.session.delete(team)
+        db.session.commit()
+        return jsonify({"status": "success"})
+    except Exception:
+        db.session.rollback()
+        return jsonify({"status": "error", "message": "Не удалось удалить команду"}), 500
+
+
+# Мои регистрации
+@api_bp.route("/my/registrations", methods=["GET"])
+@login_required
+def my_registrations():
+    from ..helpers import _MONTHS_RU
+    team_ids = [t.id for t in current_user.teams]
+    if not team_ids:
+        return jsonify([])
+    registrations = RegistrationsEvent.query.filter(
+        RegistrationsEvent.team_id.in_(team_ids)
+    ).order_by(RegistrationsEvent.registered_at.desc()).all()
+
+    result = []
+    for reg in registrations:
+        ev = reg.event
+        team = reg.team
+        d = ev.date
+        photo_url = url_for("pages.serve_media", filename=ev.photo) if ev.photo else None
+        result.append({
+            "id": reg.id,
+            "event_id": ev.id,
+            "event_name": ev.name,
+            "event_date": f"{d.day} {_MONTHS_RU[d.month]} {d.year}",
+            "event_time": d.strftime("%H:%M"),
+            "event_location": ev.location,
+            "event_price": ev.price,
+            "event_photo": photo_url,
+            "team_name": team.name,
+            "player_count": reg.player_count,
+            "comment": reg.comment,
+            "status": reg.status,
+            "registered_at": reg.registered_at.isoformat() if reg.registered_at else None,
+        })
+    return jsonify(result)
+
+
+# Регистрация команды на ивент
 @api_bp.route("/register_team", methods=["POST"])
+@login_required
 def register_team():
-    if not current_user.is_authenticated:
-        return jsonify({"status": "error", "message": "Войдите в аккаунт"}), 401
-    return {"status": "success", "message": "Registration received"}
+    data = request.get_json(silent=True) or {}
+    event_id = data.get("event_id")
+    team_id = data.get("team_id")
+    player_count = data.get("player_count", 1)
+    comment = (data.get("comment") or "").strip()
+
+    if not event_id or not team_id:
+        return jsonify({"status": "error", "message": "Укажите мероприятие и команду"}), 400
+
+    event = Event.query.get(event_id)
+    if not event:
+        return jsonify({"status": "error", "message": "Мероприятие не найдено"}), 404
+
+    team = Team.query.get(team_id)
+    if not team:
+        return jsonify({"status": "error", "message": "Команда не найдена"}), 404
+
+    if current_user not in team.members:
+        return jsonify({"status": "error", "message": "Вы не участник этой команды"}), 403
+
+    existing = RegistrationsEvent.query.filter_by(team_id=team_id, event_id=event_id).first()
+    if existing:
+        return jsonify({"status": "error", "message": "Команда уже зарегистрирована на это мероприятие"}), 409
+
+    if event.booked >= event.seats:
+        return jsonify({"status": "error", "message": "Свободных мест нет"}), 400
+
+    try:
+        player_count = int(player_count)
+    except (TypeError, ValueError):
+        player_count = 1
+    if player_count < 1:
+        player_count = 1
+
+    reg = RegistrationsEvent(
+        team_id=team_id,
+        event_id=event_id,
+        player_count=player_count,
+        comment=comment or None,
+    )
+    event.booked += player_count
+
+    try:
+        db.session.add(reg)
+        db.session.commit()
+        return jsonify({"status": "success", "message": "Команда зарегистрирована"}), 201
+    except Exception:
+        db.session.rollback()
+        return jsonify({"status": "error", "message": "Не удалось зарегистрироваться"}), 500
+
+
+# Отменить регистрацию
+@api_bp.route("/registrations/<int:reg_id>", methods=["DELETE"])
+@login_required
+def cancel_registration(reg_id):
+    reg = RegistrationsEvent.query.get(reg_id)
+    if not reg:
+        return jsonify({"status": "error", "message": "Регистрация не найдена"}), 404
+    team = reg.team
+    if current_user not in team.members:
+        return jsonify({"status": "error", "message": "Нет доступа"}), 403
+    event = reg.event
+    try:
+        db.session.delete(reg)
+        if event.booked > 0:
+            event.booked -= reg.player_count
+        db.session.commit()
+        return jsonify({"status": "success"})
+    except Exception:
+        db.session.rollback()
+        return jsonify({"status": "error", "message": "Не удалось отменить регистрацию"}), 500
 
 
 # Вход
@@ -261,8 +416,6 @@ def login_account():
 
 
 # Регистрация аккаунта
-
-
 @api_bp.route("/signup", methods=["POST"])
 def signup():
     payload = request.get_json(silent=True) or {}
@@ -310,8 +463,6 @@ def signup():
 
 
 # Обновление профиля
-
-
 @api_bp.route("/profile", methods=["PUT"])
 @login_required
 def update_profile():
@@ -343,7 +494,7 @@ def update_profile():
         return jsonify({"status": "error", "message": "Не удалось сохранить"}), 500
 
 
-#dmin: недавние игры
+# dmin: недавние игры
 @api_bp.route("/admin/recent-games")
 def admin_recent_games():
     if not _require_admin_json():
@@ -366,7 +517,7 @@ def admin_recent_games():
     return jsonify({"games": rows})
 
 
-#Admin: таблица результатов
+# Admin: таблица результатов
 @api_bp.route("/admin/games/<int:event_id>/scoreboard", methods=["GET"])
 def admin_get_scoreboard(event_id):
     if not _require_admin_json():
@@ -376,6 +527,8 @@ def admin_get_scoreboard(event_id):
         return jsonify({"status": "error", "message": "Игра не найдена"}), 404
 
     d = event.date
+    regs = RegistrationsEvent.query.filter_by(event_id=event_id).all()
+    teams = [{"name": r.team.name, "index": i} for i, r in enumerate(regs)]
     board = scoreboards.get(event_id, [])
     return jsonify(
         {
@@ -384,7 +537,7 @@ def admin_get_scoreboard(event_id):
             "date": f"{d.day} {_MONTHS_RU[d.month]} {d.year}",
             "time": d.strftime("%H:%M"),
             "rounds": SCOREBOARD_ROUNDS,
-            "teams": [],
+            "teams": teams,
             "scores": board,
         }
     )
@@ -468,18 +621,6 @@ def get_stats():
         "total_attendees": total_booked,
         "occupancy_rate": occupancy_rate,
         "events": events_list,
-        "attendance_data": {
-            "labels": ["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"],
-            "values": [120, 150, 180, 200, 220, 250, 180],
-        },
-        "revenue_data": {
-            "labels": ["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"],
-            "values": [72000, 90000, 108000, 120000, 132000, 150000, 108000],
-        },
         "top_events": top_events,
-        "event_distribution": {
-            "labels": ["Кино", "Музыка", "История", "Другое"],
-            "values": [30, 25, 20, 15],
-        },
     }
     return jsonify(stats)

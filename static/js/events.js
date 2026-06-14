@@ -58,7 +58,7 @@ function renderEvents(filter) {
           <div class="seats-badge ${seats.cls}">${seats.text}</div>
         </div>
         <button class="btn-register" ${seats.disabled ? 'disabled' : ''}
-          onclick="openRegModal('${ev.title.replace(/'/g, "\\'")}', '${ev.date}, ${ev.time}', '${ev.price} ₽ с игрока', '')">
+          onclick="openRegModal(${ev.id}, '${ev.title.replace(/'/g, "\\'")}', '${ev.date}, ${ev.time}', '${ev.price} ₽ с игрока')">
           ${seats.disabled ? 'Мест нет' : 'Зарегистрироваться →'}
         </button>
       </div>

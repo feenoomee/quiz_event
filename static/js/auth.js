@@ -1,4 +1,4 @@
-let currentRegEvent = {};
+let currentRegEvent = null;
 const pendingRegStorageKey = 'tltquizPendingRegistration';
 
 function isAuthenticated() {
@@ -13,27 +13,30 @@ function popPendingRegistration() {
   const raw = sessionStorage.getItem(pendingRegStorageKey);
   if (!raw) return null;
   sessionStorage.removeItem(pendingRegStorageKey);
-  try {
-    return JSON.parse(raw);
-  } catch (error) {
-    return null;
-  }
+  try { return JSON.parse(raw); }
+  catch { return null; }
 }
 
-function openRegModal(name, date, price, icon) {
-  currentRegEvent = { name, date, price, icon };
+async function openRegModal(eventId, name, date, price) {
+  currentRegEvent = { eventId, name, date, price };
+
   if (!isAuthenticated()) {
     savePendingRegistration(currentRegEvent);
     openAuthModal();
     return;
   }
+
   document.getElementById('regEventName').textContent = name;
   document.getElementById('regEventDate').textContent = date;
   document.getElementById('regEventPrice').textContent = price;
-  document.getElementById('regEventIcon').textContent = icon;
-  document.getElementById('regForm').style.display = 'block';
   document.getElementById('regSuccess').style.display = 'none';
   document.getElementById('regModalFooter').style.display = 'flex';
+
+  document.getElementById('regStepTeam').style.display = 'block';
+  document.getElementById('regStepCreate').style.display = 'none';
+
+  await loadUserTeams();
+
   document.getElementById('regModal').classList.add('open');
   document.body.style.overflow = 'hidden';
 }
@@ -44,51 +47,86 @@ function closeRegModal(e) {
   document.body.style.overflow = '';
 }
 
-async function submitReg() {
-  const team = document.getElementById('teamName').value.trim();
-  const name = document.getElementById('regName').value.trim();
-  const phone = document.getElementById('regPhone').value.trim();
-  const count = document.getElementById('regCount').value;
-  if (!team || !name || !phone || !count) {
-    alert('Пожалуйста, заполните все обязательные поля!');
-    return;
+async function loadUserTeams() {
+  const select = document.getElementById('regTeamSelect');
+  select.innerHTML = '<option value="">— Загружаем...</option>';
+  try {
+    const resp = await fetch('/api/my/teams');
+    const teams = await resp.json();
+    if (!teams.length) {
+      select.innerHTML = '<option value="">— У вас нет команд</option>';
+      return;
+    }
+    select.innerHTML = '<option value="">— Выберите команду —</option>';
+    teams.forEach(t => {
+      const opt = document.createElement('option');
+      opt.value = t.id;
+      opt.textContent = `${t.name} (${t.members.length} чел.)`;
+      select.appendChild(opt);
+    });
+  } catch {
+    select.innerHTML = '<option value="">— Ошибка загрузки</option>';
   }
+}
+
+function showCreateTeam() {
+  document.getElementById('regStepTeam').style.display = 'none';
+  document.getElementById('regStepCreate').style.display = 'block';
+}
+
+function hideCreateTeam() {
+  document.getElementById('regStepCreate').style.display = 'none';
+  document.getElementById('regStepTeam').style.display = 'block';
+}
+
+async function submitReg() {
+  const eventId = currentRegEvent?.eventId;
+  if (!eventId) { alert('Ошибка: не выбрано мероприятие.'); return; }
+
+  let teamId = null;
+  const stepCreate = document.getElementById('regStepCreate');
+  if (stepCreate && stepCreate.style.display !== 'none') {
+    const name = document.getElementById('regNewTeamName').value.trim();
+    if (!name) { alert('Введите название команды.'); return; }
+    try {
+      const resp = await fetch('/api/teams', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name }),
+      });
+      const data = await resp.json();
+      if (!resp.ok) { alert(data.message || 'Ошибка создания команды'); return; }
+      teamId = data.team.id;
+    } catch { alert('Ошибка сети'); return; }
+  } else {
+    const select = document.getElementById('regTeamSelect');
+    teamId = select.value;
+    if (!teamId) { alert('Выберите команду.'); return; }
+  }
+
+  const count = document.getElementById('regCount').value || 1;
+  const comment = document.getElementById('regComment').value.trim();
 
   try {
-    const response = await fetch('/api/register_team', {
+    const resp = await fetch('/api/register_team', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        event: currentRegEvent,
-        team,
-        name,
-        phone,
-        count,
-        comment: document.getElementById('regComment').value.trim()
-      })
+      body: JSON.stringify({ event_id: eventId, team_id: teamId, player_count: count, comment }),
     });
-    const data = await response.json();
-    if (response.status === 401) {
-      savePendingRegistration(currentRegEvent);
-      closeRegModal();
-      openAuthModal();
-      return;
-    }
-    if (!response.ok) {
-      alert(data.message || 'Не удалось отправить регистрацию.');
-      return;
-    }
-  } catch (error) {
-    alert('Не удалось отправить регистрацию. Попробуйте снова.');
+    const data = await resp.json();
+    if (!resp.ok) { alert(data.message || 'Ошибка регистрации'); return; }
+  } catch {
+    alert('Ошибка сети');
     return;
   }
 
-  document.getElementById('regForm').style.display = 'none';
+  document.getElementById('regStepTeam').style.display = 'none';
+  document.getElementById('regStepCreate').style.display = 'none';
   document.getElementById('regModalFooter').style.display = 'none';
   document.getElementById('regSuccess').style.display = 'block';
-  ['teamName','regName','regPhone','regCount','regComment'].forEach(id => {
-    document.getElementById(id).value = '';
-  });
+  document.getElementById('regCount').value = 4;
+  document.getElementById('regComment').value = '';
+  document.getElementById('regNewTeamName').value = '';
 }
 
 function openAuthModal(e) {
@@ -111,7 +149,6 @@ function switchAuthTab(tab, btn) {
   document.getElementById('authSubmitBtn').textContent = tab === 'login' ? 'Войти' : 'Создать аккаунт';
 }
 
-
 async function submitAuth() {
   const isLoginTab = document.getElementById('loginForm').style.display !== 'none';
 
@@ -128,6 +165,17 @@ async function submitAuth() {
         email: document.getElementById('signupEmail')?.value.trim(),
         password: document.getElementById('signupPassword')?.value
       };
+
+  const errorEl = document.getElementById('signupPasswordError');
+  if (errorEl) errorEl.style.display = 'none';
+
+  if (!isLoginTab) {
+    const confirm = document.getElementById('signupPasswordConfirm')?.value;
+    if (payload.password !== confirm) {
+      if (errorEl) errorEl.style.display = 'block';
+      return;
+    }
+  }
 
   const requiredValues = Object.values(payload);
   if (requiredValues.some(value => !value)) {
@@ -148,7 +196,13 @@ async function submitAuth() {
       return;
     }
 
-    window.location.href = data.redirect_to || '/';
+    window.currentUser = data.user;
+    const pending = popPendingRegistration();
+    if (pending) {
+      openRegModal(pending.eventId, pending.name, pending.date, pending.price);
+    } else {
+      window.location.href = data.redirect_to || '/';
+    }
   } catch (error) {
     alert('Не удалось выполнить действие. Попробуйте снова.');
   }
