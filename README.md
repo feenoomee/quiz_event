@@ -31,14 +31,37 @@ quiz_event/
 
 ## 🚀 Getting Started
 
-### 1. Install dependencies
+### 1. Setup environment
 ```bash
-pip install -r requirements.txt
+python -m venv .venv
+# Windows
+.venv\Scripts\pip install -r requirements.txt
+# Linux/macOS
+# .venv/bin/pip install -r requirements.txt
 ```
 
-### 2. Run the application
+### 2. Create `.env` file
+Copy `.env.example` or create `.env` with:
+```
+SECRET_KEY=your-secret-key-here
+```
+
+### 3. Create database tables
 ```bash
-python run.py
+# Windows
+.venv\Scripts\python -c "from quiz_app import create_app, db; from quiz_app.models import *; app = create_app(); app.app_context().push(); db.create_all()"
+.venv\Scripts\flask db stamp head
+# Linux/macOS
+# .venv/bin/python -c "from quiz_app import create_app, db; from quiz_app.models import *; app = create_app(); app.app_context().push(); db.create_all()"
+# .venv/bin/flask db stamp head
+```
+
+### 4. Run the application
+```bash
+# Windows
+.venv\Scripts\python app.py
+# Linux/macOS
+# .venv/bin/python app.py
 ```
 
 The app will be available at `http://localhost:5000`
