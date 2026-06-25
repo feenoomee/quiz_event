@@ -42,6 +42,20 @@ function renderRegistrations(regs, tab) {
 
   container.innerHTML = '';
   filtered.forEach(r => {
+    const status = r.status || 'pending';
+    const isPending = status === 'pending';
+
+    const parts = (r.event_date || '').split(' ');
+    const monthMap = { 'января':0,'февраля':1,'марта':2,'апреля':3,'мая':4,'июня':5,'июля':6,'августа':7,'сентября':8,'октября':9,'ноября':10,'декабря':11 };
+    const day = parseInt(parts[0]);
+    const month = monthMap[parts[1]];
+    const year = parseInt(parts[2]);
+    const timeParts = (r.event_time || '00:00').split(':');
+    const eventDate = (!isNaN(day) && month !== undefined && !isNaN(year))
+      ? new Date(year, month, day, parseInt(timeParts[0]), parseInt(timeParts[1]))
+      : null;
+    const withinConfirmWindow = eventDate && (eventDate.getTime() - Date.now()) <= 14 * 60 * 60 * 1000;
+
     const card = document.createElement('div');
     card.className = 'profile-card';
     card.innerHTML = `
@@ -50,7 +64,6 @@ function renderRegistrations(regs, tab) {
           <h3>${escapeHtml(r.event_name)}</h3>
           <p>${escapeHtml(r.event_date)}, ${escapeHtml(r.event_time)}</p>
         </div>
-        <span class="reg-card-status status-registered">✓ Зарегистрирован</span>
       </div>
       <div class="reg-card-body">
         <div class="reg-card-detail">
@@ -64,11 +77,25 @@ function renderRegistrations(regs, tab) {
         </div>
       </div>
       <div class="reg-card-footer">
-        <button class="btn-cancel" onclick="cancelRegistration(${r.id})">Отменить</button>
+        ${isPending && withinConfirmWindow
+          ? `<button class="btn-main" onclick="confirmRegistration(${r.id})">Подтвердить участие</button>
+             <button class="btn-cancel" onclick="cancelRegistration(${r.id})" style="margin-left:8px;">Отменить</button>`
+          : `<button class="btn-cancel" onclick="cancelRegistration(${r.id})">Отменить</button>`}
       </div>
     `;
     container.appendChild(card);
   });
+}
+
+async function confirmRegistration(regId) {
+  try {
+    const resp = await fetch(`/api/registrations/${regId}/confirm`, { method: 'POST' });
+    const data = await resp.json();
+    if (!resp.ok) { alert(data.message || 'Ошибка'); return; }
+    loadRegistrations(currentRegTab);
+  } catch {
+    alert('Ошибка сети');
+  }
 }
 
 function switchRegTab(tab, btn) {

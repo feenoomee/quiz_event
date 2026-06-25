@@ -233,6 +233,11 @@
 
     <div class="scoreboard-wrap fade-in" id="scoreboard-wrap" hidden>
       <div class="scoreboard-banner" id="scoreboard-banner-title">—</div>
+      <div class="scoreboard-rounds-control">
+        <label>Туров:</label>
+        <input type="number" class="scoreboard-rounds-input" id="scoreboard-rounds-input" min="1" max="20" value="7" />
+        <button type="button" class="btn-update-rounds" id="btn-update-rounds">Применить</button>
+      </div>
       <div class="scoreboard-table-scroll">
         <table class="scoreboard-table" id="scoreboard-table">
           <thead id="scoreboard-thead"></thead>
@@ -302,6 +307,40 @@
   </div>
 </section>
 
+</div>
+
+<!-- Participants Modal -->
+<div class="modal-overlay" id="participantsModal" onclick="closeParticipantsModal(event)">
+  <div class="modal modal--participants" onclick="event.stopPropagation()">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title" id="participantsModalTitle">Участники</div>
+        <div class="modal-sub" id="participantsCount"></div>
+      </div>
+      <button class="modal-close" onclick="closeParticipantsModal()">&times;</button>
+    </div>
+    <div class="modal-body" style="padding:0;">
+      <div class="participants-table-scroll">
+        <table class="participants-table">
+          <thead>
+            <tr>
+              <th>Команда</th>
+              <th>Игроков</th>
+              <th>Участники</th>
+              <th>Комментарий</th>
+              <th>Статус</th>
+            </tr>
+          </thead>
+          <tbody id="participants-tbody">
+            <tr><td colspan="5" style="text-align:center;padding:20px;color:#888;">Загрузка...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-submit" type="button" onclick="closeParticipantsModal()" style="flex:1;">Закрыть</button>
+    </div>
+  </div>
 </div>
 
 <!-- Event Modal -->

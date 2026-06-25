@@ -1,8 +1,10 @@
+import io
 import os
 import uuid
 
 from flask_login import current_user
 from flask import current_app, url_for
+from PIL import Image
 
 from datetime import datetime
 
@@ -87,12 +89,28 @@ def _allowed_file(filename):
     return "." in filename and filename.rsplit(".", 1)[1].lower() in current_app.config.get("ALLOWED_EXTENSIONS", set())
 
 
-def _save_upload(file, subfolder):
+def _save_upload(file, subfolder, max_file_size=None, max_size=None):
     if not file or not _allowed_file(file.filename):
         return None
+
+    if max_file_size:
+        file.seek(0, os.SEEK_END)
+        size = file.tell()
+        file.seek(0)
+        if size > max_file_size:
+            return None
+
     ext = file.filename.rsplit(".", 1)[1].lower()
     unique_name = f"{uuid.uuid4().hex}.{ext}"
     folder = os.path.join(current_app.config["UPLOAD_FOLDER"], subfolder)
     os.makedirs(folder, exist_ok=True)
-    file.save(os.path.join(folder, unique_name))
+    dest = os.path.join(folder, unique_name)
+
+    if max_size:
+        img = Image.open(file)
+        img.thumbnail(max_size, Image.LANCZOS)
+        img.save(dest, optimize=True)
+    else:
+        file.save(dest)
+
     return f"uploads/{subfolder}/{unique_name}"

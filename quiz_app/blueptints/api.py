@@ -1,6 +1,8 @@
 from datetime import datetime
 
-from flask import Blueprint, jsonify, request, url_for#, current_app
+import os
+
+from flask import Blueprint, jsonify, request, url_for, current_app
 from flask_login import login_required, current_user, login_user
 # from werkzeug.utils import secure_filename
 
@@ -10,9 +12,6 @@ from ..helpers import _format_short_name, _require_admin_json, _MONTHS_RU, _form
 
 api_bp = Blueprint("api", __name__, url_prefix="/api")
 
-scoreboards = {}
-SCOREBOARD_ROUNDS = 7
-
 
 @api_bp.route("/upload/avatar", methods=["POST"])
 @login_required
@@ -20,9 +19,15 @@ def upload_avatar():
     if "file" not in request.files:
         return jsonify({"status": "error", "message": "Файл не передан"}), 400
     file = request.files["file"]
-    rel_path = _save_upload(file, "avatars")
+    rel_path = _save_upload(file, "avatars", max_file_size=5*1024*1024, max_size=(300, 300))
     if not rel_path:
-        return jsonify({"status": "error", "message": "Недопустимый формат файла"}), 400
+        return jsonify({"status": "error", "message": "Недопустимый формат или размер файла (макс. 5 МБ)"}), 400
+
+    if current_user.avatar:
+        old_path = os.path.join(current_app.root_path, "media", current_user.avatar)
+        if os.path.exists(old_path):
+            os.remove(old_path)
+
     current_user.avatar = rel_path
     try:
         db.session.commit()
@@ -53,6 +58,50 @@ def upload_event_photo():
 def list_events():
     events = Event.query.order_by(Event.date).all()
     return jsonify([_format_event(e) for e in events])
+
+
+@api_bp.route("/games/past")
+def public_past_games():
+    now = datetime.now()
+    events = Event.query.filter(Event.scores.isnot(None), Event.scores != '').order_by(Event.date.desc()).limit(20).all()
+
+    result = []
+    for event in events:
+        regs = RegistrationsEvent.query.filter_by(event_id=event.id).order_by(RegistrationsEvent.id).all()
+        teams = [r.team.name for r in regs]
+
+        scores_data = event.get_scores()
+        if not scores_data or not teams:
+            continue
+
+        team_results = []
+        for i, row in enumerate(scores_data):
+            if i >= len(teams):
+                break
+            total = sum(v for v in row if v is not None)
+            team_results.append({
+                "team_name": teams[i],
+                "scores": row,
+                "total": total,
+            })
+
+        team_results.sort(key=lambda x: x["total"], reverse=True)
+        for idx, tr in enumerate(team_results):
+            tr["place"] = idx + 1
+
+        d = event.date
+        result.append({
+            "id": event.id,
+            "title": event.name,
+            "date": f"{d.day} {_MONTHS_RU[d.month]} {d.year}",
+            "time": d.strftime("%H:%M"),
+            "location": event.location,
+            "photo": url_for("pages.serve_media", filename=event.photo) if event.photo else None,
+            "rounds": event.rounds,
+            "results": team_results,
+        })
+
+    return jsonify({"games": result})
 
 
 @api_bp.route("/events", methods=["POST"])
@@ -143,6 +192,11 @@ def update_event(event_id):
     if "seats" in data or "max_seats" in data:
         try:
             event.seats = int(data.get("seats") or data.get("max_seats", event.seats))
+        except (TypeError, ValueError):
+            pass
+    if "rounds" in data:
+        try:
+            event.rounds = int(data["rounds"])
         except (TypeError, ValueError):
             pass
 
@@ -279,6 +333,7 @@ def delete_team(team_id):
 @login_required
 def my_registrations():
     from ..helpers import _MONTHS_RU
+    auto_cleanup_pending()
     team_ids = [t.id for t in current_user.teams]
     if not team_ids:
         return jsonify([])
@@ -353,6 +408,7 @@ def register_team():
         event_id=event_id,
         player_count=player_count,
         comment=comment or None,
+        status="pending",
     )
     event.booked += player_count
 
@@ -363,6 +419,53 @@ def register_team():
     except Exception:
         db.session.rollback()
         return jsonify({"status": "error", "message": "Не удалось зарегистрироваться"}), 500
+
+
+# Подтвердить участие
+@api_bp.route("/registrations/<int:reg_id>/confirm", methods=["POST"])
+@login_required
+def confirm_registration(reg_id):
+    reg = RegistrationsEvent.query.get(reg_id)
+    if not reg:
+        return jsonify({"status": "error", "message": "Регистрация не найдена"}), 404
+    team = reg.team
+    if current_user not in team.members:
+        return jsonify({"status": "error", "message": "Нет доступа"}), 403
+    if reg.status == "confirmed":
+        return jsonify({"status": "success", "message": "Уже подтверждено"})
+    reg.status = "confirmed"
+    try:
+        db.session.commit()
+        return jsonify({"status": "success", "message": "Участие подтверждено"})
+    except Exception:
+        db.session.rollback()
+        return jsonify({"status": "error", "message": "Не удалось подтвердить участие"}), 500
+
+
+def auto_cleanup_pending():
+    now = datetime.now()
+    from datetime import timedelta
+    pending = RegistrationsEvent.query.join(Event).filter(
+        RegistrationsEvent.status == "pending",
+    ).all()
+    pending = [
+        reg for reg in pending
+        if datetime(reg.event.date.year, reg.event.date.month, reg.event.date.day, 14, 0) <= now
+    ]
+    removed = 0
+    for reg in pending:
+        event = reg.event
+        if event.booked >= reg.player_count:
+            event.booked -= reg.player_count
+        else:
+            event.booked = 0
+        db.session.delete(reg)
+        removed += 1
+    if removed:
+        try:
+            db.session.commit()
+        except Exception:
+            db.session.rollback()
 
 
 # Отменить регистрацию
@@ -517,6 +620,34 @@ def admin_recent_games():
     return jsonify({"games": rows})
 
 
+# Admin: команды, зарегистрированные на мероприятие
+@api_bp.route("/admin/events/<int:event_id>/registrations", methods=["GET"])
+def admin_event_registrations(event_id):
+    if not _require_admin_json():
+        return jsonify({"status": "error", "message": "Нет доступа"}), 403
+    event = Event.query.get(event_id)
+    if not event:
+        return jsonify({"status": "error", "message": "Мероприятие не найдено"}), 404
+
+    auto_cleanup_pending()
+    regs = RegistrationsEvent.query.filter_by(event_id=event_id).all()
+    result = []
+    for reg in regs:
+        team = reg.team
+        members = [{"id": m.id, "name": m.name, "short_name": _format_short_name(m.name)} for m in team.members]
+        result.append({
+            "id": reg.id,
+            "team_id": team.id,
+            "team_name": team.name,
+            "player_count": reg.player_count,
+            "comment": reg.comment,
+            "status": reg.status,
+            "registered_at": reg.registered_at.isoformat() if reg.registered_at else None,
+            "members": members,
+        })
+    return jsonify({"status": "success", "registrations": result})
+
+
 # Admin: таблица результатов
 @api_bp.route("/admin/games/<int:event_id>/scoreboard", methods=["GET"])
 def admin_get_scoreboard(event_id):
@@ -529,14 +660,14 @@ def admin_get_scoreboard(event_id):
     d = event.date
     regs = RegistrationsEvent.query.filter_by(event_id=event_id).all()
     teams = [{"name": r.team.name, "index": i} for i, r in enumerate(regs)]
-    board = scoreboards.get(event_id, [])
+    board = event.get_scores()
     return jsonify(
         {
             "event_id": event.id,
             "title": event.name,
             "date": f"{d.day} {_MONTHS_RU[d.month]} {d.year}",
             "time": d.strftime("%H:%M"),
-            "rounds": SCOREBOARD_ROUNDS,
+            "rounds": event.rounds,
             "teams": teams,
             "scores": board,
         }
@@ -574,9 +705,14 @@ def admin_save_scoreboard(event_id):
                 out_row.append(v)
         normalized.append(out_row)
 
-    trimmed = [(row + [None] * SCOREBOARD_ROUNDS)[:SCOREBOARD_ROUNDS] for row in normalized]
-    scoreboards[event_id] = trimmed
-    return jsonify({"status": "success", "scores": trimmed})
+    trimmed = [(row + [None] * event.rounds)[:event.rounds] for row in normalized]
+    event.set_scores(trimmed)
+    try:
+        db.session.commit()
+        return jsonify({"status": "success", "scores": trimmed})
+    except Exception:
+        db.session.rollback()
+        return jsonify({"status": "error", "message": "Не удалось сохранить"}), 500
 
 
 # Статистика

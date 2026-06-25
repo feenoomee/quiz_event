@@ -61,7 +61,7 @@ async function loadUserTeams() {
     teams.forEach(t => {
       const opt = document.createElement('option');
       opt.value = t.id;
-      opt.textContent = `${t.name} (${t.members.length} чел.)`;
+      opt.textContent = `${t.name}`;
       select.appendChild(opt);
     });
   } catch {

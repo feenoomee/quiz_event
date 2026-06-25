@@ -6,3 +6,4 @@ sqlalchemy_utils
 phonenumbers
 python-dotenv
 flask-migrate
+Pillow

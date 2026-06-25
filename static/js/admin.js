@@ -115,6 +115,7 @@ function populateEventsTable(events) {
         <button class="btn-edit" onclick="editEvent(${id})">Редакт.</button>
         <button class="btn-delete" onclick="deleteEvent(${id})">Удал.</button>
         <button class="btn-close" onclick="closeEvent(${id})">Закрыть</button>
+        <button class="btn-participants" onclick="openParticipantsModal(${id})">Участники</button>
       </td>
     `;
     tbody.appendChild(row);
@@ -135,6 +136,10 @@ function initScoreboardUi() {
   const tbody = document.getElementById('scoreboard-tbody');
   if (tbody) {
     tbody.addEventListener('input', onScoreboardInput);
+  }
+  const updateRoundsBtn = document.getElementById('btn-update-rounds');
+  if (updateRoundsBtn) {
+    updateRoundsBtn.addEventListener('click', updateRounds);
   }
 }
 
@@ -224,6 +229,10 @@ function renderScoreboard(data) {
   const scores = data.scores || [];
 
   banner.textContent = data.title || '—';
+  const roundsInput = document.getElementById('scoreboard-rounds-input');
+  if (roundsInput) roundsInput.value = rounds;
+  const hint = document.getElementById('scoreboard-places-hint');
+  if (hint) hint.textContent = `Заполните все ${rounds} туров у каждой команды — тогда места проставятся автоматически.`;
 
   const headRow1 = document.createElement('tr');
   headRow1.innerHTML = `
@@ -387,6 +396,38 @@ function saveScoreboard() {
     .catch(() => alert('Ошибка сети'));
 }
 
+function updateRounds() {
+  if (scoreboardEventId === null) {
+    alert('Сначала выберите игру.');
+    return;
+  }
+  const input = document.getElementById('scoreboard-rounds-input');
+  const newRounds = parseInt(input.value, 10);
+  if (Number.isNaN(newRounds) || newRounds < 1 || newRounds > 20) {
+    alert('Введите число от 1 до 20');
+    return;
+  }
+  fetch(`/api/events/${scoreboardEventId}`, {
+    method: 'PUT',
+    credentials: 'same-origin',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ rounds: newRounds }),
+  })
+    .then((r) => r.json().then((body) => ({ ok: r.ok, body })))
+    .then(({ ok, body }) => {
+      if (!ok || body.status === 'error') {
+        alert(body.message || 'Не удалось изменить количество туров');
+        return;
+      }
+      fetch(`/api/admin/games/${scoreboardEventId}/scoreboard`, { credentials: 'same-origin' })
+        .then((r) => r.json())
+        .then((data) => {
+          if (data.status !== 'error') renderScoreboard(data);
+        });
+    })
+    .catch(() => alert('Ошибка сети'));
+}
+
 // --- Модалка события и прочее ---
 
 function openCreateEventModal() {
@@ -476,6 +517,64 @@ function closeEvent(id) {
       })
       .catch(() => alert('Ошибка сети'));
   }
+}
+
+// --- Модалка участников ---
+
+function openParticipantsModal(eventId) {
+  const modal = document.getElementById('participantsModal');
+  const tbody = document.getElementById('participants-tbody');
+  const titleEl = document.getElementById('participantsModalTitle');
+  const countEl = document.getElementById('participantsCount');
+
+  if (!modal || !tbody) return;
+
+  tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:20px;color:#888;">Загрузка...</td></tr>';
+  titleEl.textContent = (statsData && statsData.events && statsData.events[eventId]?.title) || 'Мероприятие';
+  countEl.textContent = '';
+  modal.classList.add('show');
+  document.body.style.overflow = 'hidden';
+
+  fetch(`/api/admin/events/${eventId}/registrations`, { credentials: 'same-origin' })
+    .then(r => r.json())
+    .then(data => {
+      if (data.status === 'error') {
+        tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:20px;color:#888;">${escapeHtml(data.message)}</td></tr>`;
+        return;
+      }
+      const regs = data.registrations || [];
+      countEl.textContent = `Зарегистрировано команд: ${regs.length}`;
+      tbody.innerHTML = '';
+      if (!regs.length) {
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:20px;color:#888;">Нет зарегистрированных команд</td></tr>';
+        return;
+      }
+      regs.forEach(reg => {
+        const membersList = reg.members.map(m => escapeHtml(m.short_name)).join(', ');
+        const isConfirmed = reg.status === 'confirmed';
+        const statusHtml = isConfirmed
+          ? '<span style="color:#4caf50;font-weight:600;">✅ Подтвердили</span>'
+          : '<span style="color:#ff9800;font-weight:600;">⏳ Ожидание</span>';
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td><strong>${escapeHtml(reg.team_name)}</strong></td>
+          <td>${reg.player_count}</td>
+          <td style="font-size:0.85rem;color:#aaa;">${membersList}</td>
+          <td>${reg.comment ? escapeHtml(reg.comment) : '—'}</td>
+          <td>${statusHtml}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    })
+    .catch(() => {
+      tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:20px;color:#888;">Ошибка загрузки</td></tr>';
+    });
+}
+
+function closeParticipantsModal(e) {
+  if (e && e.target !== document.getElementById('participantsModal')) return;
+  document.getElementById('participantsModal').classList.remove('show');
+  document.body.style.overflow = '';
 }
 
 function previewPhoto(event) {
@@ -629,6 +728,11 @@ function initializePhotoUpload() {
     const gameModal = document.getElementById('gameSelectModal');
     if (gameModal && gameModal.classList.contains('show')) {
       closeGameSelectModal();
+      return;
+    }
+    const participantsModal = document.getElementById('participantsModal');
+    if (participantsModal && participantsModal.classList.contains('show')) {
+      closeParticipantsModal();
     }
   });
 }

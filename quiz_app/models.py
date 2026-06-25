@@ -1,3 +1,4 @@
+import json
 from datetime import datetime
 
 from . import db
@@ -70,8 +71,21 @@ class Event(db.Model):
     booked = db.Column(db.Integer, nullable=False, default=0)
     tag = db.Column(db.String(20), nullable=True)
     photo = db.Column(db.String(255), nullable=True)
+    rounds = db.Column(db.Integer, nullable=False, default=7)
+    scores = db.Column(db.Text, nullable=True)
 
     registrations = db.relationship("RegistrationsEvent", back_populates="event", cascade="all, delete-orphan")
+
+    def get_scores(self):
+        if not self.scores:
+            return []
+        try:
+            return json.loads(self.scores)
+        except (json.JSONDecodeError, TypeError):
+            return []
+
+    def set_scores(self, scores_data):
+        self.scores = json.dumps(scores_data)
 
 
 class RegistrationsEvent(db.Model):
@@ -83,7 +97,7 @@ class RegistrationsEvent(db.Model):
     player_count = db.Column(db.Integer, nullable=False, default=1)
     comment = db.Column(db.String(500), nullable=True)
     registered_at = db.Column(db.DateTime, nullable=False, default=datetime.now)
-    status = db.Column(db.String(20), default="registered")
+    status = db.Column(db.String(20), default="pending")
 
     event = db.relationship("Event", back_populates="registrations")
     team = db.relationship("Team", back_populates="registrations")
