@@ -54,7 +54,13 @@ function renderRegistrations(regs, tab) {
     const eventDate = (!isNaN(day) && month !== undefined && !isNaN(year))
       ? new Date(year, month, day, parseInt(timeParts[0]), parseInt(timeParts[1]))
       : null;
-    const withinConfirmWindow = eventDate && (eventDate.getTime() - Date.now()) <= 14 * 60 * 60 * 1000;
+    const now = new Date();
+    const eventDayCutoff = eventDate ? new Date(eventDate.getFullYear(), eventDate.getMonth(), eventDate.getDate(), 14, 0, 0) : null;
+    const withinConfirmWindow = eventDayCutoff !== null
+      && now < eventDayCutoff
+      && now.getDate() === eventDayCutoff.getDate()
+      && now.getMonth() === eventDayCutoff.getMonth()
+      && now.getFullYear() === eventDayCutoff.getFullYear();
 
     const card = document.createElement('div');
     card.className = 'profile-card';
@@ -202,6 +208,23 @@ async function leaveTeam(teamId) {
 function escapeHtml(s) {
   return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
+
+function toggleCabinetDropdown(event) {
+  event.stopPropagation();
+  const dropdown = document.getElementById('cabinetDropdown') || document.getElementById('cabinetDropdownMobile');
+  if (dropdown) {
+    dropdown.classList.toggle('show');
+  }
+}
+
+document.addEventListener('click', function (e) {
+  const dropdowns = document.querySelectorAll('.cabinet-dropdown');
+  dropdowns.forEach(function(dropdown) {
+    if (!dropdown.parentElement.contains(e.target)) {
+      dropdown.classList.remove('show');
+    }
+  });
+});
 
 function toggleSettingsMenu(e) {
   e.preventDefault();

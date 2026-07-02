@@ -1,4 +1,3 @@
-import io
 import os
 import uuid
 
@@ -38,20 +37,11 @@ def _format_date_ru(dt):
     return f"{dt.day} {_MONTHS_RU[dt.month]} {dt.year}"
 
 
-def _safe_next_url(value):
-    if not value or not isinstance(value, str):
-        return None
-    if not value.startswith("/") or value.startswith("//"):
-        return None
-    return value
-
-
 def get_current_user():
     if not current_user.is_authenticated:
         return None
     avatar_url = None
     if current_user.avatar:
-        from flask import url_for
         avatar_url = url_for("pages.serve_media", filename=current_user.avatar)
     return {
         "id": current_user.id,

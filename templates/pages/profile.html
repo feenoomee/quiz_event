@@ -7,7 +7,27 @@
   <a href="/">На главную</a>
   <a href="/#events">Календарь</a>
   <a href="https://vk.com/tltquiz" target="_blank">Корпоратив</a>
-  <button type="button" class="btn-profile" onclick="toggleSettingsMenu(event)">Кабинет</button>
+  <div class="dropdown-wrapper">
+    <button class="btn-profile" id="cabinetBtn" onclick="toggleCabinetDropdown(event)">Кабинет</button>
+    <div class="cabinet-dropdown" id="cabinetDropdown">
+      <div class="cabinet-dropdown-header">
+        <span>Настройки</span>
+      </div>
+      <button class="cabinet-dropdown-item" onclick="openModal('editProfileModal')">
+         Редактирование профиля
+      </button>
+      <button class="cabinet-dropdown-item" onclick="openModal('securityModal')">
+         Безопасность
+      </button>
+      <button class="cabinet-dropdown-item" onclick="openModal('notificationsModal')">
+         Уведомления
+      </button>
+      <div class="cabinet-dropdown-divider"></div>
+      <button class="cabinet-dropdown-item logout-item" onclick="logout()">
+         Выход
+      </button>
+    </div>
+  </div>
   {% if current_user and current_user.role == 'admin' %}
     <a href="/admin">Админка</a>
   {% endif %}
@@ -16,13 +36,33 @@
   <a href="/" onclick="closeMobileMenu()">На главную</a>
   <a href="/#events" onclick="closeMobileMenu()">Календарь</a>
   <a href="https://vk.com/tltquiz" target="_blank" onclick="closeMobileMenu()">Корпоратив</a>
-  <button type="button" class="btn-profile" onclick="toggleSettingsMenu(event); closeMobileMenu()">Кабинет</button>
+  <div class="dropdown-wrapper">
+    <button class="btn-profile" id="cabinetBtnMobile" onclick="toggleCabinetDropdown(event); closeMobileMenu()">Кабинет</button>
+    <div class="cabinet-dropdown" id="cabinetDropdownMobile">
+      <div class="cabinet-dropdown-header">
+        <span>Настройки</span>
+      </div>
+      <button class="cabinet-dropdown-item" onclick="openModal('editProfileModal')">
+         Редактирование профиля
+      </button>
+      <button class="cabinet-dropdown-item" onclick="openModal('securityModal')">
+         Безопасность
+      </button>
+      <button class="cabinet-dropdown-item" onclick="openModal('notificationsModal')">
+         Уведомления
+      </button>
+      <div class="cabinet-dropdown-divider"></div>
+      <button class="cabinet-dropdown-item logout-item" onclick="logout()">
+         Выход
+      </button>
+    </div>
+  </div>
   {% if current_user and current_user.role == 'admin' %}
     <a href="/admin" onclick="closeMobileMenu()">Админка</a>
   {% endif %}
 {% endblock %}
 {% block content %}
-{# Шапка ЛК → блоки «Регистрации» / «Команды» → скрытая секция настроек → выпадающее меню → модальные окна #}
+{# Шапка ЛК → блоки «Регистрации» / «Команды» → модальные окна #}
 
 <section class="profile-header">
   <div class="profile-header-inner">
@@ -32,26 +72,6 @@
         <h1>{{ current_user.name if current_user else 'Пользователь' }}</h1>
         <p>{{ current_user.email if current_user else 'user@example.com' }}</p>
         <p style="font-size: 0.85rem;">Присоединился {{ current_user.created_at if current_user and current_user.created_at else '—' }}</p>
-      </div>
-    </div>
-    <div>
-      <!-- <div class="profile-stats">
-        <div class="profile-stat-item">
-          <span class="profile-stat-value">5</span>
-          <span class="profile-stat-label">Участий</span>
-        </div>
-        <div class="profile-stat-item">
-          <span class="profile-stat-value">2</span>
-          <span class="profile-stat-label">Команд</span>
-        </div>
-        <div class="profile-stat-item">
-          <span class="profile-stat-value">1</span>
-          <span class="profile-stat-label">Побед</span>
-        </div> -->
-      </div>
-      <div class="profile-actions" style="margin-top: 20px; display: none;" id="profileActions">
-        <button class="btn-edit" onclick="toggleSettingsMenu(event)">Меню</button>
-        <button class="btn-logout">Выход</button>
       </div>
     </div>
   </div>
@@ -81,14 +101,6 @@
   </section>
 
 
-</div>
-
-<!-- Выпадающее меню по кнопке «Меню» -->
-<div class="settings-menu" id="settingsMenu">
-  <button class="settings-menu-item" onclick="openModal('editProfileModal')">Редактировать профиль</button>
-  <button class="settings-menu-item" onclick="openModal('securityModal')">Безопасность</button>
-  <button class="settings-menu-item" onclick="openModal('notificationsModal')">Уведомления</button>
-  <button class="settings-menu-item logout" onclick="logout()">Выход</button>
 </div>
 
 <!-- Модальные окна профиля -->

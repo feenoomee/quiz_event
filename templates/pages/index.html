@@ -5,7 +5,7 @@
 {% endblock %}
 {% block nav_links %}
   <a href="#events">Календарь</a>
-  <a href="https://vk.com/tltquiz" target="_blank" onclick="openCorpModal(event)">Корпоратив</a>
+  <a href="https://vk.com/tltquiz" target="_blank">Корпоратив</a>
   <a href="#contacts">Контакты</a>
   {% if current_user %}
     <a href="{{ url_for('pages.dashboard') }}" class="btn-profile">{{ current_user.short_name }}</a>
@@ -74,9 +74,9 @@
         <div class="hero-card-meta-row"><span class="meta-icon"></span> Команды от 4 до 10 человек</div>
       </div>
       <div class="hero-price">{{ nearest_event.price }} ₽ <small style="font-size:0.7rem;color:#888;font-weight:500">с игрока</small></div>
-      <div class="hero-seats">{% if nearest_event.seats_left == 0 %}Мест нет{% else %}Осталось {{ nearest_event.seats_left }} мест!{% endif %}</div>
+      <div class="hero-seats">{% if nearest_event.seats_left == 0 %}Мест нет, можно в лист ожидания{% else %}Осталось {{ nearest_event.seats_left }} мест!{% endif %}</div>
       <button class="btn-main" onclick="openRegModal({{ nearest_event.id }}, '{{ nearest_event.name }}', '{{ nearest_event.date }}, {{ nearest_event.time }}', '{{ nearest_event.price }} ₽')">
-        Зарегистрироваться →
+        {% if nearest_event.seats_left == 0 %}В лист ожидания →{% else %}Зарегистрироваться →{% endif %}
       </button>
     </div>
     {% endif %}
@@ -246,7 +246,7 @@
           <input id="authPassword" class="form-input" type="password" placeholder="Введите пароль" />
         </div>
         <div style="text-align:right;margin-top:-4px;margin-bottom:12px;">
-          <a href="#" style="color:#888;font-size:0.82rem;text-decoration:underline;" onclick="alert('Функция восстановления пароля будет добавлена позже');return false;">Забыли пароль?</a>
+          <a href="#" style="color:#888;font-size:0.82rem;text-decoration:underline;" onclick="openForgotModal();return false;">Забыли пароль?</a>
         </div>
       </div>
 
@@ -283,6 +283,64 @@
     <div class="modal-footer">
       <button class="btn-cancel" onclick="closeAuthModal()">Отмена</button>
       <button class="btn-submit" id="authSubmitBtn" onclick="submitAuth()">Войти</button>
+    </div>
+  </div>
+</div>
+
+<!-- 7. Модалка «Забыли пароль?» -->
+<div class="modal-overlay" id="forgotModal" onclick="closeForgotModal(event)">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title">Восстановление пароля</div>
+      </div>
+    </div>
+    <div class="modal-body">
+      <!-- Шаг 1: Email -->
+      <div id="forgotStep1">
+        <p style="color:#888;font-size:0.92rem;margin-bottom:16px;">Введите email, указанный при регистрации. Мы отправим код для сброса пароля.</p>
+        <div class="form-group">
+          <label class="form-label">Email</label>
+          <input id="forgotEmail" class="form-input" type="email" placeholder="email@example.com" />
+        </div>
+        <div id="forgotError1" style="display:none;color:#e53935;font-size:0.9rem;margin-top:8px;"></div>
+      </div>
+
+      <!-- Шаг 2: Код -->
+      <div id="forgotStep2" style="display:none;">
+        <p style="color:#888;font-size:0.92rem;margin-bottom:16px;">Код отправлен на <span id="forgotEmailDisplay" style="color:#f5c518;"></span>. Введите его ниже.</p>
+        <div class="form-group">
+          <label class="form-label">Код из письма</label>
+          <input id="forgotCode" class="form-input" type="text" maxlength="6" placeholder="000000" style="letter-spacing:0.3em;font-size:1.3rem;text-align:center;" />
+        </div>
+        <div id="forgotError2" style="display:none;color:#e53935;font-size:0.9rem;margin-top:8px;"></div>
+        <div style="margin-top:8px;">
+          <a href="#" style="color:#888;font-size:0.82rem;text-decoration:underline;" onclick="resendForgotCode();return false;">Отправить код повторно</a>
+        </div>
+      </div>
+
+      <!-- Шаг 3: Новый пароль -->
+      <div id="forgotStep3" style="display:none;">
+        <p style="color:#888;font-size:0.92rem;margin-bottom:16px;">Код подтверждён. Задайте новый пароль.</p>
+        <div class="form-group">
+          <label class="form-label">Новый пароль</label>
+          <input id="forgotNewPassword" class="form-input" type="password" placeholder="Не менее 6 символов" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Подтвердите пароль</label>
+          <input id="forgotConfirmPassword" class="form-input" type="password" placeholder="Повторите пароль" />
+        </div>
+        <div id="forgotError3" style="display:none;color:#e53935;font-size:0.9rem;margin-top:8px;"></div>
+      </div>
+
+      <div id="forgotSuccess" style="display:none;margin-top:8px;">
+        <div style="color:#f5c518;font-weight:600;">Пароль успешно изменён!</div>
+        <div style="color:#888;font-size:0.9rem;margin-top:4px;">Теперь можно войти с новым паролем.</div>
+      </div>
+    </div>
+    <div class="modal-footer" id="forgotModalFooter">
+      <button class="btn-cancel" onclick="closeForgotModal()">Отмена</button>
+      <button class="btn-submit" id="forgotSubmitBtn" onclick="submitForgotStep1()">Отправить</button>
     </div>
   </div>
 </div>

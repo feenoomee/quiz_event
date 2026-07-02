@@ -861,7 +861,7 @@
   }
 }
 
-/* Responsive */
+/* Dead code: duplicate responsive rules (already defined at lines 378-423)
 @media (max-width: 1024px) {
   .quick-stats {
     grid-template-columns: repeat(2, 1fr);
@@ -892,6 +892,7 @@
     flex-direction: column;
   }
 }
+*/
 
 /* Dropdown Cabinet Menu */
 .dropdown-wrapper {
@@ -1394,6 +1395,15 @@ body::before {
   .reports-grid {
     grid-template-columns: 1fr;
   }
+}
+
+/* Waitlist section in participants modal */
+#waitlist-section table tbody tr:hover {
+  background: rgba(245,197,24,0.04);
+}
+
+#waitlist-section table tbody tr:last-child td {
+  border-bottom: none;
 }
 
 @media (max-width: 768px) {

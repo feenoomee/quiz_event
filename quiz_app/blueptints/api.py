@@ -332,7 +332,7 @@ def delete_team(team_id):
 @api_bp.route("/my/registrations", methods=["GET"])
 @login_required
 def my_registrations():
-    from ..helpers import _MONTHS_RU
+    # from ..helpers import _MONTHS_RU  # redundant: already imported at module level
     auto_cleanup_pending()
     team_ids = [t.id for t in current_user.teams]
     if not team_ids:
@@ -378,6 +378,8 @@ def register_team():
     if not event_id or not team_id:
         return jsonify({"status": "error", "message": "Укажите мероприятие и команду"}), 400
 
+    auto_cleanup_pending()
+
     event = Event.query.get(event_id)
     if not event:
         return jsonify({"status": "error", "message": "Мероприятие не найдено"}), 404
@@ -393,8 +395,11 @@ def register_team():
     if existing:
         return jsonify({"status": "error", "message": "Команда уже зарегистрирована на это мероприятие"}), 409
 
-    if event.booked >= event.seats:
-        return jsonify({"status": "error", "message": "Свободных мест нет"}), 400
+    # Check 14:00 cutoff on event day
+    now = datetime.now()
+    event_day_cutoff = datetime(event.date.year, event.date.month, event.date.day, 14, 0)
+    if now >= event_day_cutoff and event.date.date() == now.date():
+        return jsonify({"status": "error", "message": "Регистрация на сегодняшнее мероприятие закрыта после 14:00"}), 400
 
     try:
         player_count = int(player_count)
@@ -403,19 +408,24 @@ def register_team():
     if player_count < 1:
         player_count = 1
 
+    is_waitlist = event.booked >= event.seats
+
     reg = RegistrationsEvent(
         team_id=team_id,
         event_id=event_id,
         player_count=player_count,
         comment=comment or None,
         status="pending",
+        waitlist=is_waitlist,
     )
-    event.booked += player_count
+    if not is_waitlist:
+        event.booked += player_count
 
     try:
         db.session.add(reg)
         db.session.commit()
-        return jsonify({"status": "success", "message": "Команда зарегистрирована"}), 201
+        message = "Команда добавлена в лист ожидания" if is_waitlist else "Команда зарегистрирована"
+        return jsonify({"status": "success", "message": message, "waitlist": is_waitlist}), 201
     except Exception:
         db.session.rollback()
         return jsonify({"status": "error", "message": "Не удалось зарегистрироваться"}), 500
@@ -436,17 +446,62 @@ def confirm_registration(reg_id):
     reg.status = "confirmed"
     try:
         db.session.commit()
+
+        from ..mail import send_registration_confirmed_email
+        for member in team.members:
+            send_registration_confirmed_email(member, reg.event)
+
         return jsonify({"status": "success", "message": "Участие подтверждено"})
     except Exception:
         db.session.rollback()
         return jsonify({"status": "error", "message": "Не удалось подтвердить участие"}), 500
 
 
+@api_bp.route("/admin/registrations/<int:reg_id>/confirm-waitlist", methods=["POST"])
+def admin_confirm_waitlist_registration(reg_id):
+    if not _require_admin_json():
+        return jsonify({"status": "error", "message": "Нет доступа"}), 403
+
+    reg = RegistrationsEvent.query.get(reg_id)
+    if not reg:
+        return jsonify({"status": "error", "message": "Регистрация не найдена"}), 404
+
+    if not reg.waitlist and reg.status == "confirmed":
+        return jsonify({"status": "success", "message": "Команда уже подтверждена"})
+
+    event = reg.event
+    was_waitlist = reg.waitlist
+    reg.waitlist = False
+    reg.status = "confirmed"
+    if was_waitlist:
+        event.booked += reg.player_count
+
+    try:
+        db.session.commit()
+        return jsonify({
+            "status": "success",
+            "message": "Команда перенесена в подтвержденные участники",
+            "registration": {
+                "id": reg.id,
+                "status": reg.status,
+                "waitlist": reg.waitlist,
+            },
+            "event": {
+                "id": event.id,
+                "booked": event.booked,
+                "seats": event.seats,
+            },
+        })
+    except Exception:
+        db.session.rollback()
+        return jsonify({"status": "error", "message": "Не удалось подтвердить команду"}), 500
+
+
 def auto_cleanup_pending():
     now = datetime.now()
-    from datetime import timedelta
     pending = RegistrationsEvent.query.join(Event).filter(
         RegistrationsEvent.status == "pending",
+        RegistrationsEvent.waitlist == False,
     ).all()
     pending = [
         reg for reg in pending
@@ -481,7 +536,7 @@ def cancel_registration(reg_id):
     event = reg.event
     try:
         db.session.delete(reg)
-        if event.booked > 0:
+        if not reg.waitlist and event.booked > 0:
             event.booked -= reg.player_count
         db.session.commit()
         return jsonify({"status": "success"})
@@ -551,6 +606,10 @@ def signup():
         return jsonify({"status": "error", "message": "Не удалось создать аккаунт"}), 500
 
     login_user(user)
+
+    from ..mail import send_welcome_email
+    send_welcome_email(user)
+
     return jsonify(
         {
             "status": "success",
@@ -597,7 +656,91 @@ def update_profile():
         return jsonify({"status": "error", "message": "Не удалось сохранить"}), 500
 
 
-# dmin: недавние игры
+# Сброс пароля — отправка кода
+@api_bp.route("/forgot-password", methods=["POST"])
+def forgot_password():
+    from ..models import PasswordReset
+    payload = request.get_json(silent=True) or {}
+    email = (payload.get("email") or "").strip().lower()
+    if not email:
+        return jsonify({"status": "error", "message": "Укажите email"}), 400
+
+    user = User.query.filter_by(email=email).first()
+    if not user:
+        return jsonify({"status": "success", "message": "Если аккаунт существует, письмо отправлено"})
+
+    code = PasswordReset.create_for_user(user)
+    from ..mail import send_password_reset_email
+    send_password_reset_email(user, code)
+
+    return jsonify({"status": "success", "message": "Код отправлен на почту"})
+
+
+# Сброс пароля — проверка кода
+@api_bp.route("/verify-reset-code", methods=["POST"])
+def verify_reset_code():
+    from ..models import PasswordReset
+    payload = request.get_json(silent=True) or {}
+    email = (payload.get("email") or "").strip().lower()
+    code = (payload.get("code") or "").strip()
+
+    if not email or not code:
+        return jsonify({"status": "error", "message": "Укажите email и код"}), 400
+
+    user = User.query.filter_by(email=email).first()
+    if not user:
+        return jsonify({"status": "error", "message": "Пользователь не найден"}), 404
+
+    reset = PasswordReset.query.filter_by(user_id=user.id, code=code, used=False).order_by(PasswordReset.id.desc()).first()
+    if not reset:
+        return jsonify({"status": "error", "message": "Неверный код"}), 400
+    if reset.is_expired():
+        return jsonify({"status": "error", "message": "Код истёк. Запросите новый."}), 400
+
+    reset.used = True
+    db.session.commit()
+
+    import secrets
+    reset_token = secrets.token_urlsafe(32)
+
+    from ..models import PasswordResetToken
+    token_obj = PasswordResetToken.create_for_user(user, reset_token)
+
+    return jsonify({"status": "success", "reset_token": reset_token})
+
+
+# Сброс пароля — установка нового пароля
+@api_bp.route("/reset-password", methods=["POST"])
+def reset_password():
+    from ..models import PasswordResetToken
+    payload = request.get_json(silent=True) or {}
+    token = (payload.get("token") or "").strip()
+    new_password = payload.get("password") or ""
+
+    if not token or not new_password:
+        return jsonify({"status": "error", "message": "Укажите токен и новый пароль"}), 400
+
+    if len(new_password) < 6:
+        return jsonify({"status": "error", "message": "Пароль должен быть не менее 6 символов"}), 400
+
+    token_obj = PasswordResetToken.query.filter_by(token=token, used=False).first()
+    if not token_obj:
+        return jsonify({"status": "error", "message": "Неверный или использованный токен"}), 400
+    if token_obj.is_expired():
+        return jsonify({"status": "error", "message": "Токен истёк"}), 400
+
+    user = User.query.get(token_obj.user_id)
+    if not user:
+        return jsonify({"status": "error", "message": "Пользователь не найден"}), 404
+
+    user.set_password(new_password)
+    token_obj.used = True
+    db.session.commit()
+
+    return jsonify({"status": "success", "message": "Пароль успешно изменён"})
+
+
+# Admin: недавние игры
 @api_bp.route("/admin/recent-games")
 def admin_recent_games():
     if not _require_admin_json():
@@ -631,21 +774,37 @@ def admin_event_registrations(event_id):
 
     auto_cleanup_pending()
     regs = RegistrationsEvent.query.filter_by(event_id=event_id).all()
-    result = []
+    registrations = []
+    waitlist = []
     for reg in regs:
         team = reg.team
         members = [{"id": m.id, "name": m.name, "short_name": _format_short_name(m.name)} for m in team.members]
-        result.append({
+        captain = User.query.get(team.user_id)
+        reg_data = {
             "id": reg.id,
             "team_id": team.id,
             "team_name": team.name,
             "player_count": reg.player_count,
             "comment": reg.comment,
             "status": reg.status,
+            "waitlist": reg.waitlist,
             "registered_at": reg.registered_at.isoformat() if reg.registered_at else None,
             "members": members,
-        })
-    return jsonify({"status": "success", "registrations": result})
+            "captain": {
+                "name": captain.name if captain else "—",
+                "phone": str(captain.number_telephone) if captain and captain.number_telephone else "—",
+                "email": captain.email if captain else "—",
+            } if reg.waitlist else None,
+        }
+        if reg.waitlist:
+            waitlist.append(reg_data)
+        else:
+            registrations.append(reg_data)
+    return jsonify({
+        "status": "success",
+        "registrations": registrations,
+        "waitlist": waitlist,
+    })
 
 
 # Admin: таблица результатов

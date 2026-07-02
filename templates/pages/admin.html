@@ -283,6 +283,7 @@
     </div>
 
     <div class="reports-grid fade-in">
+      <!-- Dead code: exportReport stub is not implemented
       <div class="report-card">
         <div class="report-icon">📄</div>
         <h3>Отчет в PDF</h3>
@@ -302,6 +303,8 @@
         <h3>CSV экспорт</h3>
         <p>Данные в формате CSV для дальнейшей обработки</p>
         <button class="btn-main" onclick="exportReport('csv')">Скачать CSV</button>
+      </div>
+      -->
       </div>
     </div>
   </div>
@@ -336,9 +339,66 @@
           </tbody>
         </table>
       </div>
+      <div id="waitlist-section" style="display:none;border-top:2px solid rgba(245,197,24,0.2);">
+        <div style="padding:14px 16px;background:rgba(245,197,24,0.06);font-weight:700;color:var(--yellow);font-size:0.82rem;text-transform:uppercase;letter-spacing:0.5px;">Лист ожидания</div>
+        <div style="padding:0;">
+          <table class="participants-table">
+            <thead>
+              <tr>
+                <th>Команда</th>
+                <th>Игроков</th>
+                <th>Дата записи</th>
+                <th>Действия</th>
+              </tr>
+            </thead>
+            <tbody id="waitlist-tbody">
+            </tbody>
+          </table>
+        </div>
+      </div>
     </div>
     <div class="modal-footer">
       <button class="btn-submit" type="button" onclick="closeParticipantsModal()" style="flex:1;">Закрыть</button>
+    </div>
+  </div>
+</div>
+
+<!-- Waitlist Team Details Modal -->
+<div class="modal-overlay" id="waitlistDetailsModal" onclick="closeWaitlistDetailsModal(event)">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title">Детали команды из листа ожидания</div>
+      </div>
+      <button class="modal-close" onclick="closeWaitlistDetailsModal()">&times;</button>
+    </div>
+    <div class="modal-body" id="waitlistDetailsBody">
+      <div style="display:grid;gap:16px;">
+        <div class="form-group">
+          <label class="form-label">Название команды</label>
+          <div style="color:#fff;font-size:1.1rem;font-weight:700;" id="wl-details-team-name">—</div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Капитан</label>
+          <div style="color:#fff;" id="wl-details-captain-name">—</div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Количество игроков</label>
+          <div style="color:#fff;" id="wl-details-player-count">—</div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Телефон</label>
+          <div style="color:#fff;" id="wl-details-phone">—</div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Email</label>
+          <div style="color:#fff;" id="wl-details-email">—</div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" type="button" onclick="closeWaitlistDetailsModal()">Закрыть</button>
+      <button class="btn-submit" type="button" id="confirmWaitlistBtn" onclick="confirmWaitlistRegistration()">Подтвердили</button>
     </div>
   </div>
 </div>

@@ -3,6 +3,9 @@ let scoreboardEventId = null;
 let editingEventId = null;
 let currentPhotoPath = null;
 let pendingPhotoFile = null;
+let currentParticipantsEventId = null;
+let currentWaitlistData = [];
+let currentWaitlistRegId = null;
 
 document.addEventListener('DOMContentLoaded', function () {
   loadStats();
@@ -103,7 +106,7 @@ function populateEventsTable(events) {
   }
 
   for (const [id, event] of Object.entries(events)) {
-    const occupancy = event.max_seats ? Math.round((event.registered / event.max_seats) * 100) : 0;
+    const occupancy = event.max_seats ? Math.min(100, Math.round((event.registered / event.max_seats) * 100)) : 0;
     const row = document.createElement('tr');
     row.innerHTML = `
       <td><strong>${escapeHtml(event.title)}</strong></td>
@@ -501,35 +504,44 @@ function deleteEvent(id) {
     .catch(() => alert('Ошибка сети'));
 }
 
-function closeEvent(id) {
-  if (confirm('Закрыть событие досрочно? Новые регистрации будут невозможны.')) {
-    fetch(`/api/events/${id}`, {
-      method: 'DELETE',
-      credentials: 'same-origin',
-    })
-      .then((r) => r.json())
-      .then((result) => {
-        if (result.status === 'success') {
-          loadStats();
-        } else {
-          alert(result.message || 'Ошибка');
-        }
-      })
-      .catch(() => alert('Ошибка сети'));
-  }
-}
+// Dead code: closeEvent was a duplicate of deleteEvent
+// function closeEvent(id) {
+//   if (confirm('Закрыть событие досрочно? Новые регистрации будут невозможны.')) {
+//     fetch(`/api/events/${id}`, {
+//       method: 'DELETE',
+//       credentials: 'same-origin',
+//     })
+//       .then((r) => r.json())
+//       .then((result) => {
+//         if (result.status === 'success') {
+//           loadStats();
+//         } else {
+//           alert(result.message || 'Ошибка');
+//         }
+//       })
+//       .catch(() => alert('Ошибка сети'));
+//   }
+// }
 
 // --- Модалка участников ---
 
 function openParticipantsModal(eventId) {
   const modal = document.getElementById('participantsModal');
   const tbody = document.getElementById('participants-tbody');
+  const wlTbody = document.getElementById('waitlist-tbody');
+  const wlSection = document.getElementById('waitlist-section');
   const titleEl = document.getElementById('participantsModalTitle');
   const countEl = document.getElementById('participantsCount');
 
   if (!modal || !tbody) return;
 
+  currentParticipantsEventId = eventId;
+  currentWaitlistData = [];
+  currentWaitlistRegId = null;
+
   tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:20px;color:#888;">Загрузка...</td></tr>';
+  if (wlSection) wlSection.style.display = 'none';
+  if (wlTbody) wlTbody.innerHTML = '';
   titleEl.textContent = (statsData && statsData.events && statsData.events[eventId]?.title) || 'Мероприятие';
   countEl.textContent = '';
   modal.classList.add('show');
@@ -543,32 +555,124 @@ function openParticipantsModal(eventId) {
         return;
       }
       const regs = data.registrations || [];
+      const wlRegs = data.waitlist || [];
+      currentWaitlistData = wlRegs;
       countEl.textContent = `Зарегистрировано команд: ${regs.length}`;
+
+      // Render registered participants
       tbody.innerHTML = '';
       if (!regs.length) {
         tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:20px;color:#888;">Нет зарегистрированных команд</td></tr>';
-        return;
+      } else {
+        regs.forEach(reg => {
+          const membersList = reg.members.map(m => escapeHtml(m.short_name)).join(', ');
+          const isConfirmed = reg.status === 'confirmed';
+          const statusHtml = isConfirmed
+            ? '<span style="color:#4caf50;font-weight:600;">✅ Подтвердили</span>'
+            : '<span style="color:#ff9800;font-weight:600;">⏳ Ожидание</span>';
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td><strong>${escapeHtml(reg.team_name)}</strong></td>
+            <td>${reg.player_count}</td>
+            <td style="font-size:0.85rem;color:#aaa;">${membersList}</td>
+            <td>${reg.comment ? escapeHtml(reg.comment) : '—'}</td>
+            <td>${statusHtml}</td>
+          `;
+          tbody.appendChild(tr);
+        });
       }
-      regs.forEach(reg => {
-        const membersList = reg.members.map(m => escapeHtml(m.short_name)).join(', ');
-        const isConfirmed = reg.status === 'confirmed';
-        const statusHtml = isConfirmed
-          ? '<span style="color:#4caf50;font-weight:600;">✅ Подтвердили</span>'
-          : '<span style="color:#ff9800;font-weight:600;">⏳ Ожидание</span>';
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-          <td><strong>${escapeHtml(reg.team_name)}</strong></td>
-          <td>${reg.player_count}</td>
-          <td style="font-size:0.85rem;color:#aaa;">${membersList}</td>
-          <td>${reg.comment ? escapeHtml(reg.comment) : '—'}</td>
-          <td>${statusHtml}</td>
-        `;
-        tbody.appendChild(tr);
-      });
+
+      // Render waitlist
+      if (wlTbody && wlSection) {
+        wlTbody.innerHTML = '';
+        if (wlRegs.length) {
+          wlSection.style.display = 'block';
+          wlRegs.forEach(reg => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+              <td><strong>${escapeHtml(reg.team_name)}</strong></td>
+              <td>${reg.player_count}</td>
+              <td style="font-size:0.85rem;color:#aaa;">${reg.registered_at ? new Date(reg.registered_at).toLocaleString('ru-RU') : '—'}</td>
+              <td><button class="btn-edit" onclick="showWaitlistDetails(${reg.id})">Подробнее</button></td>
+            `;
+            wlTbody.appendChild(tr);
+          });
+        }
+      }
     })
     .catch(() => {
       tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:20px;color:#888;">Ошибка загрузки</td></tr>';
     });
+}
+
+function showWaitlistDetails(regId) {
+  const reg = currentWaitlistData.find(r => r.id === regId);
+  if (!reg) { alert('Данные не найдены'); return; }
+  currentWaitlistRegId = regId;
+
+  document.getElementById('wl-details-team-name').textContent = reg.team_name || '—';
+  document.getElementById('wl-details-captain-name').textContent = reg.captain?.name || '—';
+  document.getElementById('wl-details-player-count').textContent = reg.player_count || '—';
+  document.getElementById('wl-details-phone').textContent = reg.captain?.phone || '—';
+  document.getElementById('wl-details-email').textContent = reg.captain?.email || '—';
+  const confirmBtn = document.getElementById('confirmWaitlistBtn');
+  if (confirmBtn) {
+    confirmBtn.disabled = false;
+    confirmBtn.textContent = 'Подтвердили';
+  }
+
+  document.getElementById('waitlistDetailsModal').classList.add('show');
+  document.body.style.overflow = 'hidden';
+}
+
+function confirmWaitlistRegistration() {
+  if (!currentWaitlistRegId) {
+    alert('Сначала выберите команду из листа ожидания.');
+    return;
+  }
+
+  const confirmBtn = document.getElementById('confirmWaitlistBtn');
+  if (confirmBtn) {
+    confirmBtn.disabled = true;
+    confirmBtn.textContent = 'Сохраняем...';
+  }
+
+  fetch(`/api/admin/registrations/${currentWaitlistRegId}/confirm-waitlist`, {
+    method: 'POST',
+    credentials: 'same-origin',
+    headers: { 'Content-Type': 'application/json' },
+  })
+    .then((r) => r.json().then((body) => ({ ok: r.ok, body })))
+    .then(({ ok, body }) => {
+      if (!ok || body.status === 'error') {
+        alert(body.message || 'Не удалось подтвердить команду');
+        if (confirmBtn) {
+          confirmBtn.disabled = false;
+          confirmBtn.textContent = 'Подтвердили';
+        }
+        return;
+      }
+
+      closeWaitlistDetailsModal();
+      if (currentParticipantsEventId) {
+        openParticipantsModal(currentParticipantsEventId);
+      }
+      loadStats();
+    })
+    .catch(() => {
+      alert('Ошибка сети');
+      if (confirmBtn) {
+        confirmBtn.disabled = false;
+        confirmBtn.textContent = 'Подтвердили';
+      }
+    });
+}
+
+function closeWaitlistDetailsModal(e) {
+  if (e && e.target !== document.getElementById('waitlistDetailsModal')) return;
+  document.getElementById('waitlistDetailsModal').classList.remove('show');
+  currentWaitlistRegId = null;
+  document.body.style.overflow = '';
 }
 
 function closeParticipantsModal(e) {
@@ -672,14 +776,15 @@ async function submitEventForm() {
   }
 }
 
-function exportReport(format) {
-  const formats = {
-    pdf: 'PDF',
-    excel: 'Excel',
-    csv: 'CSV',
-  };
-  alert(`Начинаем экспорт в ${formats[format]}...`);
-}
+// Dead code: exportReport is a stub with no real implementation
+// function exportReport(format) {
+//   const formats = {
+//     pdf: 'PDF',
+//     excel: 'Excel',
+//     csv: 'CSV',
+//   };
+//   alert(`Начинаем экспорт в ${formats[format]}...`);
+// }
 
 function formatNumber(num) {
   return new Intl.NumberFormat('ru-RU').format(num);
@@ -733,6 +838,11 @@ function initializePhotoUpload() {
     const participantsModal = document.getElementById('participantsModal');
     if (participantsModal && participantsModal.classList.contains('show')) {
       closeParticipantsModal();
+      return;
+    }
+    const wlDetailsModal = document.getElementById('waitlistDetailsModal');
+    if (wlDetailsModal && wlDetailsModal.classList.contains('show')) {
+      closeWaitlistDetailsModal();
     }
   });
 }
@@ -779,11 +889,12 @@ document.addEventListener('click', function (e) {
   });
 });
 
-document.addEventListener('keydown', function (event) {
-  if (event.key === 'Escape') {
-    const dropdowns = document.querySelectorAll('.cabinet-dropdown');
-    dropdowns.forEach(function(dropdown) {
-      dropdown.classList.remove('show');
-    });
-  }
-});
+// Dead code: duplicate Escape handler (already handled in initializePhotoUpload)
+// document.addEventListener('keydown', function (event) {
+//   if (event.key === 'Escape') {
+//     const dropdowns = document.querySelectorAll('.cabinet-dropdown');
+//     dropdowns.forEach(function(dropdown) {
+//       dropdown.classList.remove('show');
+//     });
+//   }
+// });

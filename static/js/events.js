@@ -1,6 +1,11 @@
 let eventsData = [];
 let currentFilter = 'all';
 
+function escapeHtml(str) {
+  if (!str) return '';
+  return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
 function loadEvents() {
   const grid = document.getElementById('eventsGrid');
   if (grid) {
@@ -22,8 +27,8 @@ function loadEvents() {
 }
 
 function getSeatsInfo(event) {
-  const left = event.total - event.booked;
-  if (left === 0) return { text: 'Мест нет', cls: 'seats-full', disabled: true };
+  const left = Math.max(0, event.total - event.booked);
+  if (left === 0) return { text: 'Мест нет', cls: 'seats-full', disabled: false };
   if (left <= 4) return { text: `Осталось ${left} места!`, cls: 'seats-few', disabled: false };
   return { text: `Мест: ${left} из ${event.total}`, cls: 'seats-ok', disabled: false };
 }
@@ -34,6 +39,7 @@ function renderEvents(filter) {
   grid.innerHTML = '';
   filtered.forEach((ev, i) => {
     const seats = getSeatsInfo(ev);
+    const seatsLeft = Math.max(0, ev.total - ev.booked);
     const card = document.createElement('div');
     card.className = 'event-card fade-in';
     card.style.animationDelay = (i * 0.08) + 's';
@@ -44,7 +50,7 @@ function renderEvents(filter) {
         ${ev.tag ? `<div class="event-tag">${ev.tag}</div>` : ''}
       </div>
       <div class="event-card-body">
-        <div class="event-card-title">${ev.title}</div>
+        <div class="event-card-title">${escapeHtml(ev.title)}</div>
         <div class="event-meta">
           <div class="event-meta-row"><span class="event-meta-icon"></span>${ev.date}</div>
           <div class="event-meta-row"><span class="event-meta-icon"></span>${ev.time}</div>
@@ -57,9 +63,9 @@ function renderEvents(filter) {
           </div>
           <div class="seats-badge ${seats.cls}">${seats.text}</div>
         </div>
-        <button class="btn-register" ${seats.disabled ? 'disabled' : ''}
-          onclick="openRegModal(${ev.id}, '${ev.title.replace(/'/g, "\\'")}', '${ev.date}, ${ev.time}', '${ev.price} ₽ с игрока')">
-          ${seats.disabled ? 'Мест нет' : 'Зарегистрироваться →'}
+        <button class="btn-register"
+          onclick="openRegModal(${ev.id}, '${escapeHtml(ev.title)}', '${escapeHtml(ev.date)}, ${escapeHtml(ev.time)}', '${ev.price} ₽ с игрока')">
+          ${seatsLeft === 0 ? 'В лист ожидания →' : 'Зарегистрироваться →'}
         </button>
       </div>
     `;

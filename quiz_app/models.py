@@ -1,5 +1,6 @@
 import json
-from datetime import datetime
+import secrets
+from datetime import datetime, timedelta
 
 from . import db
 from flask_login import UserMixin
@@ -98,6 +99,7 @@ class RegistrationsEvent(db.Model):
     comment = db.Column(db.String(500), nullable=True)
     registered_at = db.Column(db.DateTime, nullable=False, default=datetime.now)
     status = db.Column(db.String(20), default="pending")
+    waitlist = db.Column(db.Boolean, default=False)
 
     event = db.relationship("Event", back_populates="registrations")
     team = db.relationship("Team", back_populates="registrations")
@@ -112,3 +114,72 @@ class Team(db.Model):
 
     members = db.relationship("User", secondary=team_members, back_populates="teams")
     registrations = db.relationship("RegistrationsEvent", back_populates="team", cascade="all, delete-orphan")
+
+
+class PasswordReset(db.Model):
+    __tablename__ = "password_resets"
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
+    code = db.Column(db.String(6), nullable=False)
+    created_at = db.Column(db.DateTime, nullable=False, default=datetime.now)
+    expires_at = db.Column(db.DateTime, nullable=False)
+    used = db.Column(db.Boolean, default=False)
+
+    user = db.relationship("User", backref="password_resets")
+
+    @staticmethod
+    def generate_code():
+        return f"{secrets.randbelow(10**6):06d}"
+
+    def is_expired(self):
+        return datetime.now() > self.expires_at
+
+    @staticmethod
+    def create_for_user(user):
+        old = PasswordReset.query.filter_by(user_id=user.id, used=False).all()
+        for r in old:
+            r.used = True
+        db.session.flush()
+
+        code = PasswordReset.generate_code()
+        reset = PasswordReset(
+            user_id=user.id,
+            code=code,
+            expires_at=datetime.now() + timedelta(minutes=15),
+        )
+        db.session.add(reset)
+        db.session.commit()
+        return code
+
+
+class PasswordResetToken(db.Model):
+    __tablename__ = "password_reset_tokens"
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
+    token = db.Column(db.String(64), nullable=False, unique=True)
+    created_at = db.Column(db.DateTime, nullable=False, default=datetime.now)
+    expires_at = db.Column(db.DateTime, nullable=False)
+    used = db.Column(db.Boolean, default=False)
+
+    user = db.relationship("User")
+
+    def is_expired(self):
+        return datetime.now() > self.expires_at
+
+    @staticmethod
+    def create_for_user(user, token):
+        old = PasswordResetToken.query.filter_by(user_id=user.id, used=False).all()
+        for r in old:
+            r.used = True
+        db.session.flush()
+
+        obj = PasswordResetToken(
+            user_id=user.id,
+            token=token,
+            expires_at=datetime.now() + timedelta(minutes=15),
+        )
+        db.session.add(obj)
+        db.session.commit()
+        return obj
