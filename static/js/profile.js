@@ -31,7 +31,8 @@ function renderRegistrations(regs, tab) {
     const day = parseInt(parts[0]);
     const year = parseInt(parts[2]);
     if (isNaN(day) || isNaN(year) || month === undefined) return tab === 'active';
-    const eventDate = new Date(year, month, day);
+    const timeParts = (r.event_time || '00:00').split(':');
+    const eventDate = new Date(year, month, day, parseInt(timeParts[0]), parseInt(timeParts[1]));
     return tab === 'active' ? eventDate >= now : eventDate < now;
   });
 
@@ -211,10 +212,24 @@ function escapeHtml(s) {
 
 function toggleCabinetDropdown(event) {
   event.stopPropagation();
-  const dropdown = document.getElementById('cabinetDropdown') || document.getElementById('cabinetDropdownMobile');
-  if (dropdown) {
-    dropdown.classList.toggle('show');
+  if (window.innerWidth <= 768) {
+    const modal = document.getElementById('cabinetModal');
+    if (modal) {
+      modal.classList.add('active');
+    }
+    closeMobileMenu();
+  } else {
+    const dropdown = document.getElementById('cabinetDropdown');
+    if (dropdown) {
+      dropdown.classList.toggle('show');
+    }
   }
+}
+
+function closeCabinetModal(e) {
+  if (e && e.target !== e.currentTarget) return;
+  const modal = document.getElementById('cabinetModal');
+  if (modal) modal.classList.remove('active');
 }
 
 document.addEventListener('click', function (e) {

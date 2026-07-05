@@ -581,3 +581,10 @@
   .profile-content { padding: 32px 1rem 60px; }
   .profile-section-title { font-size: 1.3rem; }
 }
+
+/* Cabinet modal items fill width */
+#cabinetModal .cabinet-dropdown-item {
+  width: 100%;
+  border-radius: 10px;
+  margin-bottom: 4px;
+}

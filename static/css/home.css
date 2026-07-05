@@ -444,6 +444,7 @@
 }
 .btn-register:hover { background: var(--yellow-light); transform: translateY(-1px); }
 .btn-register:disabled { background: #2a2a2a; color: #555; cursor: not-allowed; transform: none; }
+.btn-register--closed { background: #2a2a2a; color: #555; cursor: not-allowed; transform: none; pointer-events: none; }
 
 .chat-fab {
   position: fixed;

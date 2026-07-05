@@ -8,29 +8,27 @@
   <a href="/">На главную</a>
   <a href="/#events">Календарь</a>
   <a href="https://vk.com/tltquiz" target="_blank">Корпоратив</a>
-  {% if current_user and current_user.role == 'admin' %}
-    <div class="dropdown-wrapper">
-      <button class="btn-profile active" id="cabinetBtn" onclick="toggleCabinetDropdown(event)">Кабинет</button>
-      <div class="cabinet-dropdown" id="cabinetDropdown">
-        <div class="cabinet-dropdown-header">
-          <span>Настройки</span>
-        </div>
-        <button class="cabinet-dropdown-item" onclick="openModal('editProfileModal')">
-           Редактирование профиля
-        </button>
-        <button class="cabinet-dropdown-item" onclick="openModal('securityModal')">
-           Безопасность
-        </button>
-        <button class="cabinet-dropdown-item" onclick="openModal('notificationsModal')">
-           Уведомления
-        </button>
-        <div class="cabinet-dropdown-divider"></div>
-        <button class="cabinet-dropdown-item logout-item" onclick="window.location.href='/logout'">
-           Выход
-        </button>
+  <div class="dropdown-wrapper">
+    <button class="btn-profile" id="cabinetBtn" onclick="toggleCabinetDropdown(event)">Кабинет</button>
+    <div class="cabinet-dropdown" id="cabinetDropdown">
+      <div class="cabinet-dropdown-header">
+        <span>Настройки</span>
       </div>
+      <button class="cabinet-dropdown-item" onclick="openModal('editProfileModal')">
+         Редактирование профиля
+      </button>
+      <button class="cabinet-dropdown-item" onclick="openModal('securityModal')">
+         Безопасность
+      </button>
+      <button class="cabinet-dropdown-item" onclick="openModal('notificationsModal')">
+         Уведомления
+      </button>
+      <div class="cabinet-dropdown-divider"></div>
+      <button class="cabinet-dropdown-item logout-item" onclick="logout()">
+         Выход
+      </button>
     </div>
-  {% endif %}
+  </div>
   <a href="/logout" style="display: none;">Выход</a>
 {% endblock %}
 {% block mobile_menu_links %}
@@ -39,23 +37,23 @@
   <a href="https://vk.com/tltquiz" target="_blank" onclick="closeMobileMenu()">Корпоратив</a>
   {% if current_user and current_user.role == 'admin' %}
     <div class="dropdown-wrapper">
-      <button class="btn-profile active" id="cabinetBtnMobile" onclick="toggleCabinetDropdown(event)">Кабинет</button>
+      <button class="btn-profile" id="cabinetBtnMobile" onclick="toggleCabinetDropdown(event)">Кабинет</button>
       <div class="cabinet-dropdown" id="cabinetDropdownMobile">
         <div class="cabinet-dropdown-header">
           <span>Настройки</span>
         </div>
         <button class="cabinet-dropdown-item" onclick="openModal('editProfileModal'); closeMobileMenu();">
-          <span class="cabinet-icon">👤</span> Редактирование профиля
+           Редактирование профиля
         </button>
         <button class="cabinet-dropdown-item" onclick="openModal('securityModal'); closeMobileMenu();">
-          <span class="cabinet-icon">🔒</span> Безопасность
+           Безопасность
         </button>
         <button class="cabinet-dropdown-item" onclick="openModal('notificationsModal'); closeMobileMenu();">
-          <span class="cabinet-icon">🔔</span> Уведомления
+           Уведомления
         </button>
         <div class="cabinet-dropdown-divider"></div>
-        <button class="cabinet-dropdown-item logout-item" onclick="window.location.href='/logout'">
-          <span class="cabinet-icon">🚪</span> Выход
+        <button class="cabinet-dropdown-item logout-item" onclick="logout(); closeMobileMenu();">
+           Выход
         </button>
       </div>
     </div>
@@ -223,13 +221,13 @@
     <div class="section-header fade-in" style="display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; flex-wrap: wrap;">
       <div>
         <h2 class="section-title">Результаты <span>последней игры</span></h2>
-        <p class="section-sub">Выберите игру из списка недавних, введите очки по турам. Сумма считается сразу; места — когда заполнены все ячейки таблицы.</p>
+        <p class="section-sub">Выберите игру из списка недавних, укажите количество туров, введите очки по турам. Сумма считается сразу, места — когда заполнены все ячейки таблицы.</p>
       </div>
       <button type="button" class="btn-main" id="btn-open-game-modal">Выбрать игру</button>
     </div>
 
     <p class="scoreboard-empty fade-in" id="scoreboard-empty">Игра не выбрана. Нажмите «Выбрать игру», чтобы загрузить команды и таблицу туров.</p>
-    <p class="scoreboard-hint fade-in" id="scoreboard-places-hint" hidden>Заполните все 7 туров у каждой команды — тогда места проставятся автоматически.</p>
+    <p class="scoreboard-hint fade-in" id="scoreboard-places-hint" hidden>Укажите сколько туров в игре, а после начните их заполнение. Места проставятся автоматически и отобразятся на сайте</p>
 
     <div class="scoreboard-wrap fade-in" id="scoreboard-wrap" hidden>
       <div class="scoreboard-banner" id="scoreboard-banner-title">—</div>
@@ -485,6 +483,31 @@
     <div class="modal-footer">
       <button class="btn-cancel" type="button" onclick="closeEventModal()">Отменить</button>
       <button class="btn-submit" type="button" onclick="submitEventForm()">Сохранить событие</button>
+    </div>
+  </div>
+</div>
+
+<!-- Cabinet modal (mobile) -->
+<div class="modal-overlay-custom" id="cabinetModal" onclick="closeCabinetModal(event)">
+  <div class="modal-box" onclick="event.stopPropagation()">
+    <div class="modal-header-custom">
+      <div class="modal-title-custom">Настройки</div>
+      <button class="modal-close-btn" onclick="closeCabinetModal()">×</button>
+    </div>
+    <div class="modal-body">
+      <button class="cabinet-dropdown-item" onclick="openModal('editProfileModal'); closeCabinetModal(); closeMobileMenu();">
+         Редактирование профиля
+      </button>
+      <button class="cabinet-dropdown-item" onclick="openModal('securityModal'); closeCabinetModal(); closeMobileMenu();">
+         Безопасность
+      </button>
+      <button class="cabinet-dropdown-item" onclick="openModal('notificationsModal'); closeCabinetModal(); closeMobileMenu();">
+         Уведомления
+      </button>
+      <div class="cabinet-dropdown-divider"></div>
+      <button class="cabinet-dropdown-item logout-item" onclick="logout(); closeCabinetModal();">
+         Выход
+      </button>
     </div>
   </div>
 </div>

@@ -119,6 +119,10 @@ button.btn-profile {
   gap: 8px;
 }
 .btn-main:hover { background: var(--yellow-light); transform: translateY(-2px); box-shadow: 0 8px 24px rgba(245,197,24,0.35); }
+.btn-main--disabled,
+.btn-main:disabled { background: #2a2a2a; color: #555; cursor: not-allowed; transform: none; box-shadow: none; }
+.btn-main--disabled:hover,
+.btn-main:disabled:hover { background: #2a2a2a; color: #555; transform: none; box-shadow: none; }
 .btn-outline {
   background: transparent;
   color: var(--yellow);
@@ -318,7 +322,7 @@ footer {
 .mobile-menu {
   display: none;
   position: fixed;
-  top: 68px; left: 0; right: 0;
+  top: 68px; left: 0; right: 0; bottom: 0;
   background: rgba(13,13,13,0.98);
   border-bottom: 1px solid var(--border);
   z-index: 99;
@@ -326,6 +330,7 @@ footer {
   flex-direction: column;
   gap: 8px;
   backdrop-filter: blur(18px);
+  overflow-y: auto;
 }
 .mobile-menu.open { display: flex; }
 .mobile-menu a {

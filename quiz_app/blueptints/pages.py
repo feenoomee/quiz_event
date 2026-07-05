@@ -24,7 +24,10 @@ def index():
     if nearest:
         d = nearest.date
         date_ru = f"{d.day} {_MONTHS_RU[d.month]} {d.year}, {_WEEKDAYS_RU[d.weekday()]}"
-        seats_left = nearest.seats - nearest.booked
+        seats_left = max(0, nearest.seats - nearest.booked)
+        now = datetime.now()
+        cutoff = datetime(d.year, d.month, d.day, 14, 0)
+        registration_open = d > now if d.date() != now.date() else now < cutoff
         nearest_event = {
             "id": nearest.id,
             "name": nearest.name,
@@ -36,6 +39,7 @@ def index():
             "booked": nearest.booked,
             "seats_left": seats_left,
             "photo": nearest.photo,
+            "registration_open": registration_open,
         }
     return render_template("pages/index.html", nearest_event=nearest_event)
 

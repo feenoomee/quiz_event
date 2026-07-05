@@ -7,3 +7,4 @@ phonenumbers
 python-dotenv
 flask-migrate
 Pillow
+APScheduler==3.10.4

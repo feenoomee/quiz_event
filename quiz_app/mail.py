@@ -50,6 +50,12 @@ def send_registration_confirmed_email(user, event):
     send_email(user.email, f"Участие подтверждено — {event.name}", html)
 
 
+def send_reminder_email(user, event):
+    """Send reminder email on event day — confirm participation before 14:00."""
+    html = render_template("emails/reminder.html", user=user, event=event)
+    send_email(user.email, f"Напоминание: {event.name} сегодня!", html)
+
+
 def send_password_reset_email(user, code):
     """Send password reset code email."""
     html = render_template("emails/reset_password.html", user=user, code=code)

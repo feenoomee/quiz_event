@@ -63,10 +63,13 @@ function renderEvents(filter) {
           </div>
           <div class="seats-badge ${seats.cls}">${seats.text}</div>
         </div>
-        <button class="btn-register"
-          onclick="openRegModal(${ev.id}, '${escapeHtml(ev.title)}', '${escapeHtml(ev.date)}, ${escapeHtml(ev.time)}', '${ev.price} ₽ с игрока')">
-          ${seatsLeft === 0 ? 'В лист ожидания →' : 'Зарегистрироваться →'}
-        </button>
+        ${ev.registration_open === false
+          ? '<button class="btn-register btn-register--closed" disabled>Регистрация закрыта</button>'
+          : `<button class="btn-register"
+              onclick="openRegModal(${ev.id}, '${escapeHtml(ev.title)}', '${escapeHtml(ev.date)}, ${escapeHtml(ev.time)}', '${ev.price} ₽ с игрока')">
+              ${seatsLeft === 0 ? 'В лист ожидания →' : 'Зарегистрироваться →'}
+            </button>`
+        }
       </div>
     `;
     grid.appendChild(card);

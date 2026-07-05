@@ -43,6 +43,7 @@ async function openRegModal(eventId, name, date, price) {
 
 function closeRegModal(e) {
   if (e && e.target !== document.getElementById('regModal')) return;
+  if (window.getSelection().toString().length > 0) return;
   document.getElementById('regModal').classList.remove('open');
   document.body.style.overflow = '';
 }
@@ -148,6 +149,7 @@ function openAuthModal(e) {
 
 function closeAuthModal(e) {
   if (e && e.target !== document.getElementById('authModal')) return;
+  if (window.getSelection().toString().length > 0) return;
   document.getElementById('authModal').classList.remove('open');
   document.body.style.overflow = '';
 }
@@ -158,6 +160,8 @@ function switchAuthTab(tab, btn) {
   document.getElementById('loginForm').style.display = tab === 'login' ? 'block' : 'none';
   document.getElementById('registerForm').style.display = tab === 'register' ? 'block' : 'none';
   document.getElementById('authSubmitBtn').textContent = tab === 'login' ? 'Войти' : 'Создать аккаунт';
+  const errEl = document.getElementById('loginError');
+  if (errEl) errEl.style.display = 'none';
 }
 
 async function submitAuth() {
@@ -203,7 +207,10 @@ async function submitAuth() {
 
     const data = await response.json();
     if (!response.ok) {
-      alert(data.message || 'Ошибка входа.');
+      document.getElementById('authPassword').value = '';
+      const errEl = document.getElementById('loginError');
+      errEl.textContent = 'Логин или пароль введены неверно';
+      errEl.style.display = 'block';
       return;
     }
 
@@ -244,6 +251,7 @@ function openForgotModal() {
 
 function closeForgotModal(e) {
   if (e && e.target !== document.getElementById('forgotModal')) return;
+  if (window.getSelection().toString().length > 0) return;
   document.getElementById('forgotModal').classList.remove('open');
   document.body.style.overflow = '';
 }

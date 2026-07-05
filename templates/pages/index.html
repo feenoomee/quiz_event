@@ -75,9 +75,13 @@
       </div>
       <div class="hero-price">{{ nearest_event.price }} ₽ <small style="font-size:0.7rem;color:#888;font-weight:500">с игрока</small></div>
       <div class="hero-seats">{% if nearest_event.seats_left == 0 %}Мест нет, можно в лист ожидания{% else %}Осталось {{ nearest_event.seats_left }} мест!{% endif %}</div>
-      <button class="btn-main" onclick="openRegModal({{ nearest_event.id }}, '{{ nearest_event.name }}', '{{ nearest_event.date }}, {{ nearest_event.time }}', '{{ nearest_event.price }} ₽')">
-        {% if nearest_event.seats_left == 0 %}В лист ожидания →{% else %}Зарегистрироваться →{% endif %}
-      </button>
+      {% if nearest_event.registration_open == false %}
+        <button class="btn-main btn-main--disabled" disabled>Регистрация закрыта</button>
+      {% else %}
+        <button class="btn-main" onclick="openRegModal({{ nearest_event.id }}, '{{ nearest_event.name }}', '{{ nearest_event.date }}, {{ nearest_event.time }}', '{{ nearest_event.price }} ₽')">
+          {% if nearest_event.seats_left == 0 %}В лист ожидания →{% else %}Зарегистрироваться →{% endif %}
+        </button>
+      {% endif %}
     </div>
     {% endif %}
   </div>
@@ -124,7 +128,7 @@
   </div>
 </section>
 
-<!-- 4. Плавающий чат (UI) -->
+<!-- 4. Плавающий чат (UI) — скрыт
 <div class="chat-fab">
   <div class="chat-panel" id="chatPanel">
     <div class="chat-header">
@@ -157,6 +161,7 @@
     <div class="chat-fab-badge" id="chatBadge">2</div>
   </button>
 </div>
+-->
 
 <!-- 5. Модалка регистрации на игру -->
 <div class="modal-overlay" id="regModal" onclick="closeRegModal(event)">
@@ -239,12 +244,13 @@
       <div id="loginForm">
         <div class="form-group">
           <label class="form-label">Email</label>
-          <input id="authIdentifier" class="form-input" type="email" placeholder="email@example.com" />
+          <input id="authIdentifier" class="form-input" type="email" placeholder="email@example.com" onkeydown="if (event.key === 'Enter') submitAuth()" />
         </div>
         <div class="form-group">
           <label class="form-label">Пароль</label>
-          <input id="authPassword" class="form-input" type="password" placeholder="Введите пароль" />
+          <input id="authPassword" class="form-input" type="password" placeholder="Введите пароль" onkeydown="if (event.key === 'Enter') submitAuth()" />
         </div>
+        <div id="loginError" style="display:none;color:#ff4444;font-size:0.85rem;margin-bottom:8px;padding:8px 12px;background:rgba(255,68,68,0.1);border-radius:6px;"></div>
         <div style="text-align:right;margin-top:-4px;margin-bottom:12px;">
           <a href="#" style="color:#888;font-size:0.82rem;text-decoration:underline;" onclick="openForgotModal();return false;">Забыли пароль?</a>
         </div>
@@ -275,7 +281,7 @@
         </div>
         <div class="form-group">
           <label class="form-label">Подтвердите пароль</label>
-          <input id="signupPasswordConfirm" class="form-input" type="password" placeholder="Повторите пароль" />
+          <input id="signupPasswordConfirm" class="form-input" type="password" placeholder="Повторите пароль" onkeydown="if (event.key === 'Enter') submitAuth()" />
         </div>
         <div id="signupPasswordError" class="form-error" style="color:#e53935;font-size:0.85rem;margin-top:-8px;margin-bottom:8px;display:none;">Пароли не совпадают</div>
       </div>

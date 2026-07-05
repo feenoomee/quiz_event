@@ -424,6 +424,15 @@ def register_team():
     try:
         db.session.add(reg)
         db.session.commit()
+
+        if not is_waitlist:
+            from ..mail import send_reminder_email
+            for member in team.members:
+                try:
+                    send_reminder_email(member, event)
+                except Exception:
+                    pass
+
         message = "Команда добавлена в лист ожидания" if is_waitlist else "Команда зарегистрирована"
         return jsonify({"status": "success", "message": message, "waitlist": is_waitlist}), 201
     except Exception:

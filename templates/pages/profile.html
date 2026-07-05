@@ -37,22 +37,22 @@
   <a href="/#events" onclick="closeMobileMenu()">Календарь</a>
   <a href="https://vk.com/tltquiz" target="_blank" onclick="closeMobileMenu()">Корпоратив</a>
   <div class="dropdown-wrapper">
-    <button class="btn-profile" id="cabinetBtnMobile" onclick="toggleCabinetDropdown(event); closeMobileMenu()">Кабинет</button>
+    <button class="btn-profile" id="cabinetBtnMobile" onclick="toggleCabinetDropdown(event)">Кабинет</button>
     <div class="cabinet-dropdown" id="cabinetDropdownMobile">
       <div class="cabinet-dropdown-header">
         <span>Настройки</span>
       </div>
-      <button class="cabinet-dropdown-item" onclick="openModal('editProfileModal')">
+      <button class="cabinet-dropdown-item" onclick="openModal('editProfileModal'); closeMobileMenu();">
          Редактирование профиля
       </button>
-      <button class="cabinet-dropdown-item" onclick="openModal('securityModal')">
+      <button class="cabinet-dropdown-item" onclick="openModal('securityModal'); closeMobileMenu();">
          Безопасность
       </button>
-      <button class="cabinet-dropdown-item" onclick="openModal('notificationsModal')">
+      <button class="cabinet-dropdown-item" onclick="openModal('notificationsModal'); closeMobileMenu();">
          Уведомления
       </button>
       <div class="cabinet-dropdown-divider"></div>
-      <button class="cabinet-dropdown-item logout-item" onclick="logout()">
+      <button class="cabinet-dropdown-item logout-item" onclick="logout(); closeMobileMenu();">
          Выход
       </button>
     </div>
@@ -206,6 +206,31 @@
     <div class="edit-actions" style="padding: 0 20px 20px;">
       <button type="button" class="btn-cancel" onclick="closeModal()">Отменить</button>
       <button type="button" class="btn-main" onclick="submitCreateTeam()">Создать</button>
+    </div>
+  </div>
+</div>
+
+<!-- Cabinet modal (mobile) -->
+<div class="modal-overlay-custom" id="cabinetModal" onclick="closeCabinetModal(event)">
+  <div class="modal-box" onclick="event.stopPropagation()">
+    <div class="modal-header-custom">
+      <div class="modal-title-custom">Настройки</div>
+      <button class="modal-close-btn" onclick="closeCabinetModal()">×</button>
+    </div>
+    <div class="modal-body">
+      <button class="cabinet-dropdown-item" onclick="openModal('editProfileModal'); closeCabinetModal(); closeMobileMenu();">
+         Редактирование профиля
+      </button>
+      <button class="cabinet-dropdown-item" onclick="openModal('securityModal'); closeCabinetModal(); closeMobileMenu();">
+         Безопасность
+      </button>
+      <button class="cabinet-dropdown-item" onclick="openModal('notificationsModal'); closeCabinetModal(); closeMobileMenu();">
+         Уведомления
+      </button>
+      <div class="cabinet-dropdown-divider"></div>
+      <button class="cabinet-dropdown-item logout-item" onclick="logout(); closeCabinetModal();">
+         Выход
+      </button>
     </div>
   </div>
 </div>
