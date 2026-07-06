@@ -9,6 +9,7 @@ let currentWaitlistRegId = null;
 
 document.addEventListener('DOMContentLoaded', function () {
   loadStats();
+  loadHistory();
   initializePhotoUpload();
   observeFadeInElements();
   initScoreboardUi();
@@ -95,6 +96,51 @@ function updateQuickStats(data) {
   setText('occupancy-rate', data.occupancy_rate + '%');
 }
 
+function loadHistory() {
+  const container = document.getElementById('historyList');
+  if (!container) return;
+
+  fetch('/api/admin/history', { credentials: 'same-origin' })
+    .then(r => {
+      if (r.status === 403) throw new Error('Доступ запрещён');
+      return r.json();
+    })
+    .then(data => {
+      if (!data.length) {
+        container.innerHTML = '<div style="text-align:center;padding:30px;color:#888;">Нет прошедших мероприятий за последние 6 месяцев</div>';
+        return;
+      }
+      container.innerHTML = '';
+      data.forEach(ev => {
+        const card = document.createElement('div');
+        card.className = 'history-card';
+        card.innerHTML = `
+          <div class="history-card-top">
+            <div class="history-card-title">${escapeHtml(ev.title)}</div>
+            <div class="history-card-meta">${escapeHtml(ev.date)} ${escapeHtml(ev.time)} · ${escapeHtml(ev.location)}</div>
+          </div>
+          <div class="history-card-stats">
+            <span>Команд: <strong>${ev.total_teams}</strong></span>
+            <span>Участников: <strong>${ev.total_players}</strong></span>
+            <span>${ev.has_scores ? 'Результаты: есть' : 'Результатов: нет'}</span>
+          </div>
+          <div class="history-card-actions">
+            <button class="btn-edit" onclick="exportEventExcel(${ev.id})">Скачать Excel</button>
+          </div>
+        `;
+        container.appendChild(card);
+      });
+    })
+    .catch(err => {
+      console.error('Error loading history:', err);
+      container.innerHTML = '<div style="text-align:center;padding:30px;color:#888;">Ошибка загрузки истории</div>';
+    });
+}
+
+function exportEventExcel(eventId) {
+  window.location.href = '/api/admin/events/' + eventId + '/export';
+}
+
 function populateEventsTable(events) {
   const tbody = document.getElementById('events-tbody');
   if (!tbody) return;
@@ -105,7 +151,10 @@ function populateEventsTable(events) {
     return;
   }
 
+  let hasUpcoming = false;
   for (const [id, event] of Object.entries(events)) {
+    if (event.is_past) continue;
+    hasUpcoming = true;
     const occupancy = event.max_seats ? Math.min(100, Math.round((event.registered / event.max_seats) * 100)) : 0;
     const row = document.createElement('tr');
     row.innerHTML = `
@@ -117,11 +166,14 @@ function populateEventsTable(events) {
       <td>
         <button class="btn-edit" onclick="editEvent(${id})">Редакт.</button>
         <button class="btn-delete" onclick="deleteEvent(${id})">Удал.</button>
-        <button class="btn-close" onclick="closeEvent(${id})">Закрыть</button>
         <button class="btn-participants" onclick="openParticipantsModal(${id})">Участники</button>
       </td>
     `;
     tbody.appendChild(row);
+  }
+
+  if (!hasUpcoming) {
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:30px;color:#888;">Нет предстоящих мероприятий</td></tr>';
   }
 }
 
@@ -539,7 +591,7 @@ function openParticipantsModal(eventId) {
   currentWaitlistData = [];
   currentWaitlistRegId = null;
 
-  tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:20px;color:#888;">Загрузка...</td></tr>';
+  tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:20px;color:#888;">Загрузка...</td></tr>';
   if (wlSection) wlSection.style.display = 'none';
   if (wlTbody) wlTbody.innerHTML = '';
   titleEl.textContent = (statsData && statsData.events && statsData.events[eventId]?.title) || 'Мероприятие';
@@ -551,7 +603,7 @@ function openParticipantsModal(eventId) {
     .then(r => r.json())
     .then(data => {
       if (data.status === 'error') {
-        tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:20px;color:#888;">${escapeHtml(data.message)}</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:20px;color:#888;">${escapeHtml(data.message)}</td></tr>`;
         return;
       }
       const regs = data.registrations || [];
@@ -562,7 +614,7 @@ function openParticipantsModal(eventId) {
       // Render registered participants
       tbody.innerHTML = '';
       if (!regs.length) {
-        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:20px;color:#888;">Нет зарегистрированных команд</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:20px;color:#888;">Нет зарегистрированных команд</td></tr>';
       } else {
         regs.forEach(reg => {
           const membersList = reg.members.map(m => escapeHtml(m.short_name)).join(', ');
@@ -577,6 +629,7 @@ function openParticipantsModal(eventId) {
             <td style="font-size:0.85rem;color:#aaa;">${membersList}</td>
             <td>${reg.comment ? escapeHtml(reg.comment) : '—'}</td>
             <td>${statusHtml}</td>
+            <td><button class="btn-delete" onclick="adminRemoveRegistration(${reg.id}, '${escapeAttr(reg.team_name)}')">Удалить</button></td>
           `;
           tbody.appendChild(tr);
         });
@@ -666,6 +719,30 @@ function confirmWaitlistRegistration() {
         confirmBtn.textContent = 'Подтвердили';
       }
     });
+}
+
+function adminRemoveRegistration(regId, teamName) {
+  if (!confirm(`Удалить команду «${teamName}» из участников? Будет отправлено уведомление на почту.`)) {
+    return;
+  }
+
+  fetch(`/api/admin/registrations/${regId}/remove`, {
+    method: 'POST',
+    credentials: 'same-origin',
+    headers: { 'Content-Type': 'application/json' },
+  })
+    .then(r => r.json().then(body => ({ ok: r.ok, body })))
+    .then(({ ok, body }) => {
+      if (!ok || body.status === 'error') {
+        alert(body.message || 'Не удалось удалить команду');
+        return;
+      }
+      if (currentParticipantsEventId) {
+        openParticipantsModal(currentParticipantsEventId);
+      }
+      loadStats();
+    })
+    .catch(() => alert('Ошибка сети'));
 }
 
 function closeWaitlistDetailsModal(e) {

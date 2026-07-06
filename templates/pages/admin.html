@@ -272,38 +272,16 @@
   </div>
 </div>
 
-<!-- Export Section -->
+<!-- History Section -->
 <section class="section admin-content">
   <div class="section-inner">
     <div class="section-header fade-in">
-      <h2 class="section-title">Экспорт и <span>отчеты</span></h2>
-      <p class="section-sub">Скачивайте отчеты в различных форматах</p>
+      <h2 class="section-title">История <span>мероприятий</span></h2>
+      <p class="section-sub">Прошедшие мероприятия за последние 6 месяцев — нажмите на событие, чтобы скачать Excel-отчёт</p>
     </div>
 
-    <div class="reports-grid fade-in">
-      <!-- Dead code: exportReport stub is not implemented
-      <div class="report-card">
-        <div class="report-icon">📄</div>
-        <h3>Отчет в PDF</h3>
-        <p>Полный отчет со всеми графиками и таблицами</p>
-        <button class="btn-main" onclick="exportReport('pdf')">Скачать PDF</button>
-      </div>
-
-      <div class="report-card">
-        <div class="report-icon">📊</div>
-        <h3>Отчет в Excel</h3>
-        <p>Таблица с подробными данными по всем событиям</p>
-        <button class="btn-main" onclick="exportReport('excel')">Скачать Excel</button>
-      </div>
-
-      <div class="report-card">
-        <div class="report-icon">📈</div>
-        <h3>CSV экспорт</h3>
-        <p>Данные в формате CSV для дальнейшей обработки</p>
-        <button class="btn-main" onclick="exportReport('csv')">Скачать CSV</button>
-      </div>
-      -->
-      </div>
+    <div class="history-list fade-in" id="historyList">
+      <div style="text-align:center;padding:30px;color:#888;">Загрузка истории...</div>
     </div>
   </div>
 </section>
@@ -330,10 +308,11 @@
               <th>Участники</th>
               <th>Комментарий</th>
               <th>Статус</th>
+              <th>Действия</th>
             </tr>
           </thead>
           <tbody id="participants-tbody">
-            <tr><td colspan="5" style="text-align:center;padding:20px;color:#888;">Загрузка...</td></tr>
+            <tr><td colspan="6" style="text-align:center;padding:20px;color:#888;">Загрузка...</td></tr>
           </tbody>
         </table>
       </div>

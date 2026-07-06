@@ -35,8 +35,13 @@ function getSeatsInfo(event) {
 
 function renderEvents(filter) {
   const grid = document.getElementById('eventsGrid');
-  const filtered = filter === 'all' ? eventsData : eventsData.filter(e => e.category === filter);
+  const upcoming = eventsData.filter(e => !e.is_past);
+  const filtered = filter === 'all' ? upcoming : upcoming.filter(e => e.category === filter);
   grid.innerHTML = '';
+  if (filtered.length === 0) {
+    grid.innerHTML = '<div style="text-align:center;padding:40px;color:#888;">Нет предстоящих мероприятий</div>';
+    return;
+  }
   filtered.forEach((ev, i) => {
     const seats = getSeatsInfo(ev);
     const seatsLeft = Math.max(0, ev.total - ev.booked);

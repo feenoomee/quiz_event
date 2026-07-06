@@ -353,8 +353,18 @@ function logout() {
     if (objectUrl) { URL.revokeObjectURL(objectUrl); objectUrl = null; }
   });
 
-  removeBtn.addEventListener('click', function (e) {
+  async function removeAvatar() {
+    try {
+      const resp = await fetch('/api/upload/avatar', { method: 'DELETE' });
+      const data = await resp.json();
+      if (!resp.ok) { alert(data.message || 'Ошибка удаления'); return false; }
+      return true;
+    } catch { alert('Ошибка сети при удалении'); return false; }
+  }
+
+  removeBtn.addEventListener('click', async function (e) {
     e.preventDefault();
-    clearPreview();
+    const ok = await removeAvatar();
+    if (ok) clearPreview();
   });
 })();

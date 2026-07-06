@@ -78,6 +78,7 @@ def _format_event(event):
         "tag": event.tag or "",
         "photo": photo_url,
         "registration_open": registration_open,
+        "is_past": d.date() < now.date(),
     }
 
 

@@ -60,3 +60,9 @@ def send_password_reset_email(user, code):
     """Send password reset code email."""
     html = render_template("emails/reset_password.html", user=user, code=code)
     send_email(user.email, "Код для сброса пароля — TLTQUIZ", html)
+
+
+def send_registration_removed_email(user, event, reason):
+    """Send email when registration is removed by admin or auto-cleanup."""
+    html = render_template("emails/registration_removed.html", user=user, event=event, reason=reason)
+    send_email(user.email, f"Регистрация отменена — {event.name}", html)

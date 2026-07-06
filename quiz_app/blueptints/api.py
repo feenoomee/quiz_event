@@ -38,6 +38,25 @@ def upload_avatar():
         return jsonify({"status": "error", "message": "Не удалось сохранить"}), 500
 
 
+@api_bp.route("/upload/avatar", methods=["DELETE"])
+@login_required
+def delete_avatar():
+    if not current_user.avatar:
+        return jsonify({"status": "error", "message": "Аватар отсутствует"}), 400
+
+    old_path = os.path.join(current_app.root_path, "media", current_user.avatar)
+    if os.path.exists(old_path):
+        os.remove(old_path)
+
+    current_user.avatar = None
+    try:
+        db.session.commit()
+        return jsonify({"status": "success"})
+    except Exception:
+        db.session.rollback()
+        return jsonify({"status": "error", "message": "Не удалось удалить аватар"}), 500
+
+
 @api_bp.route("/upload/event-photo", methods=["POST"])
 @login_required
 def upload_event_photo():
@@ -56,12 +75,14 @@ def upload_event_photo():
 # Events CRUD
 @api_bp.route("/events", methods=["GET"])
 def list_events():
+    cleanup_past_event_photos()
     events = Event.query.order_by(Event.date).all()
     return jsonify([_format_event(e) for e in events])
 
 
 @api_bp.route("/games/past")
 def public_past_games():
+    cleanup_past_event_photos()
     now = datetime.now()
     events = Event.query.filter(Event.scores.isnot(None), Event.scores != '').order_by(Event.date.desc()).limit(20).all()
 
@@ -226,6 +247,11 @@ def delete_event(event_id):
     event = Event.query.get(event_id)
     if not event:
         return jsonify({"status": "error", "message": "Мероприятие не найдено"}), 404
+
+    if event.photo:
+        photo_path = os.path.join(current_app.root_path, "media", event.photo)
+        if os.path.exists(photo_path):
+            os.remove(photo_path)
 
     try:
         db.session.delete(event)
@@ -506,7 +532,48 @@ def admin_confirm_waitlist_registration(reg_id):
         return jsonify({"status": "error", "message": "Не удалось подтвердить команду"}), 500
 
 
+@api_bp.route("/admin/registrations/<int:reg_id>/remove", methods=["POST"])
+def admin_remove_registration(reg_id):
+    if not _require_admin_json():
+        return jsonify({"status": "error", "message": "Нет доступа"}), 403
+
+    reg = RegistrationsEvent.query.get(reg_id)
+    if not reg:
+        return jsonify({"status": "error", "message": "Регистрация не найдена"}), 404
+
+    event = reg.event
+    team = reg.team
+
+    from quiz_app.mail import send_registration_removed_email
+
+    for member in team.members:
+        try:
+            send_registration_removed_email(member, event, "Администратор удалил вашу команду из списка участников.")
+        except Exception:
+            pass
+
+    try:
+        db.session.delete(reg)
+        if not reg.waitlist and event.booked > 0:
+            event.booked -= reg.player_count
+        db.session.commit()
+        return jsonify({
+            "status": "success",
+            "message": "Команда удалена, уведомление отправлено",
+            "event": {
+                "id": event.id,
+                "booked": event.booked,
+                "seats": event.seats,
+            },
+        })
+    except Exception:
+        db.session.rollback()
+        return jsonify({"status": "error", "message": "Не удалось удалить команду"}), 500
+
+
 def auto_cleanup_pending():
+    from quiz_app.mail import send_registration_removed_email
+
     now = datetime.now()
     pending = RegistrationsEvent.query.join(Event).filter(
         RegistrationsEvent.status == "pending",
@@ -516,16 +583,45 @@ def auto_cleanup_pending():
         reg for reg in pending
         if datetime(reg.event.date.year, reg.event.date.month, reg.event.date.day, 14, 0) <= now
     ]
-    removed = 0
+    removed_teams = []
     for reg in pending:
         event = reg.event
         if event.booked >= reg.player_count:
             event.booked -= reg.player_count
         else:
             event.booked = 0
+        removed_teams.append((reg, event))
         db.session.delete(reg)
-        removed += 1
-    if removed:
+
+    if removed_teams:
+        try:
+            db.session.commit()
+            for reg, event in removed_teams:
+                team = reg.team
+                if team:
+                    for member in team.members:
+                        try:
+                            send_registration_removed_email(
+                                member, event,
+                                "Вы не подтвердили участие до 14:00 в день мероприятия."
+                            )
+                        except Exception:
+                            pass
+        except Exception:
+            db.session.rollback()
+
+
+def cleanup_past_event_photos():
+    now = datetime.now()
+    past_events = Event.query.filter(Event.date < now, Event.photo.isnot(None)).all()
+    cleaned = 0
+    for event in past_events:
+        old_path = os.path.join(current_app.root_path, "media", event.photo)
+        if os.path.exists(old_path):
+            os.remove(old_path)
+        event.photo = None
+        cleaned += 1
+    if cleaned:
         try:
             db.session.commit()
         except Exception:
@@ -883,6 +979,164 @@ def admin_save_scoreboard(event_id):
         return jsonify({"status": "error", "message": "Не удалось сохранить"}), 500
 
 
+# История прошедших мероприятий (последние 6 месяцев)
+@api_bp.route("/admin/history")
+def admin_history():
+    if not _require_admin_json():
+        return jsonify({"status": "error", "message": "Нет доступа"}), 403
+
+    from datetime import timedelta
+    six_months_ago = datetime.now() - timedelta(days=180)
+    past_events = Event.query.filter(Event.date < datetime.now(), Event.date >= six_months_ago).order_by(Event.date.desc()).all()
+
+    result = []
+    for e in past_events:
+        regs = RegistrationsEvent.query.filter_by(event_id=e.id).all()
+        teams_data = []
+        total_players = 0
+        for reg in regs:
+            team = reg.team
+            captains_name = team.members[0].name if team.members else ""
+            teams_data.append({
+                "team_name": team.name,
+                "captain": captains_name,
+                "player_count": reg.player_count,
+                "status": reg.status,
+            })
+            total_players += reg.player_count
+
+        result.append({
+            "id": e.id,
+            "title": e.name,
+            "date": e.date.strftime("%Y-%m-%d"),
+            "time": e.date.strftime("%H:%M"),
+            "location": e.location,
+            "category": e.category,
+            "teams": teams_data,
+            "total_teams": len(teams_data),
+            "total_players": total_players,
+            "has_scores": bool(e.scores),
+        })
+
+    return jsonify(result)
+
+
+# Экспорт мероприятия в Excel
+@api_bp.route("/admin/events/<int:event_id>/export")
+def admin_export_event_excel(event_id):
+    if not _require_admin_json():
+        return jsonify({"status": "error", "message": "Нет доступа"}), 403
+
+    import openpyxl
+    from openpyxl.styles import Font, Alignment, Border, Side, PatternFill
+    from flask import send_file
+    import tempfile
+
+    event = Event.query.get(event_id)
+    if not event:
+        return jsonify({"status": "error", "message": "Мероприятие не найдено"}), 404
+
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Мероприятие"
+
+    header_font = Font(bold=True, size=12)
+    header_fill = PatternFill(start_color="F5C518", end_color="F5C518", fill_type="solid")
+    thin_border = Border(
+        left=Side(style="thin"),
+        right=Side(style="thin"),
+        top=Side(style="thin"),
+        bottom=Side(style="thin"),
+    )
+
+    # Информация о мероприятии
+    ws.cell(row=1, column=1, value="Мероприятие:").font = Font(bold=True, size=14)
+    ws.cell(row=1, column=2, value=event.name).font = Font(size=14)
+    ws.cell(row=2, column=1, value="Дата:").font = header_font
+    ws.cell(row=2, column=2, value=event.date.strftime("%d.%m.%Y %H:%M"))
+    ws.cell(row=3, column=1, value="Место:").font = header_font
+    ws.cell(row=3, column=2, value=event.location)
+    ws.cell(row=4, column=1, value="Категория:").font = header_font
+    ws.cell(row=4, column=2, value=event.category)
+
+    # Таблица команд
+    ws.cell(row=6, column=1, value="Команды участники:").font = Font(bold=True, size=14)
+
+    headers = ["Команда", "Капитан", "Игроков", "Статус"]
+    for col, h in enumerate(headers, 1):
+        cell = ws.cell(row=7, column=col, value=h)
+        cell.font = header_font
+        cell.fill = header_fill
+        cell.alignment = Alignment(horizontal="center")
+        cell.border = thin_border
+
+    regs = RegistrationsEvent.query.filter_by(event_id=event.id).order_by(RegistrationsEvent.id).all()
+    total_players = 0
+    for i, reg in enumerate(regs):
+        row = 8 + i
+        team = reg.team
+        captain = team.members[0].name if team.members else ""
+        ws.cell(row=row, column=1, value=team.name).border = thin_border
+        ws.cell(row=row, column=2, value=captain).border = thin_border
+        ws.cell(row=row, column=3, value=reg.player_count).border = thin_border
+        status_text = "Подтверждено" if reg.status == "confirmed" else "Ожидание"
+        if reg.waitlist:
+            status_text = "Лист ожидания"
+        ws.cell(row=row, column=4, value=status_text).border = thin_border
+        total_players += reg.player_count
+
+    # Итог
+    summary_row = 8 + len(regs) + 1
+    ws.cell(row=summary_row, column=1, value="Итого команд:").font = header_font
+    ws.cell(row=summary_row, column=2, value=len(regs))
+    ws.cell(row=summary_row + 1, column=1, value="Всего участников:").font = header_font
+    ws.cell(row=summary_row + 1, column=2, value=total_players)
+
+    # Результаты (если есть)
+    scores = event.get_scores()
+    if scores:
+        score_row = summary_row + 3
+        ws.cell(row=score_row, column=1, value="Результаты игры:").font = Font(bold=True, size=14)
+        score_row += 1
+
+        score_headers = ["Команда"] + [f"Тур {t+1}" for t in range(event.rounds)] + ["Сумма", "Место"]
+        for col, h in enumerate(score_headers, 1):
+            cell = ws.cell(row=score_row, column=col, value=h)
+            cell.font = header_font
+            cell.fill = header_fill
+            cell.alignment = Alignment(horizontal="center")
+            cell.border = thin_border
+
+        sorted_scores = sorted(scores, key=lambda s: sum(s["scores"][:event.rounds]), reverse=True)
+        for i, s in enumerate(sorted_scores):
+            row = score_row + 1 + i
+            ws.cell(row=row, column=1, value=s["team_name"]).border = thin_border
+            total = 0
+            for t in range(event.rounds):
+                val = s["scores"][t] if t < len(s["scores"]) else 0
+                ws.cell(row=row, column=2 + t, value=val).border = thin_border
+                total += val
+            ws.cell(row=row, column=2 + event.rounds, value=total).border = thin_border
+            ws.cell(row=row, column=2 + event.rounds, value=total).font = Font(bold=True)
+            ws.cell(row=row, column=3 + event.rounds, value=i + 1).border = thin_border
+
+    # Автоширина колонок
+    for col in ws.columns:
+        max_length = 0
+        col_letter = col[0].column_letter
+        for cell in col:
+            if cell.value:
+                max_length = max(max_length, len(str(cell.value)))
+        ws.column_dimensions[col_letter].width = max_length + 4
+
+    tmp = tempfile.NamedTemporaryFile(suffix=".xlsx", delete=False)
+    wb.save(tmp.name)
+    tmp.close()
+
+    filename = f"{event.name}_{event.date.strftime('%Y%m%d')}.xlsx"
+    return send_file(tmp.name, as_attachment=True, download_name=filename, mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+
+
 # Статистика
 @api_bp.route("/stats")
 def get_stats():
@@ -896,6 +1150,7 @@ def get_stats():
     total_revenue = sum(e.booked * e.price for e in all_events)
     occupancy_rate = round(total_booked / total_seats * 100, 1) if total_seats else 0
 
+    now = datetime.now()
     events_list = {}
     for e in all_events:
         photo_url = url_for("pages.serve_media", filename=e.photo) if e.photo else None
@@ -911,6 +1166,7 @@ def get_stats():
             "category": e.category,
             "photo": photo_url,
             "photo_path": e.photo,
+            "is_past": e.date.date() < now.date(),
         }
 
     top_events = sorted(

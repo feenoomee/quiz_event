@@ -11,10 +11,9 @@
 <body>
   <header>
     <div class="header-inner">
-      <div class="logo">
+      <a href="/" class="logo" style="text-decoration: none; color: inherit;">
         <div class="logo-icon"><img src="{{ url_for('static', filename='../media/logo.png') }}" alt="TLTQUIZ Logo" style="width: 80px; height: 70px;"></div>
-        TLTQUIZ
-      </div>
+      </a>
 
       <nav>
         {% block nav_links %}{% endblock %}

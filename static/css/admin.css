@@ -861,6 +861,81 @@
   }
 }
 
+/* History Section */
+.history-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.history-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  background: #1a1a1a;
+  border: 1px solid rgba(245,197,24,0.12);
+  border-radius: 8px;
+  padding: 16px 18px;
+  transition: all 0.2s;
+  flex-wrap: wrap;
+}
+
+.history-card:hover {
+  border-color: rgba(245,197,24,0.3);
+  background: rgba(245,197,24,0.03);
+}
+
+.history-card-top {
+  flex: 2;
+  min-width: 200px;
+}
+
+.history-card-title {
+  font-weight: 700;
+  color: #fff;
+  font-size: 0.95rem;
+  margin-bottom: 4px;
+}
+
+.history-card-meta {
+  color: #888;
+  font-size: 0.78rem;
+}
+
+.history-card-stats {
+  flex: 1;
+  display: flex;
+  gap: 16px;
+  color: #aaa;
+  font-size: 0.78rem;
+  min-width: 240px;
+}
+
+.history-card-stats span {
+  white-space: nowrap;
+}
+
+.history-card-stats strong {
+  color: var(--yellow);
+}
+
+.history-card-actions {
+  flex-shrink: 0;
+}
+
+@media (max-width: 768px) {
+  .history-card {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .history-card-stats {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+}
+
+
 /* Dead code: duplicate responsive rules (already defined at lines 378-423)
 @media (max-width: 1024px) {
   .quick-stats {
