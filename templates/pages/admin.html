@@ -276,8 +276,11 @@
 <section class="section admin-content">
   <div class="section-inner">
     <div class="section-header fade-in">
-      <h2 class="section-title">История <span>мероприятий</span></h2>
-      <p class="section-sub">Прошедшие мероприятия за последние 6 месяцев — нажмите на событие, чтобы скачать Excel-отчёт</p>
+      <div style="flex:1;min-width:200px;">
+        <h2 class="section-title">История <span>мероприятий</span></h2>
+        <p class="section-sub">Прошедшие мероприятия за последние 6 месяцев — нажмите на событие, чтобы скачать Excel-отчёт</p>
+      </div>
+      <button class="btn-delete" id="clearHistoryBtn" onclick="clearAllHistory()" style="align-self:flex-start;flex-shrink:0;" hidden>Очистить всё</button>
     </div>
 
     <div class="history-list fade-in" id="historyList">

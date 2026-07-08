@@ -98,6 +98,7 @@ function updateQuickStats(data) {
 
 function loadHistory() {
   const container = document.getElementById('historyList');
+  const clearBtn = document.getElementById('clearHistoryBtn');
   if (!container) return;
 
   fetch('/api/admin/history', { credentials: 'same-origin' })
@@ -108,8 +109,10 @@ function loadHistory() {
     .then(data => {
       if (!data.length) {
         container.innerHTML = '<div style="text-align:center;padding:30px;color:#888;">Нет прошедших мероприятий за последние 6 месяцев</div>';
+        if (clearBtn) clearBtn.hidden = true;
         return;
       }
+      if (clearBtn) clearBtn.hidden = false;
       container.innerHTML = '';
       data.forEach(ev => {
         const card = document.createElement('div');
@@ -126,6 +129,7 @@ function loadHistory() {
           </div>
           <div class="history-card-actions">
             <button class="btn-edit" onclick="exportEventExcel(${ev.id})">Скачать Excel</button>
+            <button class="btn-delete" onclick="deleteHistoryEvent(${ev.id}, '${escapeAttr(ev.title)}')">Удалить</button>
           </div>
         `;
         container.appendChild(card);
@@ -139,6 +143,49 @@ function loadHistory() {
 
 function exportEventExcel(eventId) {
   window.location.href = '/api/admin/events/' + eventId + '/export';
+}
+
+function deleteHistoryEvent(eventId, title) {
+  if (!confirm(`Удалить мероприятие «${title}» из истории? Это действие нельзя отменить.`)) {
+    return;
+  }
+
+  fetch(`/api/events/${eventId}`, {
+    method: 'DELETE',
+    credentials: 'same-origin',
+  })
+    .then(r => r.json().then(body => ({ ok: r.ok, body })))
+    .then(({ ok, body }) => {
+      if (!ok || body.status === 'error') {
+        alert(body.message || 'Не удалось удалить');
+        return;
+      }
+      loadHistory();
+      loadStats();
+    })
+    .catch(() => alert('Ошибка сети'));
+}
+
+function clearAllHistory() {
+  if (!confirm('Удалить ВСЕ прошедшие мероприятия из истории? Это действие нельзя отменить.')) {
+    return;
+  }
+
+  fetch('/api/admin/history/clear', {
+    method: 'POST',
+    credentials: 'same-origin',
+    headers: { 'Content-Type': 'application/json' },
+  })
+    .then(r => r.json().then(body => ({ ok: r.ok, body })))
+    .then(({ ok, body }) => {
+      if (!ok || body.status === 'error') {
+        alert(body.message || 'Не удалось очистить историю');
+        return;
+      }
+      loadHistory();
+      loadStats();
+    })
+    .catch(() => alert('Ошибка сети'));
 }
 
 function populateEventsTable(events) {

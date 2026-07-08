@@ -1021,6 +1021,31 @@ def admin_history():
     return jsonify(result)
 
 
+@api_bp.route("/admin/history/clear", methods=["POST"])
+def admin_clear_history():
+    if not _require_admin_json():
+        return jsonify({"status": "error", "message": "Нет доступа"}), 403
+
+    from datetime import timedelta
+    six_months_ago = datetime.now() - timedelta(days=180)
+    past_events = Event.query.filter(Event.date < datetime.now(), Event.date >= six_months_ago).all()
+
+    count = len(past_events)
+    for e in past_events:
+        if e.photo:
+            photo_path = os.path.join(current_app.root_path, "media", e.photo)
+            if os.path.exists(photo_path):
+                os.remove(photo_path)
+        db.session.delete(e)
+
+    try:
+        db.session.commit()
+        return jsonify({"status": "success", "message": f"Удалено {count} мероприятий"})
+    except Exception:
+        db.session.rollback()
+        return jsonify({"status": "error", "message": "Не удалось очистить историю"}), 500
+
+
 # Экспорт мероприятия в Excel
 @api_bp.route("/admin/events/<int:event_id>/export")
 def admin_export_event_excel(event_id):
