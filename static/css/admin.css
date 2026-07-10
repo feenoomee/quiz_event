@@ -518,6 +518,10 @@
   transition: border-color 0.2s;
   font-family: inherit;
 }
+select.form-input option {
+  background: #1a1a1a;
+  color: #fff;
+}
 .form-input:focus { 
   border-color: rgba(245,197,24,0.5); 
   background: rgba(245,197,24,0.02);

@@ -558,6 +558,7 @@ function editEvent(id) {
   document.querySelector('input[name="price"]').value = event.price;
   const catSelect = document.querySelector('select[name="category"]');
   if (catSelect && event.category) catSelect.value = event.category;
+  document.querySelector('textarea[name="rules"]').value = event.description || '';
 
   currentPhotoPath = event.photo_path || null;
   pendingPhotoFile = null;

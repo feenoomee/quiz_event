@@ -850,9 +850,14 @@ def reset_password():
 def admin_recent_games():
     if not _require_admin_json():
         return jsonify({"status": "error", "message": "Нет доступа"}), 403
-    limit = request.args.get("limit", default=15, type=int) or 15
-    limit = max(1, min(limit, 50))
-    events = Event.query.order_by(Event.date.desc()).limit(limit).all()
+    from datetime import datetime, timedelta
+    now = datetime.now()
+    month_start = datetime(now.year, now.month, 1)
+    month_end = (month_start + timedelta(days=32)).replace(day=1) - timedelta(seconds=1)
+    events = Event.query.filter(
+        Event.date >= month_start,
+        Event.date <= month_end,
+    ).order_by(Event.date.asc()).all()
     rows = []
     for e in events:
         d = e.date
@@ -1182,6 +1187,7 @@ def get_stats():
         events_list[e.id] = {
             "id": e.id,
             "title": e.name,
+            "description": e.description,
             "date": e.date.strftime("%Y-%m-%d"),
             "time": e.date.strftime("%H:%M"),
             "location": e.location,

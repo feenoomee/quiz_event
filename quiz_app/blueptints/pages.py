@@ -31,6 +31,7 @@ def index():
         nearest_event = {
             "id": nearest.id,
             "name": nearest.name,
+            "description": nearest.description,
             "date": date_ru,
             "time": d.strftime("%H:%M"),
             "location": nearest.location,

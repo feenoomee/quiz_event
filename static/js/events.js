@@ -56,6 +56,7 @@ function renderEvents(filter) {
       </div>
       <div class="event-card-body">
         <div class="event-card-title">${escapeHtml(ev.title)}</div>
+        <div class="event-card-desc">${escapeHtml(ev.description)}</div>
         <div class="event-meta">
           <div class="event-meta-row"><span class="event-meta-icon"></span>${ev.date}</div>
           <div class="event-meta-row"><span class="event-meta-icon"></span>${ev.time}</div>
