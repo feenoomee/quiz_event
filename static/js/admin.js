@@ -283,6 +283,14 @@ function closeGameSelectModal(e) {
   document.body.style.overflow = '';
 }
 
+function closeScoreboardModal(e) {
+  const modal = document.getElementById('scoreboardModal');
+  if (!modal) return;
+  if (e && e.target !== modal) return;
+  modal.classList.remove('show');
+  document.body.style.overflow = '';
+}
+
 function confirmGameSelection() {
   const select = document.getElementById('game-select');
   if (!select || !select.value) {
@@ -308,12 +316,11 @@ function confirmGameSelection() {
       scoreboardEventId = data.event_id;
       renderScoreboard(data);
       closeGameSelectModal();
-      const emptyEl = document.getElementById('scoreboard-empty');
-      const wrap = document.getElementById('scoreboard-wrap');
-      const hint = document.getElementById('scoreboard-places-hint');
-      if (emptyEl) emptyEl.hidden = true;
-      if (wrap) wrap.hidden = false;
-      if (hint) hint.hidden = false;
+      const modal = document.getElementById('scoreboardModal');
+      if (modal) {
+        modal.classList.add('show');
+        document.body.style.overflow = 'hidden';
+      }
     })
     .catch((err) => {
       if (err.message !== '403') console.error(err);
@@ -330,11 +337,14 @@ function renderScoreboard(data) {
   const rounds = data.rounds || 7;
   const scores = data.scores || [];
 
-  banner.textContent = data.title || '—';
+  const title = data.title || '—';
+  banner.textContent = title;
+  const titleEl = document.getElementById('scoreboardModalTitle');
+  if (titleEl) titleEl.textContent = title;
   const roundsInput = document.getElementById('scoreboard-rounds-input');
   if (roundsInput) roundsInput.value = rounds;
-  const hint = document.getElementById('scoreboard-places-hint');
-  if (hint) hint.textContent = `Заполните все ${rounds} туров у каждой команды — тогда места проставятся автоматически.`;
+  const subEl = document.getElementById('scoreboardModalSub');
+  if (subEl) subEl.textContent = `Заполните все ${rounds} туров у каждой команды — места проставятся автоматически.`;
 
   const headRow1 = document.createElement('tr');
   headRow1.innerHTML = `
@@ -493,6 +503,9 @@ function saveScoreboard() {
         alert(body.message || 'Не удалось сохранить');
         return;
       }
+      const emptyEl = document.getElementById('scoreboard-empty');
+      if (emptyEl) emptyEl.textContent = `Результаты сохранены для игры #${scoreboardEventId}`;
+      closeScoreboardModal();
       alert('Сохранено.');
     })
     .catch(() => alert('Ошибка сети'));
@@ -668,8 +681,8 @@ function openParticipantsModal(eventId) {
           const membersList = reg.members.map(m => escapeHtml(m.short_name)).join(', ');
           const isConfirmed = reg.status === 'confirmed';
           const statusHtml = isConfirmed
-            ? '<span style="color:#4caf50;font-weight:600;">✅ Подтвердили</span>'
-            : '<span style="color:#ff9800;font-weight:600;">⏳ Ожидание</span>';
+            ? '<span style="color:#4caf50;font-weight:600;">Подтвердили</span>'
+            : '<span style="color:#ff9800;font-weight:600;">Ожидание</span>';
           const tr = document.createElement('tr');
           tr.innerHTML = `
             <td><strong>${escapeHtml(reg.team_name)}</strong></td>

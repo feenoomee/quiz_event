@@ -42,7 +42,6 @@ async function openRegModal(eventId, name, date, price) {
 }
 
 function closeRegModal(e) {
-  if (e && e.target !== document.getElementById('regModal')) return;
   if (window.getSelection().toString().length > 0) return;
   document.getElementById('regModal').classList.remove('open');
   document.body.style.overflow = '';
