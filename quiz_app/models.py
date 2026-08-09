@@ -100,6 +100,7 @@ class RegistrationsEvent(db.Model):
     registered_at = db.Column(db.DateTime, nullable=False, default=datetime.now)
     status = db.Column(db.String(20), default="pending")
     waitlist = db.Column(db.Boolean, default=False)
+    reminder_sent_at = db.Column(db.DateTime, nullable=True)
 
     event = db.relationship("Event", back_populates="registrations")
     team = db.relationship("Team", back_populates="registrations")

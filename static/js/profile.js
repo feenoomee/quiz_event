@@ -56,7 +56,7 @@ function renderRegistrations(regs, tab) {
       ? new Date(year, month, day, parseInt(timeParts[0]), parseInt(timeParts[1]))
       : null;
     const now = new Date();
-    const eventDayCutoff = eventDate ? new Date(eventDate.getFullYear(), eventDate.getMonth(), eventDate.getDate(), 14, 0, 0) : null;
+    const eventDayCutoff = eventDate ? new Date(eventDate.getFullYear(), eventDate.getMonth(), eventDate.getDate(), 13, 0, 0) : null;
     const withinConfirmWindow = eventDayCutoff !== null
       && now < eventDayCutoff
       && now.getDate() === eventDayCutoff.getDate()

@@ -12,7 +12,8 @@ _app_instance = None
 
 def send_reminders():
     """Find today's events with pending (unconfirmed) registrations
-    and send a reminder to every team member."""
+    and send a reminder to every team member exactly once per registration."""
+    from quiz_app import db
     from quiz_app.models import Event, RegistrationsEvent, Team
 
     app = _app_instance
@@ -35,12 +36,14 @@ def send_reminders():
                 RegistrationsEvent.event_id == event.id,
                 RegistrationsEvent.status == "pending",
                 RegistrationsEvent.waitlist == False,
+                RegistrationsEvent.reminder_sent_at.is_(None),
             ).all()
 
             for reg in pending_regs:
                 team = Team.query.get(reg.team_id)
                 if not team:
                     continue
+                sent = False
                 for member in team.members:
                     try:
                         send_reminder_email(member, event)
@@ -48,15 +51,39 @@ def send_reminders():
                             f"Scheduler: reminder sent to {member.email} "
                             f"for event '{event.name}'"
                         )
+                        sent = True
                     except Exception as e:
                         app.logger.error(
                             f"Scheduler: failed to send reminder "
                             f"to {member.email}: {e}"
                         )
+                if sent:
+                    reg.reminder_sent_at = datetime.now()
+
+        try:
+            db.session.commit()
+        except Exception:
+            db.session.rollback()
 
         app.logger.info(
             f"Scheduler: processed {len(events)} event(s) today"
         )
+
+
+def cleanup_pending_registrations():
+    """Auto-remove unconfirmed registrations whose 13:00 deadline has passed.
+
+    Runs every day at 13:00 so the "registration cancelled" emails
+    are always sent by the deadline, even if nobody visits the site."""
+    from quiz_app.blueptints.api import auto_cleanup_pending
+
+    app = _app_instance
+    if not app:
+        return
+
+    with app.app_context():
+        auto_cleanup_pending()
+        app.logger.info("Scheduler: pending registrations cleanup finished")
 
 
 def cleanup_old_events():
@@ -108,13 +135,19 @@ def init_scheduler(app):
         replace_existing=True,
     )
     scheduler.add_job(
+        cleanup_pending_registrations,
+        trigger=CronTrigger(hour=13, minute=0),
+        id="cleanup_pending_registrations",
+        replace_existing=True,
+    )
+    scheduler.add_job(
         cleanup_old_events,
         trigger=CronTrigger(hour=3, minute=0),
         id="cleanup_old_events",
         replace_existing=True,
     )
     scheduler.start()
-    app.logger.info("Scheduler started — daily reminders at 08:00, cleanup at 03:00")
+    app.logger.info("Scheduler started — daily reminders at 08:00, cleanup at 03:00/13:00")
 
 
 def run_jobs_once(app):
@@ -127,4 +160,5 @@ def run_jobs_once(app):
     _app_instance = app
     with app.app_context():
         send_reminders()
+        cleanup_pending_registrations()
         cleanup_old_events()

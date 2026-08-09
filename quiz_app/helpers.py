@@ -61,7 +61,7 @@ def _format_event(event):
     photo_url = url_for("pages.serve_media", filename=event.photo) if event.photo else None
 
     now = datetime.now()
-    cutoff = datetime(d.year, d.month, d.day, 14, 0)
+    cutoff = datetime(d.year, d.month, d.day, 13, 0)
     registration_open = d > now if d.date() != now.date() else now < cutoff
 
     return {

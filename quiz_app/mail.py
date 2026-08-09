@@ -51,7 +51,7 @@ def send_registration_confirmed_email(user, event):
 
 
 def send_reminder_email(user, event):
-    """Send reminder email on event day — confirm participation before 14:00."""
+    """Send reminder email on event day — confirm participation before 13:00."""
     html = render_template("emails/reminder.html", user=user, event=event)
     send_email(user.email, f"Напоминание: {event.name} сегодня!", html)
 

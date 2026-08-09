@@ -421,11 +421,11 @@ def register_team():
     if existing:
         return jsonify({"status": "error", "message": "Команда уже зарегистрирована на это мероприятие"}), 409
 
-    # Check 14:00 cutoff on event day
+    # Check 13:00 cutoff on event day
     now = datetime.now()
-    event_day_cutoff = datetime(event.date.year, event.date.month, event.date.day, 14, 0)
+    event_day_cutoff = datetime(event.date.year, event.date.month, event.date.day, 13, 0)
     if now >= event_day_cutoff and event.date.date() == now.date():
-        return jsonify({"status": "error", "message": "Регистрация на сегодняшнее мероприятие закрыта после 14:00"}), 400
+        return jsonify({"status": "error", "message": "Регистрация на сегодняшнее мероприятие закрыта после 13:00"}), 400
 
     try:
         player_count = int(player_count)
@@ -450,14 +450,6 @@ def register_team():
     try:
         db.session.add(reg)
         db.session.commit()
-
-        if not is_waitlist:
-            from ..mail import send_reminder_email
-            for member in team.members:
-                try:
-                    send_reminder_email(member, event)
-                except Exception:
-                    pass
 
         message = "Команда добавлена в лист ожидания" if is_waitlist else "Команда зарегистрирована"
         return jsonify({"status": "success", "message": message, "waitlist": is_waitlist}), 201
@@ -581,7 +573,7 @@ def auto_cleanup_pending():
     ).all()
     pending = [
         reg for reg in pending
-        if datetime(reg.event.date.year, reg.event.date.month, reg.event.date.day, 14, 0) <= now
+        if datetime(reg.event.date.year, reg.event.date.month, reg.event.date.day, 13, 0) <= now
     ]
     removed_teams = []
     for reg in pending:
@@ -603,7 +595,7 @@ def auto_cleanup_pending():
                         try:
                             send_registration_removed_email(
                                 member, event,
-                                "Вы не подтвердили участие до 14:00 в день мероприятия."
+                                "Вы не подтвердили участие до 13:00 в день мероприятия."
                             )
                         except Exception:
                             pass
