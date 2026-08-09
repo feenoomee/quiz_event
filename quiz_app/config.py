@@ -20,12 +20,12 @@ class Config:
     MAX_CONTENT_LENGTH = 16 * 1024 * 1024
     ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg", "gif", "webp"}
 
-    MAIL_SERVER = "smtp.yandex.ru"
-    MAIL_PORT = 465
-    MAIL_USE_SSL = True
+    MAIL_SERVER = os.environ.get("MAIL_SERVER", "smtp.yandex.ru")
+    MAIL_PORT = int(os.environ.get("MAIL_PORT", 465))
+    MAIL_USE_SSL = os.environ.get("MAIL_USE_SSL", "true").lower() in ("1", "true", "yes")
     MAIL_USERNAME = os.environ.get("MAIL_USERNAME", "ew.vyaldin@yandex.ru")
     MAIL_PASSWORD = os.environ.get("MAIL_PASSWORD")
-    MAIL_DEFAULT_SENDER = os.environ.get("MAIL_USERNAME", "ew.vyaldin@yandex.ru")
+    MAIL_DEFAULT_SENDER = os.environ.get("MAIL_DEFAULT_SENDER", os.environ.get("MAIL_USERNAME", "ew.vyaldin@yandex.ru"))
 
 
 class DevelopmentConfig(Config):
