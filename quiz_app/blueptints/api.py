@@ -8,7 +8,7 @@ from flask_login import login_required, current_user, login_user
 
 from quiz_app import db
 from quiz_app.models import User, Event, Team, RegistrationsEvent
-from ..helpers import _format_short_name, _require_admin_json, _MONTHS_RU, _format_event, _save_upload #,_allowed_file,  _WEEKDAYS_RU
+from ..helpers import _format_short_name, _require_admin_json, _MONTHS_RU, _format_event, _save_upload, _format_date_ru #,_allowed_file,  _WEEKDAYS_RU
 
 api_bp = Blueprint("api", __name__, url_prefix="/api")
 
@@ -1024,6 +1024,58 @@ def admin_history():
         })
 
     return jsonify(result)
+
+
+# Admin: список администраторов
+@api_bp.route("/admin/users/admins", methods=["GET"])
+def admin_list_admins():
+    if not _require_admin_json():
+        return jsonify({"status": "error", "message": "Нет доступа"}), 403
+
+    admins = User.query.filter(User.role == "admin").order_by(User.email).all()
+    return jsonify([
+        {
+            "id": u.id,
+            "name": u.name,
+            "email": u.email,
+            "created_at": _format_date_ru(u.created_at),
+        }
+        for u in admins
+    ])
+
+
+# Admin: выдать / снять статус администратора по email
+@api_bp.route("/admin/users/role", methods=["POST"])
+def admin_set_user_role():
+    if not _require_admin_json():
+        return jsonify({"status": "error", "message": "Нет доступа"}), 403
+
+    data = request.get_json(silent=True) or {}
+    email = (data.get("email") or "").strip().lower()
+    role = (data.get("role") or "").strip().lower()
+
+    if not email:
+        return jsonify({"status": "error", "message": "Укажите email пользователя"}), 400
+    if role not in ("admin", "user"):
+        return jsonify({"status": "error", "message": "Недопустимая роль"}), 400
+
+    user = User.query.filter_by(email=email).first()
+    if not user:
+        return jsonify({"status": "error", "message": "Пользователь с таким email не найден"}), 404
+
+    if user.role == role:
+        already = "уже является администратором" if role == "admin" else "уже не является администратором"
+        return jsonify({"status": "success", "message": f"Пользователь {user.name} ({user.email}) {already}"})
+
+    user.role = role
+    try:
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+        return jsonify({"status": "error", "message": "Не удалось обновить роль"}), 500
+
+    action = "выдан статус администратора" if role == "admin" else "снят статус администратора"
+    return jsonify({"status": "success", "message": f"Пользователю {user.name} ({user.email}) {action}"})
 
 
 @api_bp.route("/admin/history/clear", methods=["POST"])

@@ -115,3 +115,16 @@ def init_scheduler(app):
     )
     scheduler.start()
     app.logger.info("Scheduler started — daily reminders at 08:00, cleanup at 03:00")
+
+
+def run_jobs_once(app):
+    """Run the scheduled jobs once, without starting a background scheduler.
+
+    Used from a cron job on shared hosting (Рег.ру / ispmanager),
+    where APScheduler inside a Passenger process would duplicate work.
+    """
+    global _app_instance
+    _app_instance = app
+    with app.app_context():
+        send_reminders()
+        cleanup_old_events()

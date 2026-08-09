@@ -289,6 +289,29 @@
   </div>
 </section>
 
+<!-- Admin Management Section -->
+<section class="section admin-content">
+  <div class="section-inner">
+    <div class="section-header fade-in">
+      <div style="flex:1;min-width:200px;">
+        <h2 class="section-title">Администраторы</h2>
+        <p class="section-sub">Введите email пользователя и выберите действие, чтобы выдать или снять статус администратора</p>
+      </div>
+    </div>
+    <div class="admin-users-form fade-in">
+      <input type="email" id="adminRoleEmail" class="form-input" placeholder="email@example.com" autocomplete="off">
+      <select id="adminRoleAction" class="form-input">
+        <option value="admin">Выдать статус администратора</option>
+        <option value="user">Снять статус администратора</option>
+      </select>
+      <button class="btn-main" onclick="applyAdminRole()">Применить</button>
+    </div>
+    <div class="admins-list fade-in" id="adminsList">
+      <div style="text-align:center;padding:20px;color:#888;">Загрузка...</div>
+    </div>
+  </div>
+</section>
+
 </div>
 
 <!-- Participants Modal -->

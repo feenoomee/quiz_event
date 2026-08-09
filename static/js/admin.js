@@ -10,11 +10,111 @@ let currentWaitlistRegId = null;
 document.addEventListener('DOMContentLoaded', function () {
   loadStats();
   loadHistory();
+  loadAdmins();
   initializePhotoUpload();
   observeFadeInElements();
   initScoreboardUi();
   initCustomModals();
+  initAdminUsersForm();
 });
+
+function initAdminUsersForm() {
+  const emailInput = document.getElementById('adminRoleEmail');
+  if (emailInput) {
+    emailInput.addEventListener('keydown', function (event) {
+      if (event.key === 'Enter') {
+        event.preventDefault();
+        applyAdminRole();
+      }
+    });
+  }
+}
+
+function loadAdmins() {
+  const container = document.getElementById('adminsList');
+  if (!container) return;
+
+  fetch('/api/admin/users/admins', { credentials: 'same-origin' })
+    .then((r) => {
+      if (r.status === 403) throw new Error('Доступ запрещён');
+      return r.json();
+    })
+    .then((data) => {
+      if (!data.length) {
+        container.innerHTML = '<div style="text-align:center;padding:20px;color:#888;">Администраторов пока нет</div>';
+        return;
+      }
+      container.innerHTML = '';
+      data.forEach((u) => {
+        const item = document.createElement('div');
+        item.className = 'admin-user-item';
+        item.innerHTML = `
+          <div class="admin-user-info">
+            <div class="admin-user-name">${escapeHtml(u.name)}</div>
+            <div class="admin-user-email">${escapeHtml(u.email)}</div>
+          </div>
+          <button class="btn-delete" onclick="revokeAdminRole('${escapeAttr(u.email)}')">Снять права</button>
+        `;
+        container.appendChild(item);
+      });
+    })
+    .catch((err) => {
+      console.error('Error loading admins:', err);
+      container.innerHTML = '<div style="text-align:center;padding:20px;color:#888;">Ошибка загрузки</div>';
+    });
+}
+
+function applyAdminRole() {
+  const emailInput = document.getElementById('adminRoleEmail');
+  const actionSelect = document.getElementById('adminRoleAction');
+  const email = (emailInput.value || '').trim();
+  const role = actionSelect ? actionSelect.value : 'admin';
+
+  if (!email) {
+    alert('Введите email пользователя');
+    emailInput.focus();
+    return;
+  }
+
+  fetch('/api/admin/users/role', {
+    method: 'POST',
+    credentials: 'same-origin',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, role }),
+  })
+    .then((r) => r.json().then((body) => ({ ok: r.ok, body })))
+    .then(({ ok, body }) => {
+      if (!ok || body.status === 'error') {
+        alert(body.message || 'Не удалось обновить роль');
+        return;
+      }
+      alert(body.message || 'Готово');
+      emailInput.value = '';
+      loadAdmins();
+    })
+    .catch(() => alert('Ошибка сети'));
+}
+
+function revokeAdminRole(email) {
+  if (!confirm(`Снять статус администратора с ${email}?`)) return;
+
+  fetch('/api/admin/users/role', {
+    method: 'POST',
+    credentials: 'same-origin',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, role: 'user' }),
+  })
+    .then((r) => r.json().then((body) => ({ ok: r.ok, body })))
+    .then(({ ok, body }) => {
+      if (!ok || body.status === 'error') {
+        alert(body.message || 'Не удалось снять статус');
+        return;
+      }
+      alert(body.message || 'Готово');
+      loadAdmins();
+    })
+    .catch(() => alert('Ошибка сети'));
+}
 
 function initCustomModals() {
   const modals = document.querySelectorAll('.modal-overlay-custom');

@@ -51,6 +51,11 @@ def serve_media(filename):
     return send_from_directory(os.path.join(current_app.root_path, "media"), filename)
 
 
+@pages_bp.route("/favicon.ico")
+def favicon():
+    return redirect(url_for("static", filename="favicon.ico"))
+
+
 @pages_bp.route("/profile")
 @login_required
 def profile():
