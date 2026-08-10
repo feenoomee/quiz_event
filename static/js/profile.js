@@ -1,4 +1,5 @@
 let currentRegTab = 'active';
+let currentRegsData = [];
 
 document.addEventListener('DOMContentLoaded', function () {
   loadRegistrations('active');
@@ -13,6 +14,7 @@ async function loadRegistrations(tab) {
   try {
     const resp = await fetch('/api/my/registrations');
     const regs = await resp.json();
+    currentRegsData = regs;
     renderRegistrations(regs, tab);
   } catch {
     container.innerHTML = '<div style="text-align:center;padding:30px;color:#888;">Ошибка загрузки</div>';
@@ -82,6 +84,8 @@ function renderRegistrations(regs, tab) {
         <div class="reg-card-detail">
           <span>${r.event_price} ₽ с игрока</span>
         </div>
+        <div class="reg-card-desc" onclick="openRegDetails(${r.id})">${escapeHtml(r.event_description || '')}</div>
+        <div class="reg-card-more" onclick="openRegDetails(${r.id})">Подробнее →</div>
       </div>
       <div class="reg-card-footer">
         ${isPending && withinConfirmWindow
@@ -92,6 +96,24 @@ function renderRegistrations(regs, tab) {
     `;
     container.appendChild(card);
   });
+}
+
+function openRegDetails(regId) {
+  const r = currentRegsData.find(x => x.id === regId);
+  if (!r) return;
+  document.getElementById('regDetailsName').textContent = r.event_name || '';
+  document.getElementById('regDetailsDate').textContent = r.event_date || '—';
+  document.getElementById('regDetailsTime').textContent = r.event_time || '—';
+  document.getElementById('regDetailsPlace').textContent = r.event_location || '—';
+  document.getElementById('regDetailsTeam').textContent = r.team_name ? `"${r.team_name}" (${r.player_count} чел.)` : '—';
+  document.getElementById('regDetailsPrice').textContent = `${r.event_price} ₽ с игрока`;
+  document.getElementById('regDetailsDesc').textContent = r.event_description || '';
+  document.getElementById('regDetailsModal').classList.add('active');
+}
+
+function closeRegDetails(e) {
+  if (e && e.target !== e.currentTarget) return;
+  document.getElementById('regDetailsModal').classList.remove('active');
 }
 
 async function confirmRegistration(regId) {

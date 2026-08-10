@@ -224,6 +224,41 @@
   font-size: 0.9rem;
 }
 .reg-card-detail-icon { color: var(--yellow); font-size: 1.1rem; min-width: 20px; }
+.reg-card-desc {
+  font-size: 0.82rem;
+  color: #999;
+  line-height: 1.4;
+  margin: 4px 0 4px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  cursor: pointer;
+}
+.reg-card-more {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--yellow);
+  cursor: pointer;
+  margin-bottom: 12px;
+}
+.reg-card-more:hover { text-decoration: underline; }
+.reg-details-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 18px;
+}
+.reg-details-meta-row { color: #aaa; font-size: 0.9rem; }
+.reg-details-meta-row strong { color: #fff; font-weight: 600; }
+.reg-details-desc {
+  font-size: 0.92rem;
+  color: #ddd;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
 .reg-card-footer {
   padding: 16px 20px;
   border-top: 1px solid var(--border);

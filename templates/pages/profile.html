@@ -104,6 +104,25 @@
 </div>
 
 <!-- Модальные окна профиля -->
+<div class="modal-overlay-custom" id="regDetailsModal" onclick="closeRegDetails(event)">
+  <div class="modal-box" onclick="event.stopPropagation()">
+    <div class="modal-header-custom">
+      <div class="modal-title-custom" id="regDetailsName">—</div>
+      <button class="modal-close-btn" onclick="closeRegDetails()">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="reg-details-meta">
+        <div class="reg-details-meta-row">Дата: <strong id="regDetailsDate">—</strong></div>
+        <div class="reg-details-meta-row">Время: <strong id="regDetailsTime">—</strong></div>
+        <div class="reg-details-meta-row">Место: <strong id="regDetailsPlace">—</strong></div>
+        <div class="reg-details-meta-row">Команда: <strong id="regDetailsTeam">—</strong></div>
+        <div class="reg-details-meta-row">Цена: <strong id="regDetailsPrice">—</strong></div>
+      </div>
+      <div class="reg-details-desc" id="regDetailsDesc">—</div>
+    </div>
+  </div>
+</div>
+
 <div class="modal-overlay-custom" id="editProfileModal" onclick="closeModal(event)">
   <div class="modal-box" onclick="event.stopPropagation()">
     <div class="modal-header-custom">

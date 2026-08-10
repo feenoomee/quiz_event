@@ -382,6 +382,8 @@ def my_registrations():
             "event_location": ev.location,
             "event_price": ev.price,
             "event_photo": photo_url,
+            "event_description": ev.description,
+            "event_category": ev.category,
             "team_name": team.name,
             "player_count": reg.player_count,
             "comment": reg.comment,
