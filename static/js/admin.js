@@ -717,25 +717,6 @@ function deleteEvent(id) {
     .catch(() => alert('Ошибка сети'));
 }
 
-// Dead code: closeEvent was a duplicate of deleteEvent
-// function closeEvent(id) {
-//   if (confirm('Закрыть событие досрочно? Новые регистрации будут невозможны.')) {
-//     fetch(`/api/events/${id}`, {
-//       method: 'DELETE',
-//       credentials: 'same-origin',
-//     })
-//       .then((r) => r.json())
-//       .then((result) => {
-//         if (result.status === 'success') {
-//           loadStats();
-//         } else {
-//           alert(result.message || 'Ошибка');
-//         }
-//       })
-//       .catch(() => alert('Ошибка сети'));
-//   }
-// }
-
 // --- Модалка участников ---
 
 function openParticipantsModal(eventId) {
