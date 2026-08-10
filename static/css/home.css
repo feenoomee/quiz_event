@@ -124,8 +124,21 @@
   font-size: 0.88rem;
   color: #aaa;
   line-height: 1.5;
+  margin-bottom: 6px;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  cursor: pointer;
+}
+.hero-card-more {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--yellow);
+  cursor: pointer;
   margin-bottom: 14px;
 }
+.hero-card-more:hover { text-decoration: underline; }
 .hero-card-meta { display: flex; flex-direction: column; gap: 8px; margin-bottom: 20px; }
 .hero-card-meta-row {
   display: flex;
@@ -406,12 +419,21 @@
   font-size: 0.82rem;
   color: #999;
   line-height: 1.4;
-  margin-bottom: 12px;
+  margin-bottom: 4px;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
+  cursor: pointer;
 }
+.event-card-more {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--yellow);
+  cursor: pointer;
+  margin-bottom: 12px;
+}
+.event-card-more:hover { text-decoration: underline; }
 .event-meta { display: flex; flex-direction: column; gap: 6px; margin-bottom: 16px; }
 .event-meta-row {
   display: flex;
@@ -640,3 +662,33 @@
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
+
+/* Модалка деталей мероприятия */
+.modal--event-details { max-width: 560px; }
+.event-details-photo {
+  height: 220px;
+  border-radius: 12px;
+  background-size: cover;
+  background-position: center;
+  margin-bottom: 18px;
+  display: none;
+}
+.event-details-desc {
+  font-size: 0.92rem;
+  color: #ddd;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  margin-bottom: 18px;
+}
+.event-details-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(255,255,255,0.08);
+}
+.event-details-meta-row {
+  color: #aaa;
+  font-size: 0.88rem;
+}
+.event-details-meta-row span { color: #fff; font-weight: 600; }

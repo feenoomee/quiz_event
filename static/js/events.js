@@ -1,5 +1,13 @@
 let eventsData = [];
 let currentFilter = 'all';
+let currentDetailsEvent = null;
+
+const CATEGORY_LABELS = {
+  music: 'Музыкальные квиз-вечеринки',
+  cinema: 'Классический ТЛТКВИЗ',
+  classic: 'Тематические игры',
+  show: 'Корпоратив',
+};
 
 function escapeHtml(str) {
   if (!str) return '';
@@ -55,8 +63,9 @@ function renderEvents(filter) {
         ${ev.tag ? `<div class="event-tag">${ev.tag}</div>` : ''}
       </div>
       <div class="event-card-body">
-        <div class="event-card-title">${escapeHtml(ev.title)}</div>
-        <div class="event-card-desc">${escapeHtml(ev.description)}</div>
+        <div class="event-card-title" onclick="openEventDetails(${ev.id})">${escapeHtml(ev.title)}</div>
+        <div class="event-card-desc" onclick="openEventDetails(${ev.id})">${escapeHtml(ev.description)}</div>
+        <div class="event-card-more" onclick="openEventDetails(${ev.id})">Подробнее →</div>
         <div class="event-meta">
           <div class="event-meta-row"><span class="event-meta-icon"></span>${ev.date}</div>
           <div class="event-meta-row"><span class="event-meta-icon"></span>${ev.time}</div>
@@ -88,6 +97,68 @@ function filterEvents(filter, btn) {
   document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
   renderEvents(filter);
+}
+
+function openEventDetails(eventId) {
+  const ev = eventsData.find(e => e.id === eventId);
+  if (!ev) {
+    fetch('/api/events', { credentials: 'same-origin' })
+      .then(r => r.json())
+      .then(data => {
+        eventsData = data;
+        renderEvents(currentFilter);
+        openEventDetails(eventId);
+      })
+      .catch(err => console.error('Failed to load events:', err));
+    return;
+  }
+  currentDetailsEvent = ev;
+
+  document.getElementById('detailsEventName').textContent = ev.title;
+  document.getElementById('detailsEventSub').textContent = CATEGORY_LABELS[ev.category] || 'Квиз';
+
+  const photo = document.getElementById('detailsEventPhoto');
+  if (ev.photo) {
+    photo.style.display = 'block';
+    photo.style.backgroundImage = `url('${ev.photo}')`;
+  } else {
+    photo.style.display = 'none';
+    photo.style.backgroundImage = '';
+  }
+
+  document.getElementById('detailsEventDesc').textContent = ev.description || '';
+  document.getElementById('detailsEventDate').textContent = ev.date;
+  document.getElementById('detailsEventTime').textContent = ev.time;
+  document.getElementById('detailsEventPlace').textContent = ev.place;
+
+  const seats = getSeatsInfo(ev);
+  const seatsLeft = Math.max(0, ev.total - ev.booked);
+  document.getElementById('detailsEventTeams').textContent = 'Команды 4–10 человек · ' + seats.text;
+
+  const btn = document.getElementById('detailsRegBtn');
+  if (ev.registration_open === false) {
+    btn.disabled = true;
+    btn.textContent = 'Регистрация закрыта';
+  } else {
+    btn.disabled = false;
+    btn.textContent = seatsLeft === 0 ? 'В лист ожидания →' : 'Зарегистрироваться';
+  }
+
+  document.getElementById('eventDetailsModal').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeEventDetails(e) {
+  if (e && window.getSelection().toString().length > 0) return;
+  document.getElementById('eventDetailsModal').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+function registerFromDetails() {
+  const ev = currentDetailsEvent;
+  if (!ev) return;
+  closeEventDetails();
+  openRegModal(ev.id, ev.title, `${ev.date}, ${ev.time}`, `${ev.price} ₽ с игрока`);
 }
 
 document.addEventListener('DOMContentLoaded', loadEvents);

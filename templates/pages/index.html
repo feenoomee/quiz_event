@@ -68,6 +68,7 @@
       </div>
       <div class="hero-card-title">{{ nearest_event.name }}</div>
       <div class="hero-card-desc">{{ nearest_event.description }}</div>
+      <div class="hero-card-more" onclick="openEventDetails({{ nearest_event.id }})">Подробнее →</div>
       <div class="hero-card-meta">
         <div class="hero-card-meta-row"><span class="meta-icon"></span> {{ nearest_event.date }}</div>
         <div class="hero-card-meta-row"><span class="meta-icon"></span> {{ nearest_event.time }} — старт игры</div>
@@ -227,7 +228,34 @@
   </div>
 </div>
 
-<!-- 6. Модалка входа / регистрации -->
+<!-- 6. Модалка деталей мероприятия -->
+<div class="modal-overlay" id="eventDetailsModal" onclick="closeEventDetails(event)">
+  <div class="modal modal--event-details" onclick="event.stopPropagation()">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title" id="detailsEventName">—</div>
+        <div class="modal-sub" id="detailsEventSub">Квиз</div>
+      </div>
+      <button class="modal-close" onclick="closeEventDetails(event)">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div class="event-details-photo" id="detailsEventPhoto"></div>
+      <div class="event-details-desc" id="detailsEventDesc">—</div>
+      <div class="event-details-meta">
+        <div class="event-details-meta-row">Дата: <span id="detailsEventDate">—</span></div>
+        <div class="event-details-meta-row">Время: <span id="detailsEventTime">—</span></div>
+        <div class="event-details-meta-row">Место: <span id="detailsEventPlace">—</span></div>
+        <div class="event-details-meta-row">Команды: <span id="detailsEventTeams">—</span></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeEventDetails(event)">Закрыть</button>
+      <button class="btn-submit" id="detailsRegBtn" onclick="registerFromDetails()">Зарегистрироваться</button>
+    </div>
+  </div>
+</div>
+
+<!-- 7. Модалка входа / регистрации -->
 <!-- ===== AUTH MODAL ===== -->
 <div class="modal-overlay" id="authModal" onclick="closeAuthModal(event)">
   <div class="modal" onclick="event.stopPropagation()">
@@ -294,7 +322,7 @@
   </div>
 </div>
 
-<!-- 7. Модалка «Забыли пароль?» -->
+<!-- 8. Модалка «Забыли пароль?» -->
 <div class="modal-overlay" id="forgotModal" onclick="closeForgotModal(event)">
   <div class="modal" onclick="event.stopPropagation()">
     <div class="modal-header">
