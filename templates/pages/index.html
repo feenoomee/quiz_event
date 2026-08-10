@@ -5,6 +5,7 @@
 {% endblock %}
 {% block nav_links %}
   <a href="#events">Календарь</a>
+  <a href="#results">Прошлые игры</a>
   <a href="https://vk.com/tltquiz" target="_blank">Корпоратив</a>
   <a href="#contacts">Контакты</a>
   {% if current_user %}
@@ -15,6 +16,7 @@
 {% endblock %}
 {% block mobile_menu_links %}
   <a href="#events" onclick="closeMobileMenu()">Календарь мероприятий</a>
+  <a href="#results" onclick="closeMobileMenu()">Прошлые игры</a>
   <a href="https://vk.com/tltquiz" target="_blank" onclick="closeMobileMenu()">Заказать корпоратив</a>
   <a href="#contacts" onclick="closeMobileMenu()">Контакты</a>
   {% if current_user %}
@@ -24,7 +26,7 @@
   {% endif %}
 {% endblock %}
 {% block content %}
-{# Порядок блока: герой → прошлые игры (слайдер) → календарь → виджет чата → модалки #}
+{# Порядок блока: герой → календарь → прошлые игры (слайдер) → виджет чата → модалки #}
 
 <!-- 1. Герой и карточка ближайшего квиза -->
 <section class="hero" id="home">
@@ -89,7 +91,25 @@
   </div>
 </section>
 
-<!-- 2. Слайдер «Прошлые игры» -->
+<!-- 2. Календарь мероприятий (сетка заполняется из static/js/events.js) -->
+<section class="section events-section" id="events">
+  <div class="section-inner">
+    <div class="section-header fade-in">
+      <h2 class="section-title">Календарь <span>мероприятий</span></h2>
+      <p class="section-sub">Выбирайте тему, собирайте команду и регистрируйтесь!</p>
+    </div>
+    <div class="events-filters fade-in" id="filtersRow">
+      <button class="filter-btn active" onclick="filterEvents('all', this)">Все</button>
+      <button class="filter-btn" onclick="filterEvents('music', this)">Музыкальные квиз-вечеринки</button>
+      <button class="filter-btn" onclick="filterEvents('cinema', this)"> Классический ТЛТКВИЗ</button>
+      <button class="filter-btn" onclick="filterEvents('classic', this)">Тематические игры</button>
+      <button class="filter-btn" onclick="filterEvents('show', this)">Корпоратив</button>
+    </div>
+    <div class="events-grid" id="eventsGrid"></div>
+  </div>
+</section>
+
+<!-- 3. Слайдер «Прошлые игры» -->
 <section class="section slider-section" id="results">
   <div class="section-inner">
     <div class="section-header fade-in">
@@ -109,24 +129,6 @@
         <button class="slider-btn" onclick="nextSlide()">→</button>
       </div>
     </div>
-  </div>
-</section>
-
-<!-- 3. Календарь мероприятий (сетка заполняется из static/js/events.js) -->
-<section class="section events-section" id="events">
-  <div class="section-inner">
-    <div class="section-header fade-in">
-      <h2 class="section-title">Календарь <span>мероприятий</span></h2>
-      <p class="section-sub">Выбирайте тему, собирайте команду и регистрируйтесь!</p>
-    </div>
-    <div class="events-filters fade-in" id="filtersRow">
-      <button class="filter-btn active" onclick="filterEvents('all', this)">Все</button>
-      <button class="filter-btn" onclick="filterEvents('music', this)">Музыкальные квиз-вечеринки</button>
-      <button class="filter-btn" onclick="filterEvents('cinema', this)"> Классический ТЛТКВИЗ</button>
-      <button class="filter-btn" onclick="filterEvents('classic', this)">Тематические игры</button>
-      <button class="filter-btn" onclick="filterEvents('show', this)">Корпоратив</button>
-    </div>
-    <div class="events-grid" id="eventsGrid"></div>
   </div>
 </section>
 
