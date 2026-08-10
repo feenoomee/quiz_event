@@ -1,6 +1,8 @@
 let eventsData = [];
 let currentFilter = 'all';
 let currentDetailsEvent = null;
+let currentNavList = null;
+let currentNavIndex = -1;
 
 const CATEGORY_LABELS = {
   music: 'Музыкальные квиз-вечеринки',
@@ -8,6 +10,11 @@ const CATEGORY_LABELS = {
   classic: 'Тематические игры',
   show: 'Корпоратив',
 };
+
+function getVisibleEvents() {
+  const upcoming = eventsData.filter(e => !e.is_past);
+  return currentFilter === 'all' ? upcoming : upcoming.filter(e => e.category === currentFilter);
+}
 
 function escapeHtml(str) {
   if (!str) return '';
@@ -43,8 +50,7 @@ function getSeatsInfo(event) {
 
 function renderEvents(filter) {
   const grid = document.getElementById('eventsGrid');
-  const upcoming = eventsData.filter(e => !e.is_past);
-  const filtered = filter === 'all' ? upcoming : upcoming.filter(e => e.category === filter);
+  const filtered = getVisibleEvents();
   grid.innerHTML = '';
   if (filtered.length === 0) {
     grid.innerHTML = '<div style="text-align:center;padding:40px;color:#888;">Нет предстоящих мероприятий</div>';
@@ -112,6 +118,24 @@ function openEventDetails(eventId) {
       .catch(err => console.error('Failed to load events:', err));
     return;
   }
+
+  const visible = getVisibleEvents();
+  const idx = visible.findIndex(e => e.id === eventId);
+  if (idx === -1) {
+    currentNavList = null;
+    currentNavIndex = -1;
+  } else {
+    currentNavList = visible;
+    currentNavIndex = idx;
+  }
+
+  updateDetailsView(ev);
+
+  document.getElementById('eventDetailsModal').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function updateDetailsView(ev) {
   currentDetailsEvent = ev;
 
   document.getElementById('detailsEventName').textContent = ev.title;
@@ -144,8 +168,26 @@ function openEventDetails(eventId) {
     btn.textContent = seatsLeft === 0 ? 'В лист ожидания →' : 'Зарегистрироваться';
   }
 
-  document.getElementById('eventDetailsModal').classList.add('open');
-  document.body.style.overflow = 'hidden';
+  const prevBtn = document.getElementById('detailsPrevBtn');
+  const nextBtn = document.getElementById('detailsNextBtn');
+  if (currentNavList) {
+    prevBtn.disabled = currentNavIndex <= 0;
+    nextBtn.disabled = currentNavIndex >= currentNavList.length - 1;
+  } else {
+    prevBtn.disabled = true;
+    nextBtn.disabled = true;
+  }
+
+  const body = document.getElementById('eventDetailsBody');
+  if (body) body.scrollTop = 0;
+}
+
+function navDetails(delta) {
+  if (!currentNavList) return;
+  const next = currentNavIndex + delta;
+  if (next < 0 || next >= currentNavList.length) return;
+  currentNavIndex = next;
+  updateDetailsView(currentNavList[next]);
 }
 
 function closeEventDetails(e) {
@@ -162,3 +204,11 @@ function registerFromDetails() {
 }
 
 document.addEventListener('DOMContentLoaded', loadEvents);
+
+document.addEventListener('keydown', (e) => {
+  const modal = document.getElementById('eventDetailsModal');
+  if (!modal || !modal.classList.contains('open')) return;
+  if (e.key === 'ArrowLeft') navDetails(-1);
+  if (e.key === 'ArrowRight') navDetails(1);
+  if (e.key === 'Escape') closeEventDetails();
+});

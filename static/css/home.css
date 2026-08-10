@@ -665,6 +665,35 @@
 
 /* Модалка деталей мероприятия */
 .modal--event-details { max-width: 560px; }
+.modal--event-details .modal-body {
+  max-height: 60vh;
+  overflow-y: auto;
+}
+.modal-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.details-nav-btn {
+  background: var(--card2);
+  border: none;
+  border-radius: 8px;
+  width: 32px;
+  height: 32px;
+  color: #fff;
+  font-size: 1rem;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s;
+}
+.details-nav-btn:hover:not(:disabled) { background: rgba(245,197,24,0.2); }
+.details-nav-btn:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
 .event-details-photo {
   height: 220px;
   border-radius: 12px;

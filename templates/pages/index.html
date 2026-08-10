@@ -236,9 +236,13 @@
         <div class="modal-title" id="detailsEventName">—</div>
         <div class="modal-sub" id="detailsEventSub">Квиз</div>
       </div>
-      <button class="modal-close" onclick="closeEventDetails(event)">&times;</button>
+      <div class="modal-header-actions">
+        <button class="details-nav-btn" id="detailsPrevBtn" onclick="navDetails(-1)" title="Предыдущее" disabled>&larr;</button>
+        <button class="details-nav-btn" id="detailsNextBtn" onclick="navDetails(1)" title="Следующее" disabled>&rarr;</button>
+        <button class="modal-close" onclick="closeEventDetails(event)">&times;</button>
+      </div>
     </div>
-    <div class="modal-body">
+    <div class="modal-body" id="eventDetailsBody">
       <div class="event-details-photo" id="detailsEventPhoto"></div>
       <div class="event-details-desc" id="detailsEventDesc">—</div>
       <div class="event-details-meta">
