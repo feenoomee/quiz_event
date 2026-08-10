@@ -8,7 +8,7 @@
   <link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}" sizes="32x32">
   <link rel="icon" type="image/png" href="{{ url_for('static', filename='favicon.png') }}" sizes="64x64">
   <link rel="apple-touch-icon" href="{{ url_for('static', filename='apple-touch-icon.png') }}">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}">
+  <link rel="stylesheet" href="{{ asset('css/base.css') }}">
   {% block styles %}{% endblock %}
 </head>
 <body>
@@ -36,12 +36,12 @@
     {% block content %}{% endblock %}
   </main>
   {% include 'partials/footer.html' %}
-  <script src="{{ url_for('static', filename='js/events.js') }}"></script>
-  <script src="{{ url_for('static', filename='js/slider.js') }}"></script>
-  <script src="{{ url_for('static', filename='js/auth.js') }}"></script>
-<!-- <script src="{{ url_for('static', filename='js/chat.js') }}"></script> -->
-  <script src="{{ url_for('static', filename='js/mobile-menu.js') }}"></script>
-  <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+  <script src="{{ asset('js/events.js') }}"></script>
+  <script src="{{ asset('js/slider.js') }}"></script>
+  <script src="{{ asset('js/auth.js') }}"></script>
+<!-- <script src="{{ asset('js/chat.js') }}"></script> -->
+  <script src="{{ asset('js/mobile-menu.js') }}"></script>
+  <script src="{{ asset('js/app.js') }}"></script>
   {% block scripts %}{% endblock %}
 </body>
 </html>

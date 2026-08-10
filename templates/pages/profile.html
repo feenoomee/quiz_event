@@ -1,7 +1,7 @@
 {% extends 'layout/base.html' %}
 {% block title %}Личный кабинет — TLTQUIZ{% endblock %}
 {% block styles %}
-<link rel="stylesheet" href="{{ url_for('static', filename='css/profile.css') }}">
+<link rel="stylesheet" href="{{ asset('css/profile.css') }}">
 {% endblock %}
 {% block nav_links %}
   <a href="/">На главную</a>
@@ -252,5 +252,5 @@
 {% endblock %}
 
 {% block scripts %}
-<script src="{{ url_for('static', filename='js/profile.js') }}"></script>
+<script src="{{ asset('js/profile.js') }}"></script>
 {% endblock %}

@@ -2,7 +2,7 @@ import logging
 import os
 from logging.handlers import RotatingFileHandler
 
-from flask import Flask
+from flask import Flask, url_for
 from flask_login import LoginManager
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
@@ -51,6 +51,17 @@ def create_app(config_class=Config):
     login_manager.init_app(app)
     login_manager.login_view = "pages.index"
     migrate = Migrate( app, db )
+
+    @app.context_processor
+    def inject_asset():
+        def asset(filename):
+            path = os.path.join(os.path.join(_PROJECT_ROOT, "static"), filename.replace("/", os.sep))
+            try:
+                version = int(os.path.getmtime(path))
+            except OSError:
+                version = 0
+            return url_for("static", filename=filename) + f"?v={version}"
+        return dict(asset=asset)
 
     from . import models
 

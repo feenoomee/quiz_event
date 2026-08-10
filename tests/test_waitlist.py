@@ -170,7 +170,7 @@ class TestAutoCleanupPendingWaitlist:
             from quiz_app import db as _db
             from quiz_app.blueptints.api import auto_cleanup_pending
             ev = make_event(booked=1, seats=10,
-                            event_date=_dt.datetime.now() - _dt.timedelta(hours=1))
+                            event_date=_dt.datetime.now() - _dt.timedelta(days=1))
             team = make_team(name="Clean Team")
             reg = RegistrationsEvent(
                 team_id=team.id, event_id=ev.id,

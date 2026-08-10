@@ -1,8 +1,8 @@
 {% extends 'layout/base.html' %}
 {% block title %}Админ-панель — TLTQUIZ{% endblock %}
 {% block styles %}
-<link rel="stylesheet" href="{{ url_for('static', filename='css/profile.css') }}">
-<link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}">
+<link rel="stylesheet" href="{{ asset('css/profile.css') }}">
+  <link rel="stylesheet" href="{{ asset('css/admin.css') }}">
 {% endblock %}
 {% block nav_links %}
   <a href="/">На главную</a>
@@ -519,6 +519,6 @@
 
 {% endblock %}
 {% block scripts %}
-<script src="{{ url_for('static', filename='js/profile.js') }}"></script>
-<script src="{{ url_for('static', filename='js/admin.js') }}"></script>
+<script src="{{ asset('js/profile.js') }}"></script>
+  <script src="{{ asset('js/admin.js') }}"></script>
 {% endblock %}
