@@ -67,7 +67,11 @@ function renderRegistrations(regs, tab) {
 
     const card = document.createElement('div');
     card.className = 'profile-card';
+    const regPhotoStyle = r.event_photo
+      ? `background-image:url('${r.event_photo}');background-size:contain;background-repeat:no-repeat;background-position:center;`
+      : '';
     card.innerHTML = `
+      <div class="reg-card-photo" style="${regPhotoStyle}" onclick="openRegDetails(${r.id})"></div>
       <div class="reg-card-header">
         <div class="reg-card-title-group">
           <h3>${escapeHtml(r.event_name)}</h3>
@@ -88,8 +92,8 @@ function renderRegistrations(regs, tab) {
         <div class="reg-card-more" onclick="openRegDetails(${r.id})">Подробнее →</div>
       </div>
       <div class="reg-card-footer">
-        ${isPending && withinConfirmWindow
-          ? `<button class="btn-main" onclick="confirmRegistration(${r.id})">Подтвердить участие</button>
+        ${isPending
+          ? `<button class="btn-main" onclick="onConfirmClick(${r.id}, ${withinConfirmWindow})">Подтвердить участие</button>
              <button class="btn-cancel" onclick="cancelRegistration(${r.id})" style="margin-left:8px;">Отменить</button>`
           : `<button class="btn-cancel" onclick="cancelRegistration(${r.id})">Отменить</button>`}
       </div>
@@ -108,12 +112,32 @@ function openRegDetails(regId) {
   document.getElementById('regDetailsTeam').textContent = r.team_name ? `"${r.team_name}" (${r.player_count} чел.)` : '—';
   document.getElementById('regDetailsPrice').textContent = `${r.event_price} ₽ с игрока`;
   document.getElementById('regDetailsDesc').textContent = r.event_description || '';
+
+  const photoEl = document.getElementById('regDetailsPhoto');
+  if (photoEl) {
+    if (r.event_photo) {
+      photoEl.style.display = 'block';
+      photoEl.style.backgroundImage = `url('${r.event_photo}')`;
+    } else {
+      photoEl.style.display = 'none';
+      photoEl.style.backgroundImage = '';
+    }
+  }
+
   document.getElementById('regDetailsModal').classList.add('active');
 }
 
 function closeRegDetails(e) {
   if (e && e.target !== e.currentTarget) return;
   document.getElementById('regDetailsModal').classList.remove('active');
+}
+
+function onConfirmClick(regId, active) {
+  if (!active) {
+    alert('Не торопитесь подтверждать участие — это необходимо сделать в день проведения игры до 13:00.');
+    return;
+  }
+  confirmRegistration(regId);
 }
 
 async function confirmRegistration(regId) {
