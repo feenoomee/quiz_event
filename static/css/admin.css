@@ -655,6 +655,88 @@ select.form-input option {
   border-radius: var(--radius-sm);
   overflow: hidden;
 }
+.result-mode-tabs {
+  display: inline-flex;
+  gap: 4px;
+  margin: 20px 28px 0;
+  padding: 4px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: rgba(0,0,0,0.25);
+}
+.result-mode-tab {
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-secondary);
+  padding: 8px 18px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.result-mode-tab.active {
+  background: var(--yellow);
+  color: #000;
+}
+.result-photo-panel {
+  padding: 20px 28px 28px;
+}
+.scoreboard-table-panel {
+  display: none;
+}
+.result-photo-upload {
+  width: 100%;
+  min-height: 180px;
+  border: 1.5px dashed rgba(245,197,24,0.45);
+  border-radius: 8px;
+  background: rgba(245,197,24,0.04);
+  color: var(--text);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  cursor: pointer;
+  font-family: inherit;
+}
+.result-photo-upload:hover {
+  border-color: rgba(245,197,24,0.8);
+  background: rgba(245,197,24,0.08);
+}
+.result-photo-upload-icon {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: var(--yellow);
+  color: #000;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.6rem;
+  font-weight: 800;
+}
+.result-photo-upload strong,
+.result-photo-upload small {
+  display: block;
+  text-align: left;
+}
+.result-photo-upload small {
+  margin-top: 4px;
+  color: var(--text-secondary);
+}
+.result-photo-preview {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  background: #111;
+}
+.result-photo-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
 .scoreboard-banner {
   background: linear-gradient(180deg, rgba(245,197,24,0.18) 0%, rgba(0,0,0,0.2) 100%);
   color: var(--yellow);

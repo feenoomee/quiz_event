@@ -3,6 +3,9 @@ let scoreboardEventId = null;
 let editingEventId = null;
 let currentPhotoPath = null;
 let pendingPhotoFile = null;
+let currentResultMode = 'photo';
+let currentResultPhotoPath = null;
+let pendingResultPhotoFile = null;
 let currentParticipantsEventId = null;
 let currentWaitlistData = [];
 let currentWaitlistRegId = null;
@@ -335,6 +338,19 @@ function initScoreboardUi() {
   if (saveBtn) {
     saveBtn.addEventListener('click', saveScoreboard);
   }
+  document.querySelectorAll('.result-mode-tab').forEach((btn) => {
+    btn.addEventListener('click', () => setResultMode(btn.dataset.resultMode || 'photo'));
+  });
+  const resultUploadBtn = document.getElementById('result-photo-upload-btn');
+  const resultInput = document.getElementById('resultPhotoInput');
+  if (resultUploadBtn && resultInput) {
+    resultUploadBtn.addEventListener('click', () => resultInput.click());
+    resultInput.addEventListener('change', previewResultPhoto);
+  }
+  const removeResultPhotoBtn = document.getElementById('btn-remove-result-photo');
+  if (removeResultPhotoBtn) {
+    removeResultPhotoBtn.addEventListener('click', removeResultPhoto);
+  }
   const tbody = document.getElementById('scoreboard-tbody');
   if (tbody) {
     tbody.addEventListener('input', onScoreboardInput);
@@ -415,6 +431,7 @@ function confirmGameSelection() {
       }
       scoreboardEventId = data.event_id;
       renderScoreboard(data);
+      setResultMode('photo');
       closeGameSelectModal();
       const modal = document.getElementById('scoreboardModal');
       if (modal) {
@@ -436,6 +453,11 @@ function renderScoreboard(data) {
   const teams = data.teams || [];
   const rounds = data.rounds || 7;
   const scores = data.scores || [];
+  currentResultPhotoPath = data.result_photo_path || null;
+  pendingResultPhotoFile = null;
+  const resultPhotoInput = document.getElementById('resultPhotoInput');
+  if (resultPhotoInput) resultPhotoInput.value = '';
+  updateResultPhotoPreview(data.result_photo || '');
 
   const title = data.title || '—';
   banner.textContent = title;
@@ -503,6 +525,92 @@ function renderScoreboard(data) {
   });
 
   refreshScoreboardTotals();
+}
+
+function setResultMode(mode) {
+  currentResultMode = mode === 'table' ? 'table' : 'photo';
+  document.querySelectorAll('.result-mode-tab').forEach((btn) => {
+    btn.classList.toggle('active', btn.dataset.resultMode === currentResultMode);
+  });
+  const photoPanel = document.getElementById('result-photo-panel');
+  const tablePanel = document.getElementById('scoreboard-table-panel');
+  if (photoPanel) photoPanel.style.display = currentResultMode === 'photo' ? 'block' : 'none';
+  if (tablePanel) tablePanel.style.display = currentResultMode === 'table' ? 'block' : 'none';
+  const saveBtn = document.getElementById('btn-save-scoreboard');
+  if (saveBtn) {
+    saveBtn.textContent = currentResultMode === 'photo' ? 'Сохранить фото' : 'Сохранить результаты';
+  }
+}
+
+function updateResultPhotoPreview(src) {
+  const preview = document.getElementById('result-photo-preview');
+  const img = document.getElementById('result-photo-preview-img');
+  const uploadBtn = document.getElementById('result-photo-upload-btn');
+  if (!preview || !img || !uploadBtn) return;
+  if (src) {
+    img.src = src;
+    preview.style.display = 'block';
+    uploadBtn.style.display = 'none';
+  } else {
+    img.src = '';
+    preview.style.display = 'none';
+    uploadBtn.style.display = 'flex';
+  }
+}
+
+function checkImageSize(file, width, height) {
+  return new Promise((resolve) => {
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      const ok = width === null || (img.naturalWidth === width && img.naturalHeight === height);
+      URL.revokeObjectURL(url);
+      resolve(ok);
+    };
+    img.onerror = () => {
+      URL.revokeObjectURL(url);
+      resolve(false);
+    };
+    img.src = url;
+  });
+}
+
+async function previewResultPhoto(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  if (file.size > 16 * 1024 * 1024) {
+    alert('Фото результатов не должно быть больше 16 МБ.');
+    event.target.value = '';
+    return;
+  }
+  const isValidImage = await checkImageSize(file, null, null);
+  if (!isValidImage) {
+    alert('Недопустимый формат изображения.');
+    event.target.value = '';
+    return;
+  }
+  pendingResultPhotoFile = file;
+  currentResultPhotoPath = null;
+
+  const reader = new FileReader();
+  reader.onload = (e) => updateResultPhotoPreview(e.target.result);
+  reader.readAsDataURL(file);
+}
+
+function removeResultPhoto() {
+  const resultInput = document.getElementById('resultPhotoInput');
+  if (resultInput) resultInput.value = '';
+  pendingResultPhotoFile = null;
+
+  if (scoreboardEventId && currentResultPhotoPath) {
+    fetch(`/api/admin/games/${scoreboardEventId}/result-photo`, {
+      method: 'DELETE',
+      credentials: 'same-origin',
+    }).catch(() => {});
+  }
+
+  currentResultPhotoPath = null;
+  updateResultPhotoPreview('');
 }
 
 function onScoreboardInput(ev) {
@@ -584,6 +692,10 @@ function saveScoreboard() {
     alert('Сначала выберите игру.');
     return;
   }
+  if (currentResultMode === 'photo') {
+    saveResultPhoto();
+    return;
+  }
   const { matrix } = readScoresMatrixFromDom();
   const tbody = document.getElementById('scoreboard-tbody');
   if (tbody && !tbody.querySelector('tr[data-team-index]')) {
@@ -609,6 +721,63 @@ function saveScoreboard() {
       alert('Сохранено.');
     })
     .catch(() => alert('Ошибка сети'));
+}
+
+async function saveResultPhoto() {
+  if (scoreboardEventId === null) {
+    alert('Сначала выберите игру.');
+    return;
+  }
+
+  let photoPath = currentResultPhotoPath;
+  if (pendingResultPhotoFile) {
+    const formData = new FormData();
+    formData.append('file', pendingResultPhotoFile);
+    try {
+      const uploadResp = await fetch('/api/upload/result-photo', {
+        method: 'POST',
+        credentials: 'same-origin',
+        body: formData,
+      });
+      const uploadResult = await uploadResp.json();
+      if (!uploadResp.ok || uploadResult.status !== 'success') {
+        alert(uploadResult.message || 'Не удалось загрузить фото результатов');
+        return;
+      }
+      photoPath = uploadResult.path;
+    } catch {
+      alert('Ошибка сети при загрузке фото результатов');
+      return;
+    }
+  }
+
+  if (!photoPath) {
+    alert('Загрузите фото результатов 2560x1440 px.');
+    return;
+  }
+
+  try {
+    const resp = await fetch(`/api/admin/games/${scoreboardEventId}/result-photo`, {
+      method: 'POST',
+      credentials: 'same-origin',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ result_photo_path: photoPath }),
+    });
+    const result = await resp.json();
+    if (!resp.ok || result.status !== 'success') {
+      alert(result.message || 'Не удалось сохранить фото результатов');
+      return;
+    }
+    currentResultPhotoPath = result.result_photo_path;
+    pendingResultPhotoFile = null;
+    updateResultPhotoPreview(result.result_photo);
+    const emptyEl = document.getElementById('scoreboard-empty');
+    if (emptyEl) emptyEl.textContent = `Фото результатов сохранено для игры #${scoreboardEventId}`;
+    closeScoreboardModal();
+    alert('Сохранено.');
+  } catch {
+    alert('Ошибка сети');
+  }
 }
 
 function updateRounds() {

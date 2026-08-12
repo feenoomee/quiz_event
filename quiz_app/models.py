@@ -74,6 +74,7 @@ class Event(db.Model):
     photo = db.Column(db.String(255), nullable=True)
     rounds = db.Column(db.Integer, nullable=False, default=7)
     scores = db.Column(db.Text, nullable=True)
+    result_photo = db.Column(db.String(255), nullable=True)
 
     registrations = db.relationship("RegistrationsEvent", back_populates="event", cascade="all, delete-orphan")
 

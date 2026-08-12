@@ -111,3 +111,32 @@ def _save_upload(file, subfolder, max_file_size=None, max_size=None):
         file.save(dest)
 
     return f"uploads/{subfolder}/{unique_name}"
+
+
+def _save_image_upload(file, subfolder, max_file_size=None):
+    if not file or not _allowed_file(file.filename):
+        return None
+
+    if max_file_size:
+        file.seek(0, os.SEEK_END)
+        size = file.tell()
+        file.seek(0)
+        if size > max_file_size:
+            return None
+
+    try:
+        img = Image.open(file)
+        img.verify()
+        file.seek(0)
+    except Exception:
+        file.seek(0)
+        return None
+
+    ext = file.filename.rsplit(".", 1)[1].lower()
+    unique_name = f"{uuid.uuid4().hex}.{ext}"
+    folder = os.path.join(current_app.config["UPLOAD_FOLDER"], subfolder)
+    os.makedirs(folder, exist_ok=True)
+    dest = os.path.join(folder, unique_name)
+    file.save(dest)
+
+    return f"uploads/{subfolder}/{unique_name}"

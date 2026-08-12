@@ -4,11 +4,12 @@ import os
 
 from flask import Blueprint, jsonify, request, url_for, current_app
 from flask_login import login_required, current_user, login_user
+from sqlalchemy import and_, or_
 # from werkzeug.utils import secure_filename
 
 from quiz_app import db
 from quiz_app.models import User, Event, Team, RegistrationsEvent
-from ..helpers import _format_short_name, _require_admin_json, _MONTHS_RU, _format_event, _save_upload, _format_date_ru #,_allowed_file,  _WEEKDAYS_RU
+from ..helpers import _format_short_name, _require_admin_json, _MONTHS_RU, _format_event, _save_upload, _format_date_ru, _save_image_upload #,_allowed_file,  _WEEKDAYS_RU
 
 api_bp = Blueprint("api", __name__, url_prefix="/api")
 
@@ -72,6 +73,25 @@ def upload_event_photo():
     return jsonify({"status": "success", "url": photo_url, "path": rel_path})
 
 
+@api_bp.route("/upload/result-photo", methods=["POST"])
+@login_required
+def upload_result_photo():
+    if not _require_admin_json():
+        return jsonify({"status": "error", "message": "No access"}), 403
+    if "file" not in request.files:
+        return jsonify({"status": "error", "message": "File is required"}), 400
+    file = request.files["file"]
+    rel_path = _save_image_upload(
+        file,
+        "results",
+        max_file_size=16 * 1024 * 1024,
+    )
+    if not rel_path:
+        return jsonify({"status": "error", "message": "Недопустимый формат файла или файл больше 16 МБ"}), 400
+    photo_url = url_for("pages.serve_media", filename=rel_path)
+    return jsonify({"status": "success", "url": photo_url, "path": rel_path})
+
+
 # Events CRUD
 @api_bp.route("/events", methods=["GET"])
 def list_events():
@@ -84,14 +104,34 @@ def list_events():
 def public_past_games():
     cleanup_past_event_photos()
     now = datetime.now()
-    events = Event.query.filter(Event.scores.isnot(None), Event.scores != '').order_by(Event.date.desc()).limit(20).all()
+    events = Event.query.filter(
+        or_(
+            Event.result_photo.isnot(None),
+            and_(Event.scores.isnot(None), Event.scores != ""),
+        ),
+    ).order_by(Event.date.desc()).limit(20).all()
 
     result = []
     for event in events:
-        regs = RegistrationsEvent.query.filter_by(event_id=event.id).order_by(RegistrationsEvent.id).all()
-        teams = [r.team.name for r in regs]
+        if event.result_photo:
+            d = event.date
+            result.append({
+                "id": event.id,
+                "title": event.name,
+                "date": f"{d.day} {_MONTHS_RU[d.month]} {d.year}",
+                "time": d.strftime("%H:%M"),
+                "location": event.location,
+                "photo": url_for("pages.serve_media", filename=event.photo) if event.photo else None,
+                "result_photo": url_for("pages.serve_media", filename=event.result_photo),
+                "result_type": "photo",
+                "rounds": event.rounds,
+                "results": [],
+            })
+            continue
 
         scores_data = event.get_scores()
+        regs = RegistrationsEvent.query.filter_by(event_id=event.id).order_by(RegistrationsEvent.id).all()
+        teams = [r.team.name for r in regs]
         if not scores_data or not teams:
             continue
 
@@ -118,6 +158,8 @@ def public_past_games():
             "time": d.strftime("%H:%M"),
             "location": event.location,
             "photo": url_for("pages.serve_media", filename=event.photo) if event.photo else None,
+            "result_photo": None,
+            "result_type": "table",
             "rounds": event.rounds,
             "results": team_results,
         })
@@ -252,6 +294,10 @@ def delete_event(event_id):
         photo_path = os.path.join(current_app.root_path, "media", event.photo)
         if os.path.exists(photo_path):
             os.remove(photo_path)
+    if event.result_photo:
+        result_photo_path = os.path.join(current_app.root_path, "media", event.result_photo)
+        if os.path.exists(result_photo_path):
+            os.remove(result_photo_path)
 
     try:
         db.session.delete(event)
@@ -933,6 +979,8 @@ def admin_get_scoreboard(event_id):
             "rounds": event.rounds,
             "teams": teams,
             "scores": board,
+            "result_photo": url_for("pages.serve_media", filename=event.result_photo) if event.result_photo else None,
+            "result_photo_path": event.result_photo,
         }
     )
 
@@ -969,6 +1017,11 @@ def admin_save_scoreboard(event_id):
         normalized.append(out_row)
 
     trimmed = [(row + [None] * event.rounds)[:event.rounds] for row in normalized]
+    if event.result_photo:
+        photo_path = os.path.join(current_app.root_path, "media", event.result_photo)
+        if os.path.exists(photo_path):
+            os.remove(photo_path)
+        event.result_photo = None
     event.set_scores(trimmed)
     try:
         db.session.commit()
@@ -976,6 +1029,61 @@ def admin_save_scoreboard(event_id):
     except Exception:
         db.session.rollback()
         return jsonify({"status": "error", "message": "Не удалось сохранить"}), 500
+
+
+@api_bp.route("/admin/games/<int:event_id>/result-photo", methods=["POST"])
+def admin_save_result_photo(event_id):
+    if not _require_admin_json():
+        return jsonify({"status": "error", "message": "No access"}), 403
+    event = Event.query.get(event_id)
+    if not event:
+        return jsonify({"status": "error", "message": "Game not found"}), 404
+
+    payload = request.get_json(silent=True) or {}
+    photo_path = (payload.get("result_photo_path") or "").strip()
+    if not photo_path:
+        return jsonify({"status": "error", "message": "Upload result photo first"}), 400
+    if not photo_path.startswith("uploads/results/"):
+        return jsonify({"status": "error", "message": "Invalid result photo path"}), 400
+
+    if event.result_photo and event.result_photo != photo_path:
+        old_path = os.path.join(current_app.root_path, "media", event.result_photo)
+        if os.path.exists(old_path):
+            os.remove(old_path)
+
+    event.result_photo = photo_path
+    event.scores = None
+    try:
+        db.session.commit()
+        return jsonify({
+            "status": "success",
+            "result_photo": url_for("pages.serve_media", filename=event.result_photo),
+            "result_photo_path": event.result_photo,
+        })
+    except Exception:
+        db.session.rollback()
+        return jsonify({"status": "error", "message": "Could not save result photo"}), 500
+
+
+@api_bp.route("/admin/games/<int:event_id>/result-photo", methods=["DELETE"])
+def admin_delete_result_photo(event_id):
+    if not _require_admin_json():
+        return jsonify({"status": "error", "message": "No access"}), 403
+    event = Event.query.get(event_id)
+    if not event:
+        return jsonify({"status": "error", "message": "Game not found"}), 404
+
+    if event.result_photo:
+        photo_path = os.path.join(current_app.root_path, "media", event.result_photo)
+        if os.path.exists(photo_path):
+            os.remove(photo_path)
+    event.result_photo = None
+    try:
+        db.session.commit()
+        return jsonify({"status": "success"})
+    except Exception:
+        db.session.rollback()
+        return jsonify({"status": "error", "message": "Could not delete result photo"}), 500
 
 
 # История прошедших мероприятий (последние 6 месяцев)
@@ -1014,7 +1122,7 @@ def admin_history():
             "teams": teams_data,
             "total_teams": len(teams_data),
             "total_players": total_players,
-            "has_scores": bool(e.scores),
+            "has_scores": bool(e.scores or e.result_photo),
         })
 
     return jsonify(result)
@@ -1087,6 +1195,10 @@ def admin_clear_history():
             photo_path = os.path.join(current_app.root_path, "media", e.photo)
             if os.path.exists(photo_path):
                 os.remove(photo_path)
+        if e.result_photo:
+            result_photo_path = os.path.join(current_app.root_path, "media", e.result_photo)
+            if os.path.exists(result_photo_path):
+                os.remove(result_photo_path)
         db.session.delete(e)
 
     try:

@@ -64,11 +64,15 @@ function renderResults(games) {
   games.forEach((game) => {
     const slide = document.createElement('div');
     slide.className = 'slide';
+    if (game.result_type === 'photo' && game.result_photo) {
+      slide.classList.add('slide--result-photo');
+    }
 
     const emojiDiv = document.createElement('div');
     emojiDiv.className = 'slide-emoji';
     if (game.photo) {
-      emojiDiv.innerHTML = `<img src="${game.photo}" alt="" style="width:100%;height:100%;object-fit:cover;">`;
+      emojiDiv.classList.add('slide-emoji--photo');
+      emojiDiv.innerHTML = `<img src="${game.photo}" alt="" style="width:100%;height:100%;object-fit:contain;">`;
     } else {
       emojiDiv.textContent = '🏆';
     }
@@ -84,6 +88,20 @@ function renderResults(games) {
     titleDiv.className = 'slide-title';
     titleDiv.textContent = game.title;
     infoDiv.appendChild(titleDiv);
+
+    if (game.result_type === 'photo' && game.result_photo) {
+      const resultPhotoWrap = document.createElement('div');
+      resultPhotoWrap.className = 'slide-result-photo-wrap';
+      const resultPhoto = document.createElement('img');
+      resultPhoto.className = 'slide-result-photo';
+      resultPhoto.src = game.result_photo;
+      resultPhoto.alt = game.title;
+      resultPhotoWrap.appendChild(resultPhoto);
+      infoDiv.appendChild(resultPhotoWrap);
+      slide.appendChild(infoDiv);
+      slides.appendChild(slide);
+      return;
+    }
 
     const tableWrap = document.createElement('div');
     tableWrap.className = 'slide-results-wrap';

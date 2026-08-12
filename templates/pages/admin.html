@@ -250,6 +250,25 @@
       <button type="button" class="modal-close" onclick="closeScoreboardModal()">&times;</button>
     </div>
     <div class="modal-body">
+      <div class="result-mode-tabs" role="group" aria-label="Способ ввода результатов">
+        <button type="button" class="result-mode-tab active" data-result-mode="photo">Фото</button>
+        <button type="button" class="result-mode-tab" data-result-mode="table">Таблица</button>
+      </div>
+      <div class="result-photo-panel" id="result-photo-panel">
+        <input type="file" id="resultPhotoInput" accept="image/png,image/jpeg,image/webp" style="display: none;">
+        <button type="button" class="result-photo-upload" id="result-photo-upload-btn">
+          <span class="result-photo-upload-icon">+</span>
+          <span>
+            <strong>Загрузить фото результатов</strong>
+            <small>JPG / PNG / WebP, до 16 МБ</small>
+          </span>
+        </button>
+        <div class="result-photo-preview" id="result-photo-preview" style="display: none;">
+          <img id="result-photo-preview-img" src="" alt="Фото результатов">
+          <button type="button" class="btn-remove-photo" id="btn-remove-result-photo">✕</button>
+        </div>
+      </div>
+      <div class="scoreboard-table-panel" id="scoreboard-table-panel">
       <div class="scoreboard-head">
         <div class="scoreboard-banner" id="scoreboard-banner-title">—</div>
         <div class="scoreboard-rounds-control">
@@ -263,6 +282,7 @@
           <thead id="scoreboard-thead"></thead>
           <tbody id="scoreboard-tbody"></tbody>
         </table>
+      </div>
       </div>
     </div>
     <div class="modal-footer">
