@@ -66,7 +66,7 @@ def upload_event_photo():
     if "file" not in request.files:
         return jsonify({"status": "error", "message": "Файл не передан"}), 400
     file = request.files["file"]
-    rel_path = _save_upload(file, "events")
+    rel_path = _save_upload(file, "events", max_size=(2000, 2000))
     if not rel_path:
         return jsonify({"status": "error", "message": "Недопустимый формат файла"}), 400
     photo_url = url_for("pages.serve_media", filename=rel_path)

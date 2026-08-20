@@ -48,7 +48,9 @@ def index():
 @pages_bp.route("/media/<path:filename>")
 def serve_media(filename):
     """Файлы из папки media/ (включая подпапки uploads/)."""
-    return send_from_directory(os.path.join(current_app.root_path, "media"), filename)
+    resp = send_from_directory(os.path.join(current_app.root_path, "media"), filename)
+    resp.headers["Cache-Control"] = "public, max-age=86400, must-revalidate"
+    return resp
 
 
 @pages_bp.route("/favicon.ico")

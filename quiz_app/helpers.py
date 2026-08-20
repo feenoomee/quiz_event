@@ -86,7 +86,7 @@ def _allowed_file(filename):
     return "." in filename and filename.rsplit(".", 1)[1].lower() in current_app.config.get("ALLOWED_EXTENSIONS", set())
 
 
-def _save_upload(file, subfolder, max_file_size=None, max_size=None):
+def _save_upload(file, subfolder, max_file_size=None, max_size=None, quality=82, fmt="WEBP"):
     if not file or not _allowed_file(file.filename):
         return None
 
@@ -97,18 +97,31 @@ def _save_upload(file, subfolder, max_file_size=None, max_size=None):
         if size > max_file_size:
             return None
 
-    ext = file.filename.rsplit(".", 1)[1].lower()
-    unique_name = f"{uuid.uuid4().hex}.{ext}"
+    try:
+        img = Image.open(file)
+        img.load()
+        file.seek(0)
+    except Exception:
+        file.seek(0)
+        return None
+
+    if max_size:
+        img.thumbnail(max_size, Image.LANCZOS)
+    if img.mode not in ("RGB", "RGBA"):
+        img = img.convert("RGB")
+    if fmt.upper() == "WEBP":
+        unique_name = f"{uuid.uuid4().hex}.webp"
+    else:
+        unique_name = f"{uuid.uuid4().hex}.jpg"
     folder = os.path.join(current_app.config["UPLOAD_FOLDER"], subfolder)
     os.makedirs(folder, exist_ok=True)
     dest = os.path.join(folder, unique_name)
-
-    if max_size:
-        img = Image.open(file)
-        img.thumbnail(max_size, Image.LANCZOS)
-        img.save(dest, optimize=True)
+    if fmt.upper() == "WEBP":
+        img.save(dest, format="WEBP", quality=quality, method=4, optimize=True)
     else:
-        file.save(dest)
+        if img.mode == "RGBA":
+            img = img.convert("RGB")
+        img.save(dest, format="JPEG", quality=quality, optimize=True)
 
     return f"uploads/{subfolder}/{unique_name}"
 
@@ -126,17 +139,18 @@ def _save_image_upload(file, subfolder, max_file_size=None):
 
     try:
         img = Image.open(file)
-        img.verify()
+        img.load()
         file.seek(0)
     except Exception:
         file.seek(0)
         return None
 
-    ext = file.filename.rsplit(".", 1)[1].lower()
-    unique_name = f"{uuid.uuid4().hex}.{ext}"
+    unique_name = f"{uuid.uuid4().hex}.webp"
     folder = os.path.join(current_app.config["UPLOAD_FOLDER"], subfolder)
     os.makedirs(folder, exist_ok=True)
     dest = os.path.join(folder, unique_name)
-    file.save(dest)
+    if img.mode not in ("RGB", "RGBA"):
+        img = img.convert("RGB")
+    img.save(dest, format="WEBP", quality=85, method=4, optimize=True)
 
     return f"uploads/{subfolder}/{unique_name}"
