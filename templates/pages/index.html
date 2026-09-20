@@ -58,33 +58,60 @@
       </div>
     </div>
 
-    {% if nearest_event %}
-    <div class="hero-card fade-in">
-      <div class="hero-card-label">
-        <div class="pulse-dot"></div>
-        Ближайший квиз
+    {% if nearest_event or monthly_poster %}
+    <div class="hero-showcase fade-in">
+      <div class="hero-slider" id="heroSlider">
+        <div class="hero-slides" id="heroSlides">
+          {% if nearest_event %}
+          <div class="hero-slide">
+            <div class="hero-card">
+              <div class="hero-card-label">
+                <div class="pulse-dot"></div>
+                Ближайший квиз
+              </div>
+              <div class="hero-card-img" {% if nearest_event.photo %}style="background-image:url('{{ url_for('pages.serve_media', filename=nearest_event.photo) }}');background-size:contain;background-repeat:no-repeat;background-position:center;"{% endif %}>
+                {% if not nearest_event.photo %} <div class = "hero-card-img-overlay"></div>{% endif %}
+                <div class="hero-card-img-overlay"></div>
+              </div>
+              <div class="hero-card-title">{{ nearest_event.name }}</div>
+              <div class="hero-card-desc">{{ nearest_event.description }}</div>
+              <div class="hero-card-more" onclick="openEventDetails({{ nearest_event.id }})">Подробнее →</div>
+              <div class="hero-card-meta">
+                <div class="hero-card-meta-row"><span class="meta-icon"></span> {{ nearest_event.date }}</div>
+                <div class="hero-card-meta-row"><span class="meta-icon"></span> {{ nearest_event.time }} — старт игры</div>
+                <div class="hero-card-meta-row"><span class="meta-icon"></span> {{ nearest_event.location }}</div>
+                <div class="hero-card-meta-row"><span class="meta-icon"></span> Команды от 4 до 10 человек</div>
+              </div>
+              <div class="hero-price">{{ nearest_event.price }} ₽ <small style="font-size:0.7rem;color:#888;font-weight:500">с игрока</small></div>
+              <div class="hero-seats">{% if nearest_event.seats_left == 0 %}Мест нет, можно в лист ожидания{% else %}Осталось {{ nearest_event.seats_left }} мест!{% endif %}</div>
+              {% if nearest_event.registration_open == false %}
+                <button class="btn-main btn-main--disabled" disabled>Регистрация закрыта</button>
+              {% else %}
+                <button class="btn-main" onclick="openRegModal({{ nearest_event.id }}, '{{ nearest_event.name }}', '{{ nearest_event.date }}, {{ nearest_event.time }}', '{{ nearest_event.price }} ₽')">
+                  {% if nearest_event.seats_left == 0 %}В лист ожидания →{% else %}Зарегистрироваться →{% endif %}
+                </button>
+              {% endif %}
+            </div>
+          </div>
+          {% endif %}
+          {% if monthly_poster %}
+          <div class="hero-slide">
+            <div class="hero-card hero-card--poster">
+              <div class="hero-card-label">Афиша месяца</div>
+              <button type="button" class="hero-poster-btn" data-poster-src="{{ monthly_poster.url }}" aria-label="Открыть афишу">
+                <img class="hero-poster-img" src="{{ monthly_poster.url }}" alt="Афиша месяца">
+              </button>
+            </div>
+          </div>
+          {% endif %}
+        </div>
       </div>
-      <div class="hero-card-img" {% if nearest_event.photo %}style="background-image:url('{{ url_for('pages.serve_media', filename=nearest_event.photo) }}');background-size:contain;background-repeat:no-repeat;background-position:center;"{% endif %}>
-        {% if not nearest_event.photo %} <div class = "hero-card-img-overlay"></div>{% endif %}
-        <div class="hero-card-img-overlay"></div>
+      {% if nearest_event and monthly_poster %}
+      <div class="hero-slider-controls">
+        <button type="button" class="slider-btn" id="heroPrev" aria-label="Предыдущий слайд">←</button>
+        <div class="slider-dots" id="heroSliderDots"></div>
+        <button type="button" class="slider-btn" id="heroNext" aria-label="Следующий слайд">→</button>
       </div>
-      <div class="hero-card-title">{{ nearest_event.name }}</div>
-      <div class="hero-card-desc">{{ nearest_event.description }}</div>
-      <div class="hero-card-more" onclick="openEventDetails({{ nearest_event.id }})">Подробнее →</div>
-      <div class="hero-card-meta">
-        <div class="hero-card-meta-row"><span class="meta-icon"></span> {{ nearest_event.date }}</div>
-        <div class="hero-card-meta-row"><span class="meta-icon"></span> {{ nearest_event.time }} — старт игры</div>
-        <div class="hero-card-meta-row"><span class="meta-icon"></span> {{ nearest_event.location }}</div>
-        <div class="hero-card-meta-row"><span class="meta-icon"></span> Команды от 4 до 10 человек</div>
-      </div>
-      <div class="hero-price">{{ nearest_event.price }} ₽ <small style="font-size:0.7rem;color:#888;font-weight:500">с игрока</small></div>
-      <div class="hero-seats">{% if nearest_event.seats_left == 0 %}Мест нет, можно в лист ожидания{% else %}Осталось {{ nearest_event.seats_left }} мест!{% endif %}</div>
-      {% if nearest_event.registration_open == false %}
-        <button class="btn-main btn-main--disabled" disabled>Регистрация закрыта</button>
-      {% else %}
-        <button class="btn-main" onclick="openRegModal({{ nearest_event.id }}, '{{ nearest_event.name }}', '{{ nearest_event.date }}, {{ nearest_event.time }}', '{{ nearest_event.price }} ₽')">
-          {% if nearest_event.seats_left == 0 %}В лист ожидания →{% else %}Зарегистрироваться →{% endif %}
-        </button>
       {% endif %}
     </div>
     {% endif %}
@@ -386,10 +413,16 @@
   </div>
 </div>
 
+<div class="poster-lightbox" id="posterLightbox" hidden>
+  <button type="button" class="poster-lightbox-close" id="posterLightboxClose" aria-label="Закрыть">✕</button>
+  <img id="posterLightboxImg" alt="Афиша месяца">
+</div>
+
 {% endblock %}
 
 {% block scripts %}
 <script>
   window.currentUser = {{ current_user|tojson if current_user else 'null' }};
 </script>
+<script src="{{ asset('js/hero-slider.js') }}"></script>
 {% endblock %}

@@ -19,7 +19,75 @@ document.addEventListener('DOMContentLoaded', function () {
   initScoreboardUi();
   initCustomModals();
   initAdminUsersForm();
+  initPosterAdmin();
 });
+
+function initPosterAdmin() {
+  const fileInput = document.getElementById('posterFileInput');
+  const uploadBtn = document.getElementById('posterUploadBtn');
+  const preview = document.getElementById('posterPreview');
+  const previewImg = document.getElementById('posterPreviewImg');
+  const removeBtn = document.getElementById('posterRemoveBtn');
+  if (!fileInput || !uploadBtn) return;
+
+  function showPoster(url) {
+    if (!url) {
+      preview.style.display = 'none';
+      previewImg.src = '';
+      return;
+    }
+    previewImg.src = url;
+    preview.style.display = 'block';
+  }
+
+  fetch('/api/poster', { credentials: 'same-origin' })
+    .then((r) => r.json())
+    .then((data) => showPoster(data.url))
+    .catch(() => {});
+
+  uploadBtn.addEventListener('click', () => fileInput.click());
+  fileInput.addEventListener('change', async () => {
+    const file = fileInput.files && fileInput.files[0];
+    fileInput.value = '';
+    if (!file) return;
+    const formData = new FormData();
+    formData.append('file', file);
+    try {
+      const resp = await fetch('/api/poster', {
+        method: 'POST',
+        body: formData,
+        credentials: 'same-origin',
+      });
+      const data = await resp.json();
+      if (!resp.ok) {
+        alert(data.message || 'Не удалось загрузить афишу');
+        return;
+      }
+      showPoster(data.url);
+    } catch (err) {
+      alert('Не удалось загрузить афишу');
+    }
+  });
+
+  if (removeBtn) {
+    removeBtn.addEventListener('click', async () => {
+      if (!confirm('Удалить текущую афишу с главной?')) return;
+      try {
+        const resp = await fetch('/api/poster', {
+          method: 'DELETE',
+          credentials: 'same-origin',
+        });
+        if (!resp.ok) {
+          alert('Не удалось удалить афишу');
+          return;
+        }
+        showPoster(null);
+      } catch (err) {
+        alert('Не удалось удалить афишу');
+      }
+    });
+  }
+}
 
 function initAdminUsersForm() {
   const emailInput = document.getElementById('adminRoleEmail');

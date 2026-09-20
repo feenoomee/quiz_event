@@ -17,7 +17,7 @@ def inject_current_user():
 @pages_bp.route("/")
 def index():
     from datetime import datetime
-    from quiz_app.models import Event
+    from quiz_app.models import Event, SitePoster
     now = datetime.now()
     nearest = Event.query.filter(Event.date >= now).order_by(Event.date).first()
     nearest_event = None
@@ -42,7 +42,18 @@ def index():
             "photo": nearest.photo,
             "registration_open": registration_open,
         }
-    return render_template("pages/index.html", nearest_event=nearest_event)
+    poster = SitePoster.current()
+    monthly_poster = None
+    if poster and poster.photo:
+        monthly_poster = {
+            "photo": poster.photo,
+            "url": url_for("pages.serve_media", filename=poster.photo),
+        }
+    return render_template(
+        "pages/index.html",
+        nearest_event=nearest_event,
+        monthly_poster=monthly_poster,
+    )
 
 
 @pages_bp.route("/media/<path:filename>")

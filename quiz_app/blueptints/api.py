@@ -8,7 +8,7 @@ from sqlalchemy import and_, or_
 # from werkzeug.utils import secure_filename
 
 from quiz_app import db
-from quiz_app.models import User, Event, Team, RegistrationsEvent
+from quiz_app.models import User, Event, Team, RegistrationsEvent, SitePoster
 from ..helpers import _format_short_name, _require_admin_json, _MONTHS_RU, _format_event, _save_upload, _format_date_ru, _save_image_upload #,_allowed_file,  _WEEKDAYS_RU
 
 api_bp = Blueprint("api", __name__, url_prefix="/api")
@@ -90,6 +90,74 @@ def upload_result_photo():
         return jsonify({"status": "error", "message": "Недопустимый формат файла или файл больше 16 МБ"}), 400
     photo_url = url_for("pages.serve_media", filename=rel_path)
     return jsonify({"status": "success", "url": photo_url, "path": rel_path})
+
+
+def _delete_media_file(rel_path):
+    if not rel_path:
+        return
+    photo_path = os.path.join(current_app.root_path, "media", rel_path)
+    if os.path.exists(photo_path):
+        os.remove(photo_path)
+
+
+def _poster_payload(poster):
+    if not poster:
+        return {"photo": None, "url": None}
+    return {
+        "photo": poster.photo,
+        "url": url_for("pages.serve_media", filename=poster.photo),
+    }
+
+
+@api_bp.route("/poster", methods=["GET"])
+@login_required
+def get_poster():
+    if not _require_admin_json():
+        return jsonify({"status": "error", "message": "Нет доступа"}), 403
+    return jsonify(_poster_payload(SitePoster.current()))
+
+
+@api_bp.route("/poster", methods=["POST"])
+@login_required
+def upload_poster():
+    if not _require_admin_json():
+        return jsonify({"status": "error", "message": "Нет доступа"}), 403
+    if "file" not in request.files:
+        return jsonify({"status": "error", "message": "Файл не передан"}), 400
+    file = request.files["file"]
+    rel_path = _save_image_upload(
+        file,
+        "calendar",
+        max_file_size=16 * 1024 * 1024,
+    )
+    if not rel_path:
+        return jsonify({"status": "error", "message": "Недопустимый формат файла или файл больше 16 МБ"}), 400
+
+    poster = SitePoster.current()
+    if poster:
+        _delete_media_file(poster.photo)
+        poster.photo = rel_path
+        poster.updated_at = datetime.now()
+    else:
+        poster = SitePoster(photo=rel_path)
+        db.session.add(poster)
+    db.session.commit()
+    payload = _poster_payload(poster)
+    payload["status"] = "success"
+    return jsonify(payload)
+
+
+@api_bp.route("/poster", methods=["DELETE"])
+@login_required
+def delete_poster():
+    if not _require_admin_json():
+        return jsonify({"status": "error", "message": "Нет доступа"}), 403
+    poster = SitePoster.current()
+    if poster:
+        _delete_media_file(poster.photo)
+        db.session.delete(poster)
+        db.session.commit()
+    return jsonify({"status": "success", "photo": None, "url": None})
 
 
 # Events CRUD

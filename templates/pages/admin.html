@@ -172,6 +172,29 @@
 
 <div class="admin-dashboard-shell">
 
+<section class="section admin-content">
+  <div class="section-inner">
+    <div class="section-header fade-in">
+      <h2 class="section-title">Афиша <span>месяца</span></h2>
+      <p class="section-sub">Одно изображение на главной рядом с ближайшим квизом. Новая загрузка заменяет текущую.</p>
+    </div>
+    <div class="poster-admin-card fade-in">
+      <input type="file" id="posterFileInput" accept="image/png,image/jpeg,image/webp,image/gif" style="display: none;">
+      <button type="button" class="result-photo-upload" id="posterUploadBtn">
+        <span class="result-photo-upload-icon">+</span>
+        <span>
+          <strong>Загрузить афишу</strong>
+          <small>JPG, PNG или WEBP, до 16 МБ</small>
+        </span>
+      </button>
+      <div class="poster-admin-preview" id="posterPreview" style="display: none;">
+        <img id="posterPreviewImg" src="" alt="Текущая афиша">
+        <button type="button" class="btn-remove-photo" id="posterRemoveBtn" aria-label="Удалить афишу">✕</button>
+      </div>
+    </div>
+  </div>
+</section>
+
 <!-- Events Management Section -->
 <section class="section admin-content">
   <div class="section-inner">
