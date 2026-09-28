@@ -80,9 +80,8 @@
   background: linear-gradient(90deg, var(--yellow), var(--yellow-light));
 }
 .hero-card-label {
-  font-size: 0.75rem;
-  font-weight: 700;
-  text-transform: uppercase;
+  font-size: 0.88rem;
+  font-weight: 800;
   letter-spacing: 1px;
   color: var(--yellow);
   margin-bottom: 12px;
@@ -132,8 +131,8 @@
   cursor: pointer;
 }
 .hero-card-more {
-  font-size: 0.85rem;
-  font-weight: 700;
+  font-size: 0.88rem;
+  font-weight: 800;
   color: var(--yellow);
   cursor: pointer;
   margin-bottom: 12px;
@@ -143,11 +142,9 @@
 .hero-card-meta-row {
   display: flex;
   align-items: center;
-  gap: 8px;
   color: #aaa;
   font-size: 0.88rem;
 }
-.meta-icon { color: var(--yellow); font-size: 0.9rem; }
 .hero-price {
   font-size: 1.4rem;
   font-weight: 900;

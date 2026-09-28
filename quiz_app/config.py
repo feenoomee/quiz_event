@@ -20,6 +20,8 @@ class Config:
     MAX_CONTENT_LENGTH = 16 * 1024 * 1024
     ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg", "gif", "webp"}
 
+    # Email delivery is temporarily disabled until the notification module is fixed.
+    MAIL_ENABLED = os.environ.get("MAIL_ENABLED", "false").lower() in ("1", "true", "yes")
     MAIL_SERVER = os.environ.get("MAIL_SERVER", "smtp.yandex.ru")
     MAIL_PORT = int(os.environ.get("MAIL_PORT", 465))
     MAIL_USE_SSL = os.environ.get("MAIL_USE_SSL", "true").lower() in ("1", "true", "yes")

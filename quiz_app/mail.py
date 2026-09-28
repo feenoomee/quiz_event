@@ -8,6 +8,10 @@ from flask import current_app, render_template
 
 def send_email(to, subject, html_body):
     """Send an HTML email via Yandex SMTP."""
+    if not current_app.config.get("MAIL_ENABLED", False):
+        current_app.logger.info("Email delivery is disabled, skipping email to %s", to)
+        return False
+
     smtp_server = current_app.config.get("MAIL_SERVER", "smtp.yandex.ru")
     smtp_port = current_app.config.get("MAIL_PORT", 465)
     username = current_app.config.get("MAIL_USERNAME")

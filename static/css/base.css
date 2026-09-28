@@ -126,7 +126,7 @@ button.btn-profile {
 .btn-outline {
   background: transparent;
   color: var(--yellow);
-  font-weight: 700;
+  font-weight: 800;
   font-size: 0.95rem;
   padding: 14px 28px;
   border-radius: 12px;

@@ -77,10 +77,10 @@
               <div class="hero-card-desc">{{ nearest_event.description }}</div>
               <div class="hero-card-more" onclick="openEventDetails({{ nearest_event.id }})">Подробнее →</div>
               <div class="hero-card-meta">
-                <div class="hero-card-meta-row"><span class="meta-icon"></span> {{ nearest_event.date }}</div>
-                <div class="hero-card-meta-row"><span class="meta-icon"></span> {{ nearest_event.time }} — старт игры</div>
-                <div class="hero-card-meta-row"><span class="meta-icon"></span> {{ nearest_event.location }}</div>
-                <div class="hero-card-meta-row"><span class="meta-icon"></span> Команды от 4 до 10 человек</div>
+                <div class="hero-card-meta-row">{{ nearest_event.date }}</div>
+                <div class="hero-card-meta-row">{{ nearest_event.time }} — старт игры</div>
+                <div class="hero-card-meta-row">{{ nearest_event.location }}</div>
+                <div class="hero-card-meta-row">Команды от 4 до 10 человек</div>
               </div>
               <div class="hero-price">{{ nearest_event.price }} ₽ <small style="font-size:0.7rem;color:#888;font-weight:500">с игрока</small></div>
               <div class="hero-seats">{% if nearest_event.seats_left == 0 %}Мест нет, можно в лист ожидания{% else %}Осталось {{ nearest_event.seats_left }} мест!{% endif %}</div>
