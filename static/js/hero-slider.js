@@ -13,8 +13,9 @@
 
   function goTo(n) {
     current = (n + total) % total;
-    const width = slider ? slider.clientWidth : slidesEl.clientWidth;
-    slidesEl.style.transform = 'translateX(-' + current * width + 'px)';
+    slides.forEach(function (slide, i) {
+      slide.classList.toggle('active', i === current);
+    });
     if (dotsEl) {
       dotsEl.querySelectorAll('.slider-dot').forEach(function (dot, i) {
         dot.classList.toggle('active', i === current);
@@ -35,6 +36,7 @@
     for (let i = 0; i < total; i++) {
       const dot = document.createElement('button');
       dot.type = 'button';
+      dot.setAttribute('aria-label', 'Показать слайд ' + (i + 1));
       dot.className = 'slider-dot' + (i === 0 ? ' active' : '');
       dot.addEventListener('click', function () {
         goTo(i);
@@ -64,10 +66,8 @@
     slider.addEventListener('mouseleave', startAuto);
   }
 
+  goTo(0);
   startAuto();
-  window.addEventListener('resize', function () {
-    goTo(current);
-  });
 
   const lightbox = document.getElementById('posterLightbox');
   const lightboxImg = document.getElementById('posterLightboxImg');

@@ -1,7 +1,4 @@
 document.addEventListener('DOMContentLoaded', function() {
-  if (document.getElementById('sliderDots')) {
-    initSlider();
-  }
   if (document.getElementById('eventsGrid')) {
     renderEvents('all');
   }

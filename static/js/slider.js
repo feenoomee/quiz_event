@@ -2,26 +2,34 @@ let currentSlide = 0;
 let totalSlides = 0;
 
 function initSlider(total) {
-  totalSlides = total;
   const dots = document.getElementById('sliderDots');
   const slides = document.getElementById('slides');
   if (!dots || !slides) return;
+
+  totalSlides = Number.isInteger(total) ? total : slides.children.length;
+  currentSlide = Math.min(currentSlide, Math.max(0, totalSlides - 1));
   dots.innerHTML = '';
-  for (let i = 0; i < total; i++) {
+  for (let i = 0; i < totalSlides; i++) {
     const d = document.createElement('button');
+    d.type = 'button';
+    d.setAttribute('aria-label', `Показать слайд ${i + 1}`);
     d.className = 'slider-dot' + (i === 0 ? ' active' : '');
     d.onclick = () => goToSlide(i);
     dots.appendChild(d);
   }
+  goToSlide(currentSlide);
 }
 
 function goToSlide(n) {
   const slides = document.getElementById('slides');
-  if (!slides) return;
-  currentSlide = n;
-  slides.style.transform = `translateX(-${n * 100}%)`;
-  document.querySelectorAll('.slider-dot').forEach((d, i) => {
-    d.classList.toggle('active', i === n);
+  if (!slides || totalSlides === 0) return;
+
+  currentSlide = (n + totalSlides) % totalSlides;
+  Array.from(slides.children).forEach((slide, i) => {
+    slide.classList.toggle('active', i === currentSlide);
+  });
+  document.querySelectorAll('#sliderDots .slider-dot').forEach((d, i) => {
+    d.classList.toggle('active', i === currentSlide);
   });
 }
 
@@ -41,10 +49,11 @@ function startSliderAuto() {
   clearInterval(sliderInterval);
   if (totalSlides <= 1) return;
   sliderInterval = setInterval(nextSlide, 4500);
-  const slidesContainer = document.getElementById('slides');
-  if (slidesContainer) {
-    slidesContainer.addEventListener('mouseenter', () => clearInterval(sliderInterval));
-    slidesContainer.addEventListener('mouseleave', () => {
+  const slider = document.querySelector('.slider-wrap');
+  if (slider && !slider.dataset.autoPauseBound) {
+    slider.dataset.autoPauseBound = 'true';
+    slider.addEventListener('mouseenter', () => clearInterval(sliderInterval));
+    slider.addEventListener('mouseleave', () => {
       clearInterval(sliderInterval);
       sliderInterval = setInterval(nextSlide, 4500);
     });
@@ -56,7 +65,8 @@ function renderResults(games) {
   if (!slides) return;
 
   if (!games.length) {
-    slides.innerHTML = '<div class="slide loading-slide"><p>Результаты пока не добавлены</p></div>';
+    slides.innerHTML = '<div class="slide loading-slide active"><p>Результаты пока не добавлены</p></div>';
+    initSlider(1);
     return;
   }
 
@@ -169,6 +179,7 @@ function renderResults(games) {
       renderResults(data.games || []);
     })
     .catch(() => {
-      slides.innerHTML = '<div class="slide loading-slide"><p>Не удалось загрузить результаты</p></div>';
+      slides.innerHTML = '<div class="slide loading-slide active"><p>Не удалось загрузить результаты</p></div>';
+      initSlider(1);
     });
 })();

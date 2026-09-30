@@ -175,17 +175,24 @@
   width: 100%;
 }
 .hero-slides {
-  display: flex;
+  display: grid;
   align-items: stretch;
-  transition: transform 0.4s ease;
-  will-change: transform;
 }
 .hero-slide {
+  grid-area: 1 / 1;
   display: flex;
-  flex: 0 0 100%;
   width: 100%;
   max-width: 100%;
   box-sizing: border-box;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+.hero-slide.active {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  animation: sliderFadeIn 0.35s ease both;
 }
 .hero-slide > .hero-card {
   display: flex;
@@ -308,14 +315,22 @@
   background: var(--card);
   border: 1px solid var(--border);
 }
-.slides { display: flex; transition: transform 0.5s cubic-bezier(0.4,0,0.2,1); }
+.slides { width: 100%; }
 .slide {
-  min-width: 100%;
+  display: none;
+  width: 100%;
   padding: 48px 60px;
-  display: grid;
   grid-template-columns: 1.2fr 1fr;
   gap: 48px;
   align-items: center;
+}
+.slide.active {
+  display: grid;
+  animation: sliderFadeIn 0.35s ease both;
+}
+@keyframes sliderFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 .slide-emoji {
   font-size: 6rem;
@@ -407,27 +422,42 @@
   display: flex; align-items: center; justify-content: center;
 }
 .slider-btn:hover { background: var(--yellow); color: #000; border-color: var(--yellow); }
-.slider-dots { display: flex; gap: 8px; align-items: center; }
+.slider-dots { display: flex; gap: 0; align-items: center; }
 .slider-dot {
-  width: 8px; height: 8px;
-  border-radius: 50%;
-  background: #444;
+  width: 24px;
+  height: 24px;
+  position: relative;
+  background: transparent;
   border: none;
   cursor: pointer;
-  transition: all 0.2s;
 }
-.slider-dot.active { background: var(--yellow); width: 24px; border-radius: 4px; }
+.slider-dot::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #444;
+  transform: translate(-50%, -50%);
+  transition: width 0.2s, border-radius 0.2s, background 0.2s;
+}
+.slider-dot.active::before {
+  width: 20px;
+  border-radius: 4px;
+  background: var(--yellow);
+}
 
 .loading-slide {
-  min-width: 100%;
   padding: 60px;
-  display: flex;
   align-items: center;
   justify-content: center;
   color: #888;
   font-size: 1.1rem;
   text-align: center;
 }
+.loading-slide.active { display: flex; }
 
 .slide-results-wrap {
   margin-top: 16px;

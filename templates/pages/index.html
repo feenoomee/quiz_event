@@ -4,8 +4,8 @@
 <link rel="stylesheet" href="{{ asset('css/home.css') }}">
 {% endblock %}
 {% block nav_links %}
-  <a href="#events">Календарь</a>
   <a href="#results">Прошлые игры</a>
+  <a href="#events">Календарь</a>
   <a href="https://vk.com/tltquiz" target="_blank">Корпоратив</a>
   <a href="#contacts">Контакты</a>
   {% if current_user %}
@@ -15,8 +15,8 @@
   {% endif %}
 {% endblock %}
 {% block mobile_menu_links %}
-  <a href="#events" onclick="closeMobileMenu()">Календарь мероприятий</a>
   <a href="#results" onclick="closeMobileMenu()">Прошлые игры</a>
+  <a href="#events" onclick="closeMobileMenu()">Календарь мероприятий</a>
   <a href="https://vk.com/tltquiz" target="_blank" onclick="closeMobileMenu()">Заказать корпоратив</a>
   <a href="#contacts" onclick="closeMobileMenu()">Контакты</a>
   {% if current_user %}
@@ -26,7 +26,7 @@
   {% endif %}
 {% endblock %}
 {% block content %}
-{# Порядок блока: герой → календарь → прошлые игры (слайдер) → виджет чата → модалки #}
+{# Порядок блока: герой → прошлые игры (слайдер) → календарь → виджет чата → модалки #}
 
 <!-- 1. Герой и карточка ближайшего квиза -->
 <section class="hero" id="home">
@@ -63,7 +63,7 @@
       <div class="hero-slider" id="heroSlider">
         <div class="hero-slides" id="heroSlides">
           {% if nearest_event %}
-          <div class="hero-slide">
+          <div class="hero-slide active">
             <div class="hero-card">
               <div class="hero-card-label">
                 <div class="pulse-dot"></div>
@@ -95,7 +95,7 @@
           </div>
           {% endif %}
           {% if monthly_poster %}
-          <div class="hero-slide">
+          <div class="hero-slide{% if not nearest_event %} active{% endif %}">
             <div class="hero-card hero-card--poster">
               <div class="hero-card-label">Афиша месяца</div>
               <button type="button" class="hero-poster-btn" data-poster-src="{{ monthly_poster.url }}" aria-label="Открыть афишу">
@@ -118,7 +118,30 @@
   </div>
 </section>
 
-<!-- 2. Календарь мероприятий (сетка заполняется из static/js/events.js) -->
+<!-- 2. Слайдер «Прошлые игры» -->
+<section class="section slider-section" id="results">
+  <div class="section-inner">
+    <div class="section-header fade-in">
+      <h2 class="section-title">Прошлые <span>игры</span></h2>
+      <p class="section-sub">Результаты прошедших игр</p>
+    </div>
+
+    <div class="slider-wrap fade-in">
+      <div class="slides" id="slides">
+        <div class="slide loading-slide active">
+          <p>Загрузка результатов...</p>
+        </div>
+      </div>
+      <div class="slider-controls">
+        <button class="slider-btn" onclick="prevSlide()">←</button>
+        <div class="slider-dots" id="sliderDots"></div>
+        <button class="slider-btn" onclick="nextSlide()">→</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 3. Календарь мероприятий (сетка заполняется из static/js/events.js) -->
 <section class="section events-section" id="events">
   <div class="section-inner">
     <div class="section-header fade-in">
@@ -133,29 +156,6 @@
       <button class="filter-btn" onclick="filterEvents('show', this)">Корпоратив</button>
     </div>
     <div class="events-grid" id="eventsGrid"></div>
-  </div>
-</section>
-
-<!-- 3. Слайдер «Прошлые игры» -->
-<section class="section slider-section" id="results">
-  <div class="section-inner">
-    <div class="section-header fade-in">
-      <h2 class="section-title">Прошлые <span>игры</span></h2>
-      <p class="section-sub">Результаты прошедших игр</p>
-    </div>
-
-    <div class="slider-wrap fade-in">
-      <div class="slides" id="slides">
-        <div class="slide loading-slide">
-          <p>Загрузка результатов...</p>
-        </div>
-      </div>
-      <div class="slider-controls">
-        <button class="slider-btn" onclick="prevSlide()">←</button>
-        <div class="slider-dots" id="sliderDots"></div>
-        <button class="slider-btn" onclick="nextSlide()">→</button>
-      </div>
-    </div>
   </div>
 </section>
 

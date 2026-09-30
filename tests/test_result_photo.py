@@ -30,7 +30,13 @@ def test_upload_result_photo_accepts_any_size(app, admin_client, tmp_path, monke
         content_type="multipart/form-data",
     )
     assert large.status_code == 200
-    assert large.get_json()["path"].startswith("uploads/results/")
+    large_path = large.get_json()["path"]
+    assert large_path.startswith("uploads/results/")
+    assert large_path.endswith(".webp")
+    with Image.open(tmp_path / "results" / large_path.rsplit("/", 1)[1]) as saved:
+        assert saved.format == "WEBP"
+        assert saved.width <= 2000
+        assert saved.height <= 2000
 
     valid = admin_client.post(
         "/api/upload/result-photo",
