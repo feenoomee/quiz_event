@@ -10,6 +10,8 @@ load_dotenv(os.path.join(BASE_DIR, ".env"))
 class Config:
     SECRET_KEY = os.environ["SECRET_KEY"]
 
+    os.makedirs(os.path.join(BASE_DIR, "instance"), exist_ok=True)
+    
     SQLALCHEMY_DATABASE_URI = os.environ.get(
         "DATABASE_URL",
         "sqlite:///" + os.path.join(BASE_DIR, "instance", "quiz.db"),
