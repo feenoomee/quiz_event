@@ -1,0 +1,45 @@
+.game-chat [hidden], .game-chat[hidden] { display: none !important; }
+.game-chat--widget { position: fixed; right: max(20px, env(safe-area-inset-right)); bottom: max(20px, env(safe-area-inset-bottom)); z-index: 150; }
+.game-chat-launcher { margin-left: auto; display: flex; align-items: center; justify-content: center; width: 56px; height: 56px; padding: 0; font-size: 24px; border: 0; border-radius: 28px; background: var(--yellow); color: #171400; font: inherit; font-weight: 700; cursor: pointer; box-shadow: var(--shadow-y); }
+.game-chat-panel { display: flex; flex-direction: column; overflow: hidden; background: var(--dark); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); }
+.game-chat--widget .game-chat-panel { width: min(380px, calc(100vw - 40px)); height: min(560px, calc(100dvh - 170px)); margin-bottom: 12px; }
+.game-chat-header { display: flex; align-items: center; gap: 8px; padding: 18px; border-bottom: 1px solid var(--border); }
+.game-chat-header > div { flex: 1; min-width: 0; }
+.game-chat-header h2 { font-size: 1.1rem; margin: 0 0 5px; }
+.game-chat-header p, .game-chat-hint { color: #aaa; font-size: .75rem; }
+.game-chat-icon { display: grid; place-items: center; width: 32px; height: 32px; flex-shrink: 0; border: 1px solid var(--border); border-radius: 8px; background: transparent; color: var(--yellow); font: inherit; font-size: 1.3rem; cursor: pointer; }
+.game-chat-messages { flex: 1; overflow-y: auto; min-height: 0; padding: 16px; overscroll-behavior: contain; }
+.game-chat-message { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 18px; }
+.game-chat-avatar { width: 34px; height: 34px; flex-shrink: 0; display: grid; place-items: center; border-radius: 50%; overflow: hidden; background: #3b341b; color: var(--yellow); font-size: .75rem; font-weight: 700; }
+.game-chat-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.game-chat-message-body { min-width: 0; flex: 1; }
+.game-chat-meta { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 8px; margin-bottom: 6px; }
+.game-chat-name { font-size: .82rem; overflow-wrap: anywhere; }
+.game-chat-admin { font-size: .65rem; font-weight: 600; color: var(--yellow); border: 1px solid var(--border); border-radius: 5px; padding: 2px 5px; }
+.game-chat-time { color: #aaa; font-size: .65rem; }
+.game-chat-text { white-space: pre-wrap; overflow-wrap: anywhere; font-size: .9rem; line-height: 1.5; padding: 10px 12px; border-radius: 0 12px 12px; background: var(--card2); }
+.game-chat-message--own .game-chat-text { background: #34301b; }
+.game-chat-status { flex-shrink: 0; padding: 8px 16px; color: #bbb; font-size: .8rem; }
+.game-chat-status:empty { display: none; }
+.game-chat-status[data-error="true"] { color: #ffb4a8; }
+.game-chat-form { border-top: 1px solid var(--border); padding: 12px 16px; }
+.game-chat-label { display: block; font-size: .75rem; color: #bbb; margin-bottom: 6px; }
+.game-chat-compose { display: flex; align-items: flex-end; gap: 8px; }
+.game-chat-compose textarea { width: 100%; min-width: 0; max-height: 130px; resize: vertical; border: 1px solid #555; border-radius: 10px; background: #111; color: #fff; padding: 10px; font: inherit; font-size: .9rem; }
+.game-chat-compose button { flex-shrink: 0; width: 42px; height: 42px; border: 0; border-radius: 10px; background: var(--yellow); color: #111; font-size: 1.2rem; cursor: pointer; }
+.game-chat button:disabled { opacity: .5; cursor: wait; }
+.game-chat :is(button, a, textarea):focus-visible { outline: 2px solid var(--yellow-light); outline-offset: 3px; }
+.game-chat-hint { display: block; margin-top: 6px; }
+.game-chat-login { padding: 16px; font-size: .85rem; color: #bbb; border-top: 1px solid var(--border); }
+.game-chat-login a { color: var(--yellow); text-decoration: underline; }
+.game-chat-history { padding: 9px; border: 0; border-bottom: 1px solid var(--border); background: transparent; color: var(--yellow); cursor: pointer; font: inherit; font-size: .8rem; }
+.game-chat-page { max-width: 900px; margin: 105px auto 50px; padding: 0 20px; }
+.game-chat-page h1 { font-size: clamp(1.6rem, 4vw, 2.4rem); margin-bottom: 10px; }
+.game-chat-intro { color: #bbb; line-height: 1.6; margin-bottom: 24px; }
+.game-chat--page .game-chat-panel { height: min(720px, calc(100dvh - 230px)); min-height: 360px; }
+@media (max-width: 480px) {
+  .game-chat--widget { right: max(12px, env(safe-area-inset-right)); bottom: max(12px, env(safe-area-inset-bottom)); }
+  .game-chat--widget .game-chat-panel { width: calc(100vw - 24px); height: min(520px, calc(100dvh - 160px)); }
+  .game-chat-launcher { width: 50px; height: 50px; }
+  .game-chat-page { padding: 0 12px; }
+}

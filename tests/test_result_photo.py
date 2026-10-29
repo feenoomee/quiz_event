@@ -60,7 +60,10 @@ def test_upload_result_photo_rejects_non_image(app, admin_client, tmp_path, monk
     assert resp.status_code == 400
 
 
-def test_saving_result_photo_clears_scores(app, db, admin_client):
+def test_saving_result_photo_clears_scores(app, db, admin_client, tmp_path, monkeypatch):
+    monkeypatch.setitem(app.config, "UPLOAD_FOLDER", str(tmp_path))
+    (tmp_path / "results").mkdir()
+    (tmp_path / "results" / "result.png").write_bytes(_image_file().getvalue())
     event = Event(
         name="Past game",
         description="Test",

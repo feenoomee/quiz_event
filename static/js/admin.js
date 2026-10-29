@@ -124,8 +124,9 @@ function loadAdmins() {
             <div class="admin-user-name">${escapeHtml(u.name)}</div>
             <div class="admin-user-email">${escapeHtml(u.email)}</div>
           </div>
-          <button class="btn-delete" onclick="revokeAdminRole('${escapeAttr(u.email)}')">Снять права</button>
+          <button class="btn-delete" data-action="revoke-admin">Снять права</button>
         `;
+        item.querySelector('[data-action="revoke-admin"]').addEventListener('click', () => revokeAdminRole(u.email));
         container.appendChild(item);
       });
     })
@@ -300,9 +301,10 @@ function loadHistory() {
           </div>
           <div class="history-card-actions">
             <button class="btn-edit" onclick="exportEventExcel(${ev.id})">Скачать Excel</button>
-            <button class="btn-delete" onclick="deleteHistoryEvent(${ev.id}, '${escapeAttr(ev.title)}')">Удалить</button>
+            <button class="btn-delete" data-action="delete-history">Удалить</button>
           </div>
         `;
+        card.querySelector('[data-action="delete-history"]').addEventListener('click', () => deleteHistoryEvent(ev.id, ev.title));
         container.appendChild(card);
       });
     })
@@ -1008,8 +1010,9 @@ function openParticipantsModal(eventId) {
             <td style="font-size:0.85rem;color:#aaa;">${membersList}</td>
             <td>${reg.comment ? escapeHtml(reg.comment) : '—'}</td>
             <td>${statusHtml}</td>
-            <td><button class="btn-delete" onclick="adminRemoveRegistration(${reg.id}, '${escapeAttr(reg.team_name)}')">Удалить</button></td>
+            <td><button class="btn-delete" data-action="remove-registration">Удалить</button></td>
           `;
+          tr.querySelector('[data-action="remove-registration"]').addEventListener('click', () => adminRemoveRegistration(reg.id, reg.team_name));
           tbody.appendChild(tr);
         });
       }

@@ -104,3 +104,8 @@ def dashboard():
 def logout():
     logout_user()
     return redirect(url_for("pages.index"))
+
+
+@pages_bp.route("/chat")
+def chat():
+    return render_template("pages/chat.html")

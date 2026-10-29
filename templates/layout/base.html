@@ -9,6 +9,7 @@
   <link rel="icon" type="image/png" href="{{ url_for('static', filename='favicon.png') }}" sizes="64x64">
   <link rel="apple-touch-icon" href="{{ url_for('static', filename='apple-touch-icon.png') }}">
   <link rel="stylesheet" href="{{ asset('css/base.css') }}">
+  <link rel="stylesheet" href="{{ asset('css/chat.css') }}">
   {% block styles %}{% endblock %}
 </head>
 <body>
@@ -19,6 +20,7 @@
       </a>
 
       <nav>
+        <a href="{{ url_for('pages.chat') }}" {% if request.endpoint == 'pages.chat' %}aria-current="page"{% endif %}>Общий чат</a>
         {% block nav_links %}{% endblock %}
       </nav>
 
@@ -29,17 +31,19 @@
   </header>
 
   <div class="mobile-menu" id="mobileMenu">
+    <a href="{{ url_for('pages.chat') }}" onclick="closeMobileMenu()">Общий чат</a>
     {% block mobile_menu_links %}{% endblock %}
   </div>
 
   <main>
     {% block content %}{% endblock %}
   </main>
+  {% if request.endpoint != 'pages.chat' %}{% include 'partials/chat.html' %}{% endif %}
   {% include 'partials/footer.html' %}
   <script src="{{ asset('js/events.js') }}"></script>
   <script src="{{ asset('js/slider.js') }}"></script>
   <script src="{{ asset('js/auth.js') }}"></script>
-<!-- <script src="{{ asset('js/chat.js') }}"></script> -->
+  <script src="{{ asset('js/chat.js') }}" defer></script>
   <script src="{{ asset('js/mobile-menu.js') }}"></script>
   <script src="{{ asset('js/app.js') }}"></script>
   {% block scripts %}{% endblock %}

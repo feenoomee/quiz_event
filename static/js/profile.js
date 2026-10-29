@@ -92,7 +92,7 @@ function renderRegistrations(regs, tab) {
         <div class="reg-card-more" onclick="openRegDetails(${r.id})">Подробнее →</div>
       </div>
       <div class="reg-card-footer">
-        ${isPending
+        ${!r.can_manage ? '<span>Регистрацией управляет капитан команды</span>' : isPending
           ? `<button class="btn-main" onclick="onConfirmClick(${r.id}, ${withinConfirmWindow})">Подтвердить участие</button>
              <button class="btn-cancel" onclick="cancelRegistration(${r.id})" style="margin-left:8px;">Отменить</button>`
           : `<button class="btn-cancel" onclick="cancelRegistration(${r.id})">Отменить</button>`}
@@ -205,12 +205,74 @@ function renderTeams(teams) {
           ${t.members.map(m => `<div class="team-member-badge">${escapeHtml(m.name)}${m.id === window.currentUser?.id ? ' (вы)' : ''}</div>`).join('')}
         </div>
       </div>
+      ${t.can_manage ? `
+        <form class="team-add-member" hidden>
+          <div class="form-group">
+            <label>Email участника
+              <input type="email" name="email" required maxlength="120" autocomplete="off" placeholder="player@example.com" />
+            </label>
+          </div>
+          <p class="team-member-hint">Участник должен быть зарегистрирован на сайте. Количество игроков на квиз указывается отдельно при регистрации команды.</p>
+          <p class="team-member-status" role="status" aria-live="polite"></p>
+          <button type="submit" class="btn-main">Добавить</button>
+        </form>` : ''}
       <div class="team-footer">
+        ${t.can_manage ? '<button type="button" class="team-add-toggle" aria-expanded="false">+ Добавить участника</button>' : ''}
         <button class="btn-cancel" onclick="${t.is_captain ? `deleteTeam(${t.id})` : `leaveTeam(${t.id})`}">${t.is_captain ? 'Удалить' : 'Выйти'}</button>
       </div>
     `;
+    const toggle = card.querySelector('.team-add-toggle');
+    if (toggle) {
+      const form = card.querySelector('.team-add-member');
+      toggle.addEventListener('click', () => {
+        form.hidden = !form.hidden;
+        toggle.setAttribute('aria-expanded', String(!form.hidden));
+        if (!form.hidden) form.elements.email.focus();
+      });
+      form.addEventListener('submit', event => submitTeamMember(event, t.id, card));
+    }
     container.appendChild(card);
   });
+}
+
+async function submitTeamMember(event, teamId, card) {
+  event.preventDefault();
+  const form = event.currentTarget;
+  const button = form.querySelector('[type="submit"]');
+  if (button.disabled || !form.reportValidity()) return;
+  const status = form.querySelector('.team-member-status');
+  status.textContent = '';
+  status.dataset.error = 'false';
+  button.disabled = true;
+  button.textContent = 'Добавляем…';
+  try {
+    const resp = await fetch(`/api/teams/${teamId}/join`, {
+      method: 'POST',
+      credentials: 'same-origin',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: form.elements.email.value.trim() }),
+    });
+    const data = await resp.json();
+    if (!resp.ok) {
+      status.dataset.error = 'true';
+      status.textContent = data.message || 'Не удалось добавить участника';
+      return;
+    }
+    const badge = document.createElement('div');
+    badge.className = 'team-member-badge';
+    badge.textContent = data.member.name;
+    const members = card.querySelector('.team-members-list');
+    members.appendChild(badge);
+    card.querySelector('.team-members-title').textContent = `Участники (${members.children.length})`;
+    form.reset();
+    status.textContent = `${data.member.name} — участник добавлен в команду`;
+  } catch {
+    status.dataset.error = 'true';
+    status.textContent = 'Ошибка сети. Попробуйте ещё раз.';
+  } finally {
+    button.disabled = false;
+    button.textContent = 'Добавить';
+  }
 }
 
 function openCreateTeamModal() {

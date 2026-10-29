@@ -72,6 +72,9 @@ def create_app(config_class=Config):
     from .blueptints.pages import pages_bp
     from .blueptints.api import api_bp
 
+    from .blueptints.chat import chat_bp
+
+    app.register_blueprint(chat_bp)
     app.register_blueprint( api_bp )
     app.register_blueprint(pages_bp)
 

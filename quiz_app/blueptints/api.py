@@ -1,15 +1,14 @@
 from datetime import datetime
 
-import os
 
 from flask import Blueprint, jsonify, request, url_for, current_app
 from flask_login import login_required, current_user, login_user
-from sqlalchemy import and_, or_
+from sqlalchemy import and_, or_, func
 # from werkzeug.utils import secure_filename
 
 from quiz_app import db
 from quiz_app.models import User, Event, Team, RegistrationsEvent, SitePoster
-from ..helpers import _format_short_name, _require_admin_json, _MONTHS_RU, _format_event, _save_upload, _format_date_ru, _save_image_upload #,_allowed_file,  _WEEKDAYS_RU
+from ..helpers import _media_file_path, _delete_media_file, _format_short_name, _require_admin_json, _MONTHS_RU, _format_event, _save_upload, _format_date_ru, _save_image_upload #,_allowed_file,  _WEEKDAYS_RU
 
 api_bp = Blueprint("api", __name__, url_prefix="/api")
 
@@ -25,9 +24,7 @@ def upload_avatar():
         return jsonify({"status": "error", "message": "Недопустимый формат или размер файла (макс. 5 МБ)"}), 400
 
     if current_user.avatar:
-        old_path = os.path.join(current_app.root_path, "media", current_user.avatar)
-        if os.path.exists(old_path):
-            os.remove(old_path)
+        _delete_media_file(current_user.avatar, "avatars")
 
     current_user.avatar = rel_path
     try:
@@ -45,9 +42,7 @@ def delete_avatar():
     if not current_user.avatar:
         return jsonify({"status": "error", "message": "Аватар отсутствует"}), 400
 
-    old_path = os.path.join(current_app.root_path, "media", current_user.avatar)
-    if os.path.exists(old_path):
-        os.remove(old_path)
+    _delete_media_file(current_user.avatar, "avatars")
 
     current_user.avatar = None
     try:
@@ -92,14 +87,6 @@ def upload_result_photo():
     return jsonify({"status": "success", "url": photo_url, "path": rel_path})
 
 
-def _delete_media_file(rel_path):
-    if not rel_path:
-        return
-    photo_path = os.path.join(current_app.root_path, "media", rel_path)
-    if os.path.exists(photo_path):
-        os.remove(photo_path)
-
-
 def _poster_payload(poster):
     if not poster:
         return {"photo": None, "url": None}
@@ -135,7 +122,7 @@ def upload_poster():
 
     poster = SitePoster.current()
     if poster:
-        _delete_media_file(poster.photo)
+        _delete_media_file(poster.photo, "calendar")
         poster.photo = rel_path
         poster.updated_at = datetime.now()
     else:
@@ -154,7 +141,7 @@ def delete_poster():
         return jsonify({"status": "error", "message": "Нет доступа"}), 403
     poster = SitePoster.current()
     if poster:
-        _delete_media_file(poster.photo)
+        _delete_media_file(poster.photo, "calendar")
         db.session.delete(poster)
         db.session.commit()
     return jsonify({"status": "success", "photo": None, "url": None})
@@ -268,7 +255,9 @@ def create_event():
     except ValueError:
         return jsonify({"status": "error", "message": "Неверный формат даты или времени"}), 400
 
-    photo_path = (data.get("photo_path") or "").strip()
+    photo_path = data.get("photo_path") or ""
+    if photo_path and not _media_file_path(photo_path, "events"):
+        return jsonify({"status": "error", "message": "Недопустимый путь фотографии"}), 400
 
     event = Event(
         name=name,
@@ -301,6 +290,9 @@ def update_event(event_id):
         return jsonify({"status": "error", "message": "Мероприятие не найдено"}), 404
 
     data = request.get_json(silent=True) or {}
+
+    if data.get("photo_path") and not _media_file_path(data["photo_path"], "events"):
+        return jsonify({"status": "error", "message": "Недопустимый путь фотографии"}), 400
 
     if "title" in data:
         event.name = data["title"].strip() or event.name
@@ -359,13 +351,9 @@ def delete_event(event_id):
         return jsonify({"status": "error", "message": "Мероприятие не найдено"}), 404
 
     if event.photo:
-        photo_path = os.path.join(current_app.root_path, "media", event.photo)
-        if os.path.exists(photo_path):
-            os.remove(photo_path)
+        _delete_media_file(event.photo, "events")
     if event.result_photo:
-        result_photo_path = os.path.join(current_app.root_path, "media", event.result_photo)
-        if os.path.exists(result_photo_path):
-            os.remove(result_photo_path)
+        _delete_media_file(event.result_photo, "results")
 
     try:
         db.session.delete(event)
@@ -387,6 +375,7 @@ def my_teams():
             "id": t.id,
             "name": t.name,
             "is_captain": t.user_id == current_user.id,
+            "can_manage": t.user_id == current_user.id or bool(_require_admin_json()),
             "members": [{"id": m.id, "name": m.name, "short_name": _format_short_name(m.name)} for m in t.members],
         })
     return jsonify(result)
@@ -412,22 +401,42 @@ def create_team():
         return jsonify({"status": "error", "message": "Не удалось создать команду"}), 500
 
 
-# Вступить в команду по id капитана
+# Добавить участника (только капитан или администратор)
 @api_bp.route("/teams/<int:team_id>/join", methods=["POST"])
 @login_required
 def join_team(team_id):
     team = Team.query.get(team_id)
     if not team:
         return jsonify({"status": "error", "message": "Команда не найдена"}), 404
-    if current_user in team.members:
-        return jsonify({"status": "error", "message": "Вы уже в этой команде"}), 409
-    team.members.append(current_user)
+    if team.user_id != current_user.id and not _require_admin_json():
+        return jsonify({"status": "error", "message": "Только капитан или администратор может добавлять участников"}), 403
+    data = request.get_json(silent=True)
+    if not isinstance(data, dict):
+        return jsonify({"status": "error", "message": "Укажите email участника"}), 400
+    if "email" in data:
+        email = data["email"]
+        if not isinstance(email, str):
+            return jsonify({"status": "error", "message": "Укажите корректный email"}), 400
+        email = email.strip().lower()
+        if not email or len(email) > 120 or email.count("@") != 1 or any(c.isspace() for c in email) or not all(email.split("@")):
+            return jsonify({"status": "error", "message": "Укажите корректный email"}), 400
+        member = User.query.filter(func.lower(User.email) == email).first()
+    else:
+        member_id = data.get("user_id")
+        if type(member_id) is not int or member_id < 1:
+            return jsonify({"status": "error", "message": "Укажите email участника"}), 400
+        member = db.session.get(User, member_id)
+    if not member:
+        return jsonify({"status": "error", "message": "Пользователь не найден. Попросите участника зарегистрироваться на сайте."}), 404
+    if member in team.members:
+        return jsonify({"status": "error", "message": "Пользователь уже в команде"}), 409
+    team.members.append(member)
     try:
         db.session.commit()
-        return jsonify({"status": "success"})
+        return jsonify({"status": "success", "message": "Участник добавлен в команду", "member": {"id": member.id, "name": member.name}})
     except Exception:
         db.session.rollback()
-        return jsonify({"status": "error", "message": "Не удалось присоединиться"}), 500
+        return jsonify({"status": "error", "message": "Не удалось добавить участника"}), 500
 
 
 # Выйти из команды
@@ -499,6 +508,7 @@ def my_registrations():
             "event_description": ev.description,
             "event_category": ev.category,
             "team_name": team.name,
+            "can_manage": team.user_id == current_user.id or bool(_require_admin_json()),
             "player_count": reg.player_count,
             "comment": reg.comment,
             "status": reg.status,
@@ -530,8 +540,8 @@ def register_team():
     if not team:
         return jsonify({"status": "error", "message": "Команда не найдена"}), 404
 
-    if current_user not in team.members:
-        return jsonify({"status": "error", "message": "Вы не участник этой команды"}), 403
+    if team.user_id != current_user.id and not _require_admin_json():
+        return jsonify({"status": "error", "message": "Нет доступа"}), 403
 
     existing = RegistrationsEvent.query.filter_by(team_id=team_id, event_id=event_id).first()
     if existing:
@@ -582,7 +592,7 @@ def confirm_registration(reg_id):
     if not reg:
         return jsonify({"status": "error", "message": "Регистрация не найдена"}), 404
     team = reg.team
-    if current_user not in team.members:
+    if team.user_id != current_user.id and not _require_admin_json():
         return jsonify({"status": "error", "message": "Нет доступа"}), 403
     if reg.status == "confirmed":
         return jsonify({"status": "success", "message": "Уже подтверждено"})
@@ -724,9 +734,7 @@ def cleanup_past_event_photos():
     past_events = Event.query.filter(Event.date < now, Event.photo.isnot(None)).all()
     cleaned = 0
     for event in past_events:
-        old_path = os.path.join(current_app.root_path, "media", event.photo)
-        if os.path.exists(old_path):
-            os.remove(old_path)
+        _delete_media_file(event.photo, "events")
         event.photo = None
         cleaned += 1
     if cleaned:
@@ -744,7 +752,7 @@ def cancel_registration(reg_id):
     if not reg:
         return jsonify({"status": "error", "message": "Регистрация не найдена"}), 404
     team = reg.team
-    if current_user not in team.members:
+    if team.user_id != current_user.id and not _require_admin_json():
         return jsonify({"status": "error", "message": "Нет доступа"}), 403
     event = reg.event
     try:
@@ -1086,9 +1094,7 @@ def admin_save_scoreboard(event_id):
 
     trimmed = [(row + [None] * event.rounds)[:event.rounds] for row in normalized]
     if event.result_photo:
-        photo_path = os.path.join(current_app.root_path, "media", event.result_photo)
-        if os.path.exists(photo_path):
-            os.remove(photo_path)
+        _delete_media_file(event.result_photo, "results")
         event.result_photo = None
     event.set_scores(trimmed)
     try:
@@ -1108,16 +1114,14 @@ def admin_save_result_photo(event_id):
         return jsonify({"status": "error", "message": "Game not found"}), 404
 
     payload = request.get_json(silent=True) or {}
-    photo_path = (payload.get("result_photo_path") or "").strip()
+    photo_path = payload.get("result_photo_path") or ""
     if not photo_path:
         return jsonify({"status": "error", "message": "Upload result photo first"}), 400
-    if not photo_path.startswith("uploads/results/"):
+    if not _media_file_path(photo_path, "results"):
         return jsonify({"status": "error", "message": "Invalid result photo path"}), 400
 
     if event.result_photo and event.result_photo != photo_path:
-        old_path = os.path.join(current_app.root_path, "media", event.result_photo)
-        if os.path.exists(old_path):
-            os.remove(old_path)
+        _delete_media_file(event.result_photo, "results")
 
     event.result_photo = photo_path
     event.scores = None
@@ -1142,9 +1146,7 @@ def admin_delete_result_photo(event_id):
         return jsonify({"status": "error", "message": "Game not found"}), 404
 
     if event.result_photo:
-        photo_path = os.path.join(current_app.root_path, "media", event.result_photo)
-        if os.path.exists(photo_path):
-            os.remove(photo_path)
+        _delete_media_file(event.result_photo, "results")
     event.result_photo = None
     try:
         db.session.commit()
@@ -1260,13 +1262,9 @@ def admin_clear_history():
     count = len(past_events)
     for e in past_events:
         if e.photo:
-            photo_path = os.path.join(current_app.root_path, "media", e.photo)
-            if os.path.exists(photo_path):
-                os.remove(photo_path)
+            _delete_media_file(e.photo, "events")
         if e.result_photo:
-            result_photo_path = os.path.join(current_app.root_path, "media", e.result_photo)
-            if os.path.exists(result_photo_path):
-                os.remove(result_photo_path)
+            _delete_media_file(e.result_photo, "results")
         db.session.delete(e)
 
     try:

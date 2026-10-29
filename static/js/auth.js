@@ -1,4 +1,5 @@
 let currentRegEvent = null;
+let regActionPending = false;
 const pendingRegStorageKey = 'tltquizPendingRegistration';
 
 function isAuthenticated() {
@@ -34,7 +35,6 @@ async function openRegModal(eventId, name, date, price) {
 
   document.getElementById('regStepTeam').style.display = 'block';
   document.getElementById('regStepCreate').style.display = 'none';
-
   await loadUserTeams();
 
   document.getElementById('regModal').classList.add('open');
@@ -52,9 +52,9 @@ async function loadUserTeams() {
   select.innerHTML = '<option value="">— Загружаем...</option>';
   try {
     const resp = await fetch('/api/my/teams');
-    const teams = await resp.json();
+    const teams = (await resp.json()).filter(t => t.can_manage);
     if (!teams.length) {
-      select.innerHTML = '<option value="">— У вас нет команд</option>';
+      select.innerHTML = '<option value="">— Нет команд, которыми вы управляете</option>';
       return;
     }
     select.innerHTML = '<option value="">— Выберите команду —</option>';
@@ -79,30 +79,52 @@ function hideCreateTeam() {
   document.getElementById('regStepTeam').style.display = 'block';
 }
 
-async function submitReg() {
-  const eventId = currentRegEvent?.eventId;
-  if (!eventId) { alert('Ошибка: не выбрано мероприятие.'); return; }
-
-  let teamId = null;
+async function ensureRegTeam() {
   const stepCreate = document.getElementById('regStepCreate');
   if (stepCreate && stepCreate.style.display !== 'none') {
     const name = document.getElementById('regNewTeamName').value.trim();
-    if (!name) { alert('Введите название команды.'); return; }
-    try {
-      const resp = await fetch('/api/teams', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name }),
-      });
-      const data = await resp.json();
-      if (!resp.ok) { alert(data.message || 'Ошибка создания команды'); return; }
-      teamId = data.team.id;
-    } catch { alert('Ошибка сети'); return; }
-  } else {
+    if (!name) throw new Error('Введите название новой команды.');
+    const resp = await fetch('/api/teams', {
+      method: 'POST', credentials: 'same-origin',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name }),
+    });
+    const data = await resp.json();
+    if (!resp.ok) throw new Error(data.message || 'Ошибка создания команды');
+    const team = data.team;
+    const option = document.createElement('option');
+    option.value = team.id;
+    option.textContent = team.name;
     const select = document.getElementById('regTeamSelect');
-    teamId = select.value;
-    if (!teamId) { alert('Выберите команду.'); return; }
+    select.appendChild(option);
+    select.value = String(team.id);
+    hideCreateTeam();
+    return team.id;
   }
+  const teamId = document.getElementById('regTeamSelect').value;
+  if (!teamId) throw new Error('Выберите команду.');
+  return teamId;
+}
+
+function setRegActionPending(pending) {
+  regActionPending = pending;
+  document.querySelectorAll('#regModal input, #regModal select, #regModal button:not(.modal-close):not(.btn-cancel)').forEach(control => { control.disabled = pending; });
+}
+
+async function submitReg() {
+  if (regActionPending) return;
+  setRegActionPending(true);
+  try { await submitRegRequest(); }
+  finally { setRegActionPending(false); }
+}
+
+async function submitRegRequest() {
+  const eventId = currentRegEvent?.eventId;
+  if (!eventId) { alert('Ошибка: не выбрано мероприятие.'); return; }
+
+  let teamId;
+  try { teamId = await ensureRegTeam(); }
+  catch (error) { alert(error.message || 'Ошибка сети'); return; }
 
   const count = document.getElementById('regCount').value || 1;
   const comment = document.getElementById('regComment').value.trim();
@@ -218,7 +240,8 @@ async function submitAuth() {
     if (pending) {
       openRegModal(pending.eventId, pending.name, pending.date, pending.price);
     } else {
-      window.location.href = data.redirect_to || '/';
+      window.location.href = new URLSearchParams(window.location.search).has('chat_login')
+        ? '/chat' : (data.redirect_to || '/');
     }
   } catch (error) {
     alert('Не удалось выполнить действие. Попробуйте снова.');

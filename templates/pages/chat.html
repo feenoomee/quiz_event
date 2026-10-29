@@ -1,0 +1,19 @@
+{% extends 'layout/base.html' %}
+{% block title %}Общий чат игроков — TLTQUIZ{% endblock %}
+{% block nav_links %}
+  <a href="{{ url_for('pages.index') }}">На главную</a>
+  <a href="{{ url_for('pages.index') }}#events">Календарь</a>
+  {% if current_user %}<a class="btn-profile" href="{{ url_for('pages.dashboard') }}">{{ current_user.short_name }}</a>{% endif %}
+{% endblock %}
+{% block mobile_menu_links %}
+  <a href="{{ url_for('pages.index') }}">На главную</a>
+  <a href="{{ url_for('pages.index') }}#events">Календарь</a>
+  {% if current_user %}<a href="{{ url_for('pages.dashboard') }}">{{ current_user.short_name }}</a>{% endif %}
+{% endblock %}
+{% block content %}
+<div class="game-chat-page">
+  <h1>Чат игроков</h1>
+  <p class="game-chat-intro">Обсуждайте игры, знакомьтесь и собирайте команду. Этот чат общий для всего сайта.</p>
+  {% include 'partials/chat.html' %}
+</div>
+{% endblock %}

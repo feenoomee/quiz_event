@@ -1,6 +1,6 @@
 import json
 import secrets
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 from . import db
 from flask_login import UserMixin
@@ -199,3 +199,16 @@ class PasswordResetToken(db.Model):
         db.session.add(obj)
         db.session.commit()
         return obj
+
+
+class ChatMessage(db.Model):
+    """One shared conversation for the whole site."""
+
+    __tablename__ = "chat_messages"
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False, index=True)
+    text = db.Column(db.String(2000), nullable=False)
+    created_at = db.Column(db.DateTime, nullable=False, default=lambda: datetime.now(timezone.utc).replace(tzinfo=None))
+
+    user = db.relationship("User", lazy="joined")

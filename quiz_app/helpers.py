@@ -1,5 +1,6 @@
 import os
 import uuid
+from pathlib import Path
 
 from flask_login import current_user
 from flask import current_app, url_for
@@ -137,3 +138,28 @@ def _save_image_upload(file, subfolder, max_file_size=None, max_size=(2000, 2000
         quality=82,
         fmt="WEBP",
     )
+
+
+def _media_file_path(rel_path, subfolder=None):
+    """Resolve an uploaded file inside its allowed directory, including symlinks."""
+    if not isinstance(rel_path, str) or "\\" in rel_path or ":" in rel_path or "\0" in rel_path:
+        return None
+    parts = rel_path.split("/")
+    allowed = {"avatars", "events", "results", "calendar"}
+    if (len(parts) != 3 or parts[0] != "uploads" or parts[1] not in allowed
+            or parts[2] in {"", ".", ".."} or (subfolder and parts[1] != subfolder)):
+        return None
+    try:
+        root = Path(current_app.config["UPLOAD_FOLDER"]).resolve()
+        folder = root / parts[1]
+        target = (folder / parts[2]).resolve()
+        target.relative_to(folder)
+        return target if target.is_file() else None
+    except (OSError, ValueError, RuntimeError):
+        return None
+
+
+def _delete_media_file(rel_path, subfolder=None):
+    target = _media_file_path(rel_path, subfolder)
+    if target is not None:
+        target.unlink(missing_ok=True)

@@ -66,7 +66,7 @@ function renderEvents(filter) {
     card.innerHTML = `
       <div class="event-card-img" style="${photoStyle}">
         ${ev.photo ? '' : '<div style="font-size:3.5rem;position:relative;z-index:1;"></div>'}
-        ${ev.tag ? `<div class="event-tag">${ev.tag}</div>` : ''}
+        ${ev.tag ? `<div class="event-tag">${escapeHtml(ev.tag)}</div>` : ''}
       </div>
       <div class="event-card-body">
         <div class="event-card-title" onclick="openEventDetails(${ev.id})">${escapeHtml(ev.title)}</div>
@@ -75,7 +75,7 @@ function renderEvents(filter) {
         <div class="event-meta">
           <div class="event-meta-row"><span class="event-meta-icon"></span>${ev.date}</div>
           <div class="event-meta-row"><span class="event-meta-icon"></span>${ev.time}</div>
-          <div class="event-meta-row"><span class="event-meta-icon"></span>${ev.place}</div>
+          <div class="event-meta-row"><span class="event-meta-icon"></span>${escapeHtml(ev.place)}</div>
           <div class="event-meta-row"><span class="event-meta-icon"></span>Команды 4–10 человек</div>
         </div>
         <div class="event-card-footer">
@@ -87,12 +87,16 @@ function renderEvents(filter) {
         ${ev.registration_open === false
           ? '<button class="btn-register btn-register--closed" disabled>Регистрация закрыта</button>'
           : `<button class="btn-register"
-              onclick="openRegModal(${ev.id}, '${escapeHtml(ev.title)}', '${escapeHtml(ev.date)}, ${escapeHtml(ev.time)}', '${ev.price} ₽ с игрока')">
+              data-action="register-event">
               ${seatsLeft === 0 ? 'В лист ожидания →' : 'Зарегистрироваться →'}
             </button>`
         }
       </div>
     `;
+    const registerButton = card.querySelector('[data-action="register-event"]');
+    if (registerButton) {
+      registerButton.addEventListener('click', () => openRegModal(ev.id, ev.title, `${ev.date}, ${ev.time}`, `${ev.price} ₽ с игрока`));
+    }
     grid.appendChild(card);
     setTimeout(() => card.classList.add('visible'), 50 + i * 80);
   });

@@ -1,0 +1,35 @@
+{% set full_chat = request.endpoint == 'pages.chat' %}
+<div class="game-chat{% if full_chat %} game-chat--page{% else %} game-chat--widget{% endif %}"
+     data-game-chat data-user-id="{{ current_user.id if current_user else '' }}"
+     data-endpoint="{{ url_for('chat.messages') }}">
+  <section class="game-chat-panel" id="gameChatPanel" aria-labelledby="gameChatTitle" {% if not full_chat %}hidden{% endif %}>
+    <div class="game-chat-header">
+      <div>
+        <h2 id="gameChatTitle">Общий чат</h2>
+        <p>Все игроки TLTQUIZ в одном месте</p>
+      </div>
+      {% if not full_chat %}
+      <a href="{{ url_for('pages.chat') }}" class="game-chat-icon" aria-label="Открыть чат на отдельной странице" title="На отдельную страницу">↗</a>
+      <button type="button" class="game-chat-icon" data-chat-close aria-label="Свернуть чат">×</button>
+      {% endif %}
+    </div>
+    <button type="button" class="game-chat-history" data-chat-history hidden>Загрузить предыдущие сообщения</button>
+    <div class="game-chat-messages" data-chat-messages role="log" aria-label="Сообщения общего чата" aria-live="polite" aria-relevant="additions"></div>
+    <p class="game-chat-status" data-chat-status role="status">Загружаем сообщения…</p>
+    {% if current_user %}
+    <form class="game-chat-form" data-chat-form>
+      <label class="game-chat-label" for="gameChatInput">Ваше сообщение</label>
+      <div class="game-chat-compose">
+        <textarea id="gameChatInput" name="text" rows="2" maxlength="2000" placeholder="Написать сообщение…" required></textarea>
+        <button type="submit" title="Отправить сообщение" aria-label="Отправить сообщение">➤</button>
+      </div>
+      <span class="game-chat-hint">Enter — отправить · Shift + Enter — новая строка</span>
+    </form>
+    {% else %}
+    <p class="game-chat-login"><a href="{{ url_for('pages.index', chat_login=1) }}">Войдите или зарегистрируйтесь</a>, чтобы общаться с игроками.</p>
+    {% endif %}
+  </section>
+  {% if not full_chat %}
+  <button type="button" class="game-chat-launcher" data-chat-toggle aria-expanded="false" aria-controls="gameChatPanel" aria-label="Открыть общий чат" title="Общий чат">💬</button>
+  {% endif %}
+</div>

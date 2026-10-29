@@ -90,8 +90,7 @@ def cleanup_old_events():
     """Delete events older than 6 months and their associated files."""
     from quiz_app import db
     from quiz_app.models import Event
-    import os
-    from flask import current_app
+    from quiz_app.helpers import _delete_media_file
 
     app = _app_instance
     if not app:
@@ -105,10 +104,8 @@ def cleanup_old_events():
             return
 
         for e in old_events:
-            if e.photo:
-                photo_path = os.path.join(app.root_path, "media", e.photo)
-                if os.path.exists(photo_path):
-                    os.remove(photo_path)
+            _delete_media_file(e.photo, "events")
+            _delete_media_file(e.result_photo, "results")
             db.session.delete(e)
 
         try:

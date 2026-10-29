@@ -641,3 +641,25 @@
   border-radius: 10px;
   margin-bottom: 4px;
 }
+
+
+.team-add-member {
+  margin: 0 0 20px;
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+.team-add-member[hidden] { display: none; }
+.team-add-member .form-group label { display: block; }
+.team-add-member input { box-sizing: border-box; width: 100%; margin-top: 8px; }
+.team-member-hint { color: #aaa; font-size: 0.85rem; line-height: 1.5; }
+.team-member-status { margin: 12px 0; overflow-wrap: anywhere; color: var(--yellow); }
+.team-member-status:empty { display: none; }
+.team-member-status[data-error="true"] { color: #ff7777; }
+.team-add-member button:disabled { opacity: 0.6; cursor: wait; }
+.team-footer { flex-wrap: wrap; }
+
+.team-card { min-width: 0; }
+.team-name, .team-member-badge { overflow-wrap: anywhere; }
+.team-member-badge { max-width: 100%; }
+.team-add-member input { min-width: 0; }
